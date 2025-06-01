@@ -112,45 +112,62 @@ export default function PotreeViewer() {
             renderArea = document.getElementById("potree_render_area") as HTMLDivElement | null;
           }
           
-          // If still not found, create it
+          // If still not found, create it and append to body directly
           if (!renderArea) {
             console.log("Creating potree_render_area element");
             const newRenderArea = document.createElement("div");
             newRenderArea.id = "potree_render_area";
-            const container = document.querySelector(".potree_container");
-            if (container) {
-              container.appendChild(newRenderArea);
-            }
+            
+            // Append directly to body to ensure it's in the DOM
+            document.body.appendChild(newRenderArea);
             renderArea = newRenderArea;
+            
+            // Update our ref
+            renderAreaRef.current = renderArea;
           }
           
-          // Force dimensions and styles immediately with explicit pixel values
+          // Force dimensions and styles with !important equivalent
           if (renderArea) {
             const windowWidth = window.innerWidth;
             const windowHeight = window.innerHeight;
             
-            renderArea.style.width = `${windowWidth}px`;
-            renderArea.style.height = `${windowHeight}px`;
-            renderArea.style.position = "fixed";
-            renderArea.style.top = "0px";
-            renderArea.style.left = "0px";
-            renderArea.style.zIndex = "1";
-            renderArea.style.display = "block";
-            renderArea.style.background = "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)";
-            renderArea.style.overflow = "hidden";
+            // Remove any existing styles first
+            renderArea.removeAttribute('style');
             
-            // Force layout recalculation by accessing layout properties
+            // Set styles directly on the element
+            renderArea.style.cssText = `
+              width: ${windowWidth}px !important;
+              height: ${windowHeight}px !important;
+              position: fixed !important;
+              top: 0px !important;
+              left: 0px !important;
+              z-index: 1 !important;
+              display: block !important;
+              background: linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%) !important;
+              overflow: hidden !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              border: none !important;
+              min-width: ${windowWidth}px !important;
+              min-height: ${windowHeight}px !important;
+              max-width: ${windowWidth}px !important;
+              max-height: ${windowHeight}px !important;
+            `;
+            
+            // Force multiple reflows
             void renderArea.offsetWidth;
             void renderArea.offsetHeight;
             void renderArea.clientWidth;
             void renderArea.clientHeight;
+            void renderArea.scrollWidth;
+            void renderArea.scrollHeight;
             
-            // Force another reflow
-            renderArea.style.minWidth = `${windowWidth}px`;
-            renderArea.style.minHeight = `${windowHeight}px`;
+            // Force another style update
+            renderArea.style.visibility = 'visible';
+            renderArea.style.opacity = '1';
             
             // Final reflow
-            void renderArea.offsetHeight;
+            void renderArea.getBoundingClientRect();
           }
           
           return renderArea;
@@ -159,13 +176,16 @@ export default function PotreeViewer() {
         // Wait for DOM element to be available and properly sized
         await new Promise<void>((resolve, reject) => {
           let attempts = 0;
-          const maxAttempts = 50; // Increased attempts
+          const maxAttempts = 30; // Reduced attempts but with better logic
           
           const checkElement = () => {
             const renderArea = ensureRenderArea();
             attempts++;
             
             if (renderArea) {
+              // Force a style recalculation
+              window.getComputedStyle(renderArea).getPropertyValue('width');
+              
               console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
                 element: renderArea,
                 offsetWidth: renderArea.offsetWidth,
@@ -174,7 +194,9 @@ export default function PotreeViewer() {
                 clientHeight: renderArea.clientHeight,
                 windowWidth: window.innerWidth,
                 windowHeight: window.innerHeight,
-                computedStyle: window.getComputedStyle(renderArea).width
+                computedWidth: window.getComputedStyle(renderArea).width,
+                computedHeight: window.getComputedStyle(renderArea).height,
+                boundingRect: renderArea.getBoundingClientRect()
               });
               
               if (renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
@@ -183,28 +205,23 @@ export default function PotreeViewer() {
                   height: renderArea.offsetHeight
                 });
                 
-                // Update our ref if it wasn't set
-                if (!renderAreaRef.current) {
-                  renderAreaRef.current = renderArea;
-                }
-                
                 resolve();
               } else if (attempts >= maxAttempts) {
                 console.error("DOM element not found or has no dimensions after maximum attempts");
                 reject(new Error("Potree render area not found or not properly sized"));
               } else {
-                setTimeout(checkElement, 100); // Reduced interval
+                setTimeout(checkElement, 200); // Increased interval for better stability
               }
             } else if (attempts >= maxAttempts) {
               console.error("DOM element not found after maximum attempts");
               reject(new Error("Potree render area not found"));
             } else {
-              setTimeout(checkElement, 100); // Reduced interval
+              setTimeout(checkElement, 200);
             }
           };
           
-          // Start checking immediately
-          checkElement();
+          // Start checking after a small delay to ensure DOM is ready
+          setTimeout(checkElement, 300);
         });
 
         setLoadingProgress(45);
