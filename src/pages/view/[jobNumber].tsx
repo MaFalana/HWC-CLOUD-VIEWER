@@ -99,15 +99,18 @@ export default function PotreeViewer() {
     const initializePotree = async () => {
       try {
         setLoadingProgress(40);
+        console.log("Starting Potree initialization...");
         
         // Wait for DOM element to be available with better detection
         await new Promise<void>((resolve) => {
           const checkElement = () => {
             const renderArea = document.getElementById("potree_render_area");
             if (renderArea) {
+              console.log("DOM element found:", renderArea);
               // Element exists, wait a bit more for it to be fully rendered
               setTimeout(() => resolve(), 100);
             } else {
+              console.log("DOM element not found, retrying...");
               setTimeout(checkElement, 50);
             }
           };
@@ -115,19 +118,28 @@ export default function PotreeViewer() {
         });
 
         setLoadingProgress(45);
+        console.log("DOM element ready, starting script loading...");
 
         const loadScript = (src: string): Promise<void> =>
           new Promise((resolve, reject) => {
             if (document.querySelector(`script[src="${src}"]`)) {
+              console.log(`Script already loaded: ${src}`);
               resolve();
               return;
             }
 
+            console.log(`Loading script: ${src}`);
             const script = document.createElement("script");
             script.src = src;
             script.async = false;
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error(`Failed to load script ${src}`));
+            script.onload = () => {
+              console.log(`Script loaded successfully: ${src}`);
+              resolve();
+            };
+            script.onerror = () => {
+              console.error(`Failed to load script: ${src}`);
+              reject(new Error(`Failed to load script ${src}`));
+            };
             document.body.appendChild(script);
           });
 
@@ -154,24 +166,35 @@ export default function PotreeViewer() {
 
         setLoadingProgress(50);
 
-        // Load scripts with progress updates
+        // Load scripts with progress updates and better error handling
         for (let i = 0; i < scripts.length; i++) {
-          await loadScript(scripts[i]);
-          setLoadingProgress(50 + (i + 1) * (20 / scripts.length));
+          try {
+            await loadScript(scripts[i]);
+            setLoadingProgress(50 + (i + 1) * (20 / scripts.length));
+          } catch (error) {
+            console.error(`Failed to load script ${scripts[i]}:`, error);
+            // Continue with other scripts even if one fails
+          }
         }
 
         setLoadingProgress(70);
+        console.log("All scripts loaded, checking Potree availability...");
 
         // Check if Potree is available
         if (!window.Potree) {
+          console.error("Potree not available on window object");
           throw new Error("Potree library failed to load");
         }
+
+        console.log("Potree is available:", window.Potree);
 
         // Ensure the render area element exists and has dimensions
         const renderArea = document.getElementById("potree_render_area");
         if (!renderArea) {
           throw new Error("Potree render area not found");
         }
+
+        console.log("Render area found, setting up dimensions...");
 
         // Force dimensions and ensure element is properly sized
         renderArea.style.width = "100%";
@@ -183,10 +206,20 @@ export default function PotreeViewer() {
         // Wait for the style changes to take effect
         await new Promise(resolve => setTimeout(resolve, 200));
 
+        console.log("Render area dimensions:", {
+          width: renderArea.clientWidth,
+          height: renderArea.clientHeight,
+          offsetWidth: renderArea.offsetWidth,
+          offsetHeight: renderArea.offsetHeight
+        });
+
         setLoadingProgress(80);
 
+        console.log("Initializing Potree viewer...");
         // Initialize Potree viewer
         const viewer = new window.Potree.Viewer(renderArea);
+        console.log("Potree viewer created:", viewer);
+        
         viewer.setEDLEnabled(true);
         viewer.setFOV(60);
         viewer.setPointBudget(1_000_000);
@@ -195,14 +228,20 @@ export default function PotreeViewer() {
         setLoadingProgress(85);
 
         viewer.loadGUI(() => {
+          console.log("Potree GUI loaded");
           viewer.setLanguage("en");
           setLoadingProgress(90);
         });
 
+        console.log("Potree initialization complete, simulating point cloud load...");
+
         // For demo purposes, we'll simulate a successful load without actual point cloud data
         setTimeout(() => {
           setLoadingProgress(100);
-          setTimeout(() => setLoading(false), 500);
+          setTimeout(() => {
+            console.log("Loading complete, hiding loading screen");
+            setLoading(false);
+          }, 500);
         }, 1000);
 
         // Uncomment this section when you have actual point cloud data:
@@ -242,7 +281,10 @@ export default function PotreeViewer() {
     };
 
     // Start initialization after a small delay to ensure component is mounted
-    const timeoutId = setTimeout(initializePotree, 200);
+    const timeoutId = setTimeout(() => {
+      console.log("Starting Potree initialization timeout...");
+      initializePotree();
+    }, 200);
 
     return () => {
       clearTimeout(timeoutId);
