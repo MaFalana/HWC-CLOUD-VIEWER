@@ -104,71 +104,45 @@ export default function PotreeViewer() {
         
         // Create and ensure the render area element exists with proper dimensions
         const ensureRenderArea = () => {
-          // First check if our ref has the element
-          let renderArea = renderAreaRef.current;
-          
-          // If not, try to get it by ID
-          if (!renderArea) {
-            renderArea = document.getElementById("potree_render_area") as HTMLDivElement | null;
+          // Remove any existing element first
+          const existingElement = document.getElementById("potree_render_area");
+          if (existingElement) {
+            existingElement.remove();
           }
           
-          // If still not found, create it and append to body directly
-          if (!renderArea) {
-            console.log("Creating potree_render_area element");
-            const newRenderArea = document.createElement("div");
-            newRenderArea.id = "potree_render_area";
-            
-            // Append directly to body to ensure it's in the DOM
-            document.body.appendChild(newRenderArea);
-            renderArea = newRenderArea;
-            
-            // Update our ref
-            renderAreaRef.current = renderArea;
-          }
+          // Create new element
+          const renderArea = document.createElement("div");
+          renderArea.id = "potree_render_area";
           
-          // Force dimensions and styles with !important equivalent
-          if (renderArea) {
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
-            
-            // Remove any existing styles first
-            renderArea.removeAttribute('style');
-            
-            // Set styles directly on the element
-            renderArea.style.cssText = `
-              width: ${windowWidth}px !important;
-              height: ${windowHeight}px !important;
-              position: fixed !important;
-              top: 0px !important;
-              left: 0px !important;
-              z-index: 1 !important;
-              display: block !important;
-              background: linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%) !important;
-              overflow: hidden !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              border: none !important;
-              min-width: ${windowWidth}px !important;
-              min-height: ${windowHeight}px !important;
-              max-width: ${windowWidth}px !important;
-              max-height: ${windowHeight}px !important;
-            `;
-            
-            // Force multiple reflows
-            void renderArea.offsetWidth;
-            void renderArea.offsetHeight;
-            void renderArea.clientWidth;
-            void renderArea.clientHeight;
-            void renderArea.scrollWidth;
-            void renderArea.scrollHeight;
-            
-            // Force another style update
-            renderArea.style.visibility = 'visible';
-            renderArea.style.opacity = '1';
-            
-            // Final reflow
-            void renderArea.getBoundingClientRect();
-          }
+          // Get window dimensions
+          const windowWidth = window.innerWidth;
+          const windowHeight = window.innerHeight;
+          
+          // Set attributes directly
+          renderArea.setAttribute('style', `
+            width: ${windowWidth}px;
+            height: ${windowHeight}px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            display: block;
+            background: linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%);
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            border: none;
+          `);
+          
+          // Append to body
+          document.body.appendChild(renderArea);
+          
+          // Force immediate layout calculation
+          renderArea.offsetHeight;
+          renderArea.offsetWidth;
+          
+          // Update ref
+          renderAreaRef.current = renderArea;
           
           return renderArea;
         };
@@ -176,52 +150,58 @@ export default function PotreeViewer() {
         // Wait for DOM element to be available and properly sized
         await new Promise<void>((resolve, reject) => {
           let attempts = 0;
-          const maxAttempts = 30; // Reduced attempts but with better logic
+          const maxAttempts = 20;
           
           const checkElement = () => {
-            const renderArea = ensureRenderArea();
             attempts++;
             
-            if (renderArea) {
-              // Force a style recalculation
-              window.getComputedStyle(renderArea).getPropertyValue('width');
-              
-              console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
-                element: renderArea,
-                offsetWidth: renderArea.offsetWidth,
-                offsetHeight: renderArea.offsetHeight,
-                clientWidth: renderArea.clientWidth,
-                clientHeight: renderArea.clientHeight,
-                windowWidth: window.innerWidth,
-                windowHeight: window.innerHeight,
-                computedWidth: window.getComputedStyle(renderArea).width,
-                computedHeight: window.getComputedStyle(renderArea).height,
-                boundingRect: renderArea.getBoundingClientRect()
+            // Create element fresh each time
+            const renderArea = ensureRenderArea();
+            
+            console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
+              element: renderArea,
+              offsetWidth: renderArea.offsetWidth,
+              offsetHeight: renderArea.offsetHeight,
+              clientWidth: renderArea.clientWidth,
+              clientHeight: renderArea.clientHeight,
+              windowWidth: window.innerWidth,
+              windowHeight: window.innerHeight,
+              style: renderArea.getAttribute('style')
+            });
+            
+            if (renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
+              console.log("DOM element found and has dimensions:", {
+                width: renderArea.offsetWidth,
+                height: renderArea.offsetHeight
               });
+              resolve();
+            } else if (attempts >= maxAttempts) {
+              console.error("DOM element not found or has no dimensions after maximum attempts");
+              // Force dimensions one more time before rejecting
+              renderArea.style.width = `${window.innerWidth}px`;
+              renderArea.style.height = `${window.innerHeight}px`;
+              renderArea.style.minWidth = `${window.innerWidth}px`;
+              renderArea.style.minHeight = `${window.innerHeight}px`;
+              
+              // Final check
+              renderArea.offsetHeight; // Force reflow
               
               if (renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
-                console.log("DOM element found and has dimensions:", {
+                console.log("DOM element forced to have dimensions:", {
                   width: renderArea.offsetWidth,
                   height: renderArea.offsetHeight
                 });
-                
                 resolve();
-              } else if (attempts >= maxAttempts) {
-                console.error("DOM element not found or has no dimensions after maximum attempts");
-                reject(new Error("Potree render area not found or not properly sized"));
               } else {
-                setTimeout(checkElement, 200); // Increased interval for better stability
+                reject(new Error("Potree render area not found or not properly sized"));
               }
-            } else if (attempts >= maxAttempts) {
-              console.error("DOM element not found after maximum attempts");
-              reject(new Error("Potree render area not found"));
             } else {
-              setTimeout(checkElement, 200);
+              setTimeout(checkElement, 300);
             }
           };
           
-          // Start checking after a small delay to ensure DOM is ready
-          setTimeout(checkElement, 300);
+          // Start checking immediately
+          checkElement();
         });
 
         setLoadingProgress(45);
