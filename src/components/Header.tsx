@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Grid3X3, List, Map, Filter } from "lucide-react";
+import { Search, Plus, Grid3X3, List, Map } from "lucide-react";
 import Image from "next/image";
 
 interface HeaderProps {

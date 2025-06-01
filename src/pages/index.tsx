@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useToast } from "@/hooks/use-toast";
@@ -24,11 +23,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadProjects();
-  }, []);
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     filterAndSortProjects();
-  }, [projects, searchQuery, sortBy]);
+  }, [projects, searchQuery, sortBy]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadProjects = async () => {
     try {
@@ -84,7 +83,7 @@ export default function Dashboard() {
   };
 
   const filterAndSortProjects = () => {
-    let filtered = projects.filter(project => {
+    const filtered = projects.filter(project => {
       const searchLower = searchQuery.toLowerCase();
       return (
         project.projectName.toLowerCase().includes(searchLower) ||

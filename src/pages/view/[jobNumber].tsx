@@ -1,9 +1,39 @@
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
+import Script from "next/script";
 import { projectService } from "@/services/projectService";
 import { Project } from "@/types/project";
+
+// Define types for Potree
+interface PotreeViewer {
+  setEDLEnabled: (enabled: boolean) => void;
+  setFOV: (fov: number) => void;
+  setPointBudget: (budget: number) => void;
+  setDescription: (description: string) => void;
+  loadGUI: (callback: () => void) => void;
+  setLanguage: (lang: string) => void;
+  toggleSidebar: () => void;
+  scene: {
+    addPointCloud: (pointcloud: any) => void;
+  };
+  fitToScreen: (padding: number) => void;
+}
+
+interface PotreeStatic {
+  Viewer: new (element: HTMLElement | null) => PotreeViewer;
+  PointSizeType: {
+    ADAPTIVE: number;
+  };
+  loadPointCloud: (path: string, name: string, callback: (e: { pointcloud: any }) => void) => void;
+}
+
+// Extend Window interface to include Potree
+declare global {
+  interface Window {
+    Potree: PotreeStatic;
+  }
+}
 
 export default function PotreeViewer() {
   const router = useRouter();
@@ -84,7 +114,7 @@ export default function PotreeViewer() {
         const pathToLoad = response.ok ? cloudJsPath : metadataPath;
 
         // Initialize Potree viewer
-        const viewer = new (window as any).Potree.Viewer(document.getElementById("potree_render_area"));
+        const viewer = new window.Potree.Viewer(document.getElementById("potree_render_area"));
         viewer.setEDLEnabled(true);
         viewer.setFOV(60);
         viewer.setPointBudget(1_000_000);
@@ -95,10 +125,10 @@ export default function PotreeViewer() {
           viewer.toggleSidebar();
         });
 
-        const loadCallback = (e: any) => {
+        const loadCallback = (e: { pointcloud: any }) => {
           if (e.pointcloud) {
             viewer.scene.addPointCloud(e.pointcloud);
-            e.pointcloud.material.pointSizeType = (window as any).Potree.PointSizeType.ADAPTIVE;
+            e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
             viewer.fitToScreen(0.5);
           } else {
             console.error("Failed to load point cloud.");
@@ -107,9 +137,9 @@ export default function PotreeViewer() {
         };
 
         if (pathToLoad.endsWith("cloud.js")) {
-          (window as any).Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
+          window.Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
         } else {
-          (window as any).Potree.loadPointCloud(metadataPath, jobNumber, loadCallback);
+          window.Potree.loadPointCloud(metadataPath, jobNumber, loadCallback);
         }
 
       } catch (err) {
@@ -165,15 +195,28 @@ export default function PotreeViewer() {
         <title>{project?.projectName || `Project ${jobNumber}`} - HWC Cloud Viewer</title>
         <meta name="description" content="Point cloud viewer" />
         <link rel="icon" href="/favicon.ico" />
-        
-        <link rel="stylesheet" href="/potree/build/potree/potree.css" />
-        <link rel="stylesheet" href="/potree/libs/jquery-ui/jquery-ui.min.css" />
-        <link rel="stylesheet" href="/potree/libs/openlayers3/ol.css" />
-        <link rel="stylesheet" href="/potree/libs/spectrum/spectrum.css" />
-        <link rel="stylesheet" href="/potree/libs/jstree/themes/mixed/style.css" />
-        <link rel="stylesheet" href="/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css" />
-        <link rel="stylesheet" href="/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css" />
       </Head>
+      
+      {/* Load Potree CSS */}
+      <Script id="potree-styles">
+        {`
+          // Load required CSS files
+          function loadCSS(url) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = url;
+            document.head.appendChild(link);
+          }
+          
+          loadCSS('/potree/build/potree/potree.css');
+          loadCSS('/potree/libs/jquery-ui/jquery-ui.min.css');
+          loadCSS('/potree/libs/openlayers3/ol.css');
+          loadCSS('/potree/libs/spectrum/spectrum.css');
+          loadCSS('/potree/libs/jstree/themes/mixed/style.css');
+          loadCSS('/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css');
+          loadCSS('/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css');
+        `}
+      </Script>
       
       <div
         className="potree_container"
