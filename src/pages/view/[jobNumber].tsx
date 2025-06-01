@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -61,6 +62,7 @@ export default function PotreeViewer() {
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const renderAreaRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<PotreeViewer | null>(null);
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
@@ -94,206 +96,253 @@ export default function PotreeViewer() {
     loadProject();
   }, [jobNumber]);
 
+  // Effect to handle sidebar visibility changes
+  useEffect(() => {
+    const sidebarContainer = document.getElementById("potree_sidebar_container");
+    if (sidebarContainer) {
+      sidebarContainer.style.display = sidebarVisible ? "block" : "none";
+    }
+  }, [sidebarVisible]);
+
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string" || !project) return;
 
-    const initializePotree = async () => {
-      try {
-        setLoadingProgress(40);
-        console.log("Starting Potree initialization...");
-        
-        // Get the render area element
-        const renderArea = document.getElementById("potree_render_area");
-        if (!renderArea) {
-          throw new Error("Potree render area not found");
-        }
-        
-        // Set dimensions explicitly
-        renderArea.style.width = `${window.innerWidth}px`;
-        renderArea.style.height = `${window.innerHeight}px`;
-        
-        // Force layout calculation
-        renderArea.getBoundingClientRect();
-        
-        console.log("Render area dimensions:", {
-          width: renderArea.clientWidth,
-          height: renderArea.clientHeight,
-          offsetWidth: renderArea.offsetWidth,
-          offsetHeight: renderArea.offsetHeight
-        });
-        
-        setLoadingProgress(45);
-        console.log("DOM element ready, starting script loading...");
-
-        const loadScript = (src: string): Promise<void> =>
-          new Promise((resolve, reject) => {
-            if (document.querySelector(`script[src="${src}"]`)) {
-              console.log(`Script already loaded: ${src}`);
-              resolve();
-              return;
-            }
-
-            console.log(`Loading script: ${src}`);
-            const script = document.createElement("script");
-            script.src = src;
-            script.async = false;
-            script.onload = () => {
-              console.log(`Script loaded successfully: ${src}`);
-              resolve();
-            };
-            script.onerror = () => {
-              console.error(`Failed to load script: ${src}`);
-              reject(new Error(`Failed to load script ${src}`));
-            };
-            document.body.appendChild(script);
-          });
-
-        const scripts = [
-          "/potree/libs/jquery/jquery-3.1.1.min.js",
-          "/potree/libs/spectrum/spectrum.js",
-          "/potree/libs/jquery-ui/jquery-ui.min.js",
-          "/potree/libs/other/BinaryHeap.js",
-          "/potree/libs/tween/tween.min.js",
-          "/potree/libs/d3/d3.js",
-          "/potree/libs/proj4/proj4.js",
-          "/potree/libs/openlayers3/ol.js",
-          "/potree/libs/i18next/i18next.js",
-          "/potree/libs/jstree/jstree.js",
-          "/potree/build/potree/potree.js",
-          "/potree/libs/plasio/js/laslaz.js",
-          "/potree/libs/Cesium/Cesium.js",
-          "/potree/libs/perfect-scrollbar/js/perfect-scrollbar.jquery.js",
-          "/potree/libs/amcharts/amcharts.js",
-          "/potree/libs/amcharts/serial.js",
-          "/potree/libs/panzoom/panzoom.min.js",
-          "/potree/libs/papa/papaparse.js"
-        ];
-
-        setLoadingProgress(50);
-
-        // Load scripts with progress updates and better error handling
-        for (let i = 0; i < scripts.length; i++) {
-          try {
-            await loadScript(scripts[i]);
-            setLoadingProgress(50 + (i + 1) * (20 / scripts.length));
-          } catch (error) {
-            console.error(`Failed to load script ${scripts[i]}:`, error);
-            // Continue with other scripts even if one fails
-          }
-        }
-
-        setLoadingProgress(70);
-        console.log("All scripts loaded, checking Potree availability...");
-
-        // Wait a bit more for Potree to be fully initialized
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Check if Potree is available
-        if (!window.Potree) {
-          console.error("Potree not available on window object");
-          throw new Error("Potree library failed to load");
-        }
-
-        console.log("Potree is available:", window.Potree);
-
-        // Get the render area element again to ensure it's still valid
-        const renderArea = renderAreaRef.current || document.getElementById("potree_render_area");
-        if (!renderArea) {
-          throw new Error("Potree render area not found");
-        }
-
-        console.log("Render area found, final dimensions check...");
-        console.log("Render area dimensions:", {
-          width: renderArea.clientWidth,
-          height: renderArea.clientHeight,
-          offsetWidth: renderArea.offsetWidth,
-          offsetHeight: renderArea.offsetHeight
-        });
-
-        setLoadingProgress(80);
-
-        console.log("Initializing Potree viewer...");
-        // Initialize Potree viewer
-        const viewer = new window.Potree.Viewer(renderAreaRef.current);
-        console.log("Potree viewer created:", viewer);
-        
-        // Create sidebar container if it doesn't exist
-        let sidebarContainer = document.getElementById("potree_sidebar_container");
-        if (!sidebarContainer) {
-          sidebarContainer = document.createElement("div");
-          sidebarContainer.id = "potree_sidebar_container";
-          sidebarContainer.style.position = "absolute";
-          sidebarContainer.style.top = "0";
-          sidebarContainer.style.right = "0";
-          sidebarContainer.style.width = "300px";
-          sidebarContainer.style.height = "100%";
-          sidebarContainer.style.display = sidebarVisible ? "block" : "none";
-          sidebarContainer.style.background = "rgba(41, 44, 48, 0.95)";
-          sidebarContainer.style.backdropFilter = "blur(10px)";
-          sidebarContainer.style.zIndex = "10";
-          sidebarContainer.style.overflow = "auto";
-          document.body.appendChild(sidebarContainer);
-        }
-        
-        viewer.setEDLEnabled(true);
-        viewer.setFOV(60);
-        viewer.setPointBudget(1_000_000);
-        viewer.setDescription(project?.projectName || `Project ${jobNumber}`);
-        
-        setLoadingProgress(85);
-
-        viewer.loadGUI(() => {
-          console.log("Potree GUI loaded");
-          viewer.setLanguage("en");
-          setLoadingProgress(90);
-        });
-
-        console.log("Potree initialization complete, loading demo point cloud...");
-
-        // For demo purposes, we'll load a sample point cloud
-        const demoPointCloudPath = "/potree/pointclouds/lion/cloud.js";
-        
-        window.Potree.loadPointCloud(demoPointCloudPath, "PointCloud", (e: PotreeLoadEvent) => {
-          if (e.pointcloud) {
-            console.log("Point cloud loaded successfully:", e.pointcloud);
-            viewer.scene.addPointCloud(e.pointcloud);
-            e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
-            viewer.fitToScreen(0.5);
-            setLoadingProgress(100);
-            setTimeout(() => {
-              console.log("Loading complete, hiding loading screen");
-              setLoading(false);
-            }, 500);
-          } else {
-            console.error("Failed to load point cloud.");
-            setError("Failed to load point cloud data");
-          }
-        });
-
-      } catch (err) {
-        console.error("Error initializing Potree:", err);
-        setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        setLoading(false);
-      }
+    // Load CSS files
+    const loadCSS = (url: string) => {
+      if (document.querySelector(`link[href="${url}"]`)) return;
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = url;
+      document.head.appendChild(link);
     };
 
-    // Start initialization after component is fully mounted
+    const cssFiles = [
+      "/potree/build/potree/potree.css",
+      "/potree/libs/jquery-ui/jquery-ui.min.css",
+      "/potree/libs/openlayers3/ol.css",
+      "/potree/libs/spectrum/spectrum.css",
+      "/potree/libs/jstree/themes/mixed/style.css",
+      "/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css",
+      "/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css"
+    ];
+
+    cssFiles.forEach(loadCSS);
+
+    // Initialize Potree with a delay to ensure DOM is ready
     const timeoutId = setTimeout(() => {
-      console.log("Starting Potree initialization...");
       initializePotree();
-    }, 1000); // Reduced delay to 1 second
+    }, 1000);
 
     return () => {
       clearTimeout(timeoutId);
-      // Cleanup scripts if needed
-      const scripts = document.querySelectorAll('script[src*="/potree/"]');
-      scripts.forEach(script => {
+      // Clean up
+      if (viewerRef.current) {
+        viewerRef.current = null;
+      }
+      
+      // Remove scripts
+      document.querySelectorAll('script[src*="/potree/"]').forEach(script => {
         if (script.parentNode) {
           script.parentNode.removeChild(script);
         }
       });
+      
+      // Remove CSS
+      document.querySelectorAll('link[href*="/potree/"]').forEach(link => {
+        if (link.parentNode) {
+          link.parentNode.removeChild(link);
+        }
+      });
     };
   }, [jobNumber, project]);
+
+  const initializePotree = async () => {
+    try {
+      console.log("Starting Potree initialization...");
+      setLoadingProgress(40);
+      
+      // Prepare DOM elements
+      // First, ensure the container exists
+      const container = document.querySelector(".potree_container");
+      if (!container) {
+        throw new Error("Potree container not found");
+      }
+      
+      // Create render area if it doesn't exist
+      let renderArea = document.getElementById("potree_render_area");
+      if (!renderArea) {
+        renderArea = document.createElement("div");
+        renderArea.id = "potree_render_area";
+        container.appendChild(renderArea);
+      }
+      
+      // Set explicit dimensions and styles
+      renderArea.style.width = "100vw";
+      renderArea.style.height = "100vh";
+      renderArea.style.position = "fixed";
+      renderArea.style.top = "0";
+      renderArea.style.left = "0";
+      renderArea.style.zIndex = "1";
+      renderArea.style.margin = "0";
+      renderArea.style.padding = "0";
+      renderArea.style.background = "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)";
+      
+      // Force layout calculation
+      renderArea.getBoundingClientRect();
+      
+      // Create sidebar container if it doesn't exist
+      let sidebarContainer = document.getElementById("potree_sidebar_container");
+      if (!sidebarContainer) {
+        sidebarContainer = document.createElement("div");
+        sidebarContainer.id = "potree_sidebar_container";
+        sidebarContainer.style.position = "absolute";
+        sidebarContainer.style.top = "0";
+        sidebarContainer.style.right = "0";
+        sidebarContainer.style.width = "300px";
+        sidebarContainer.style.height = "100%";
+        sidebarContainer.style.display = sidebarVisible ? "block" : "none";
+        sidebarContainer.style.background = "rgba(41, 44, 48, 0.95)";
+        sidebarContainer.style.backdropFilter = "blur(10px)";
+        sidebarContainer.style.zIndex = "10";
+        sidebarContainer.style.overflow = "auto";
+        sidebarContainer.style.borderLeft = "1px solid rgba(238, 47, 39, 0.3)";
+        container.appendChild(sidebarContainer);
+      }
+      
+      // Update ref
+      renderAreaRef.current = renderArea as HTMLDivElement;
+      
+      // Load scripts sequentially
+      setLoadingProgress(45);
+      console.log("Loading scripts...");
+      
+      const loadScript = (src: string): Promise<void> =>
+        new Promise((resolve, reject) => {
+          if (document.querySelector(`script[src="${src}"]`)) {
+            resolve();
+            return;
+          }
+          
+          const script = document.createElement("script");
+          script.src = src;
+          script.async = false;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error(`Failed to load script ${src}`));
+          document.body.appendChild(script);
+        });
+      
+      const scripts = [
+        "/potree/libs/jquery/jquery-3.1.1.min.js",
+        "/potree/libs/spectrum/spectrum.js",
+        "/potree/libs/jquery-ui/jquery-ui.min.js",
+        "/potree/libs/other/BinaryHeap.js",
+        "/potree/libs/tween/tween.min.js",
+        "/potree/libs/d3/d3.js",
+        "/potree/libs/proj4/proj4.js",
+        "/potree/libs/openlayers3/ol.js",
+        "/potree/libs/i18next/i18next.js",
+        "/potree/libs/jstree/jstree.js",
+        "/potree/build/potree/potree.js",
+        "/potree/libs/plasio/js/laslaz.js",
+        "/potree/libs/Cesium/Cesium.js",
+        "/potree/libs/perfect-scrollbar/js/perfect-scrollbar.jquery.js",
+        "/potree/libs/amcharts/amcharts.js",
+        "/potree/libs/amcharts/serial.js",
+        "/potree/libs/panzoom/panzoom.min.js",
+        "/potree/libs/papa/papaparse.js"
+      ];
+      
+      for (let i = 0; i < scripts.length; i++) {
+        try {
+          await loadScript(scripts[i]);
+          setLoadingProgress(50 + Math.floor((i / scripts.length) * 30));
+        } catch (error) {
+          console.error(`Failed to load script ${scripts[i]}:`, error);
+        }
+      }
+      
+      setLoadingProgress(80);
+      
+      // Wait for Potree to be available
+      await new Promise<void>((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 20;
+        
+        const checkPotree = () => {
+          attempts++;
+          if (window.Potree) {
+            resolve();
+          } else if (attempts >= maxAttempts) {
+            reject(new Error("Potree not available after maximum attempts"));
+          } else {
+            setTimeout(checkPotree, 200);
+          }
+        };
+        
+        checkPotree();
+      });
+      
+      console.log("Potree is available, creating viewer...");
+      
+      // Create Potree viewer
+      if (!renderAreaRef.current) {
+        throw new Error("Render area ref not available");
+      }
+      
+      // Double-check dimensions
+      console.log("Render area dimensions before viewer creation:", {
+        width: renderAreaRef.current.clientWidth,
+        height: renderAreaRef.current.clientHeight,
+        offsetWidth: renderAreaRef.current.offsetWidth,
+        offsetHeight: renderAreaRef.current.offsetHeight
+      });
+      
+      // Create viewer
+      const viewer = new window.Potree.Viewer(renderAreaRef.current);
+      viewerRef.current = viewer;
+      
+      // Configure viewer
+      viewer.setEDLEnabled(true);
+      viewer.setFOV(60);
+      viewer.setPointBudget(1_000_000);
+      viewer.setDescription(project?.projectName || `Project ${jobNumber}`);
+      
+      setLoadingProgress(85);
+      
+      // Load GUI
+      viewer.loadGUI(() => {
+        console.log("Potree GUI loaded");
+        viewer.setLanguage("en");
+        setLoadingProgress(90);
+      });
+      
+      // Load point cloud
+      console.log("Loading point cloud...");
+      const demoPointCloudPath = "/potree/pointclouds/lion/cloud.js";
+      
+      window.Potree.loadPointCloud(demoPointCloudPath, "PointCloud", (e: PotreeLoadEvent) => {
+        if (e.pointcloud) {
+          console.log("Point cloud loaded successfully");
+          viewer.scene.addPointCloud(e.pointcloud);
+          e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
+          viewer.fitToScreen(0.5);
+          setLoadingProgress(100);
+          
+          // Hide loading screen
+          setTimeout(() => {
+            setLoading(false);
+          }, 500);
+        } else {
+          throw new Error("Failed to load point cloud");
+        }
+      });
+      
+    } catch (err) {
+      console.error("Error initializing Potree:", err);
+      setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -364,27 +413,6 @@ export default function PotreeViewer() {
         <meta name="description" content="Point cloud viewer" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      
-      {/* Load Potree CSS */}
-      <Script id="potree-styles">
-        {`
-          // Load required CSS files
-          function loadCSS(url) {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = url;
-            document.head.appendChild(link);
-          }
-          
-          loadCSS('/potree/build/potree/potree.css');
-          loadCSS('/potree/libs/jquery-ui/jquery-ui.min.css');
-          loadCSS('/potree/libs/openlayers3/ol.css');
-          loadCSS('/potree/libs/spectrum/spectrum.css');
-          loadCSS('/potree/libs/jstree/themes/mixed/style.css');
-          loadCSS('/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css');
-          loadCSS('/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css');
-        `}
-      </Script>
 
       {/* Custom Header */}
       <div className="absolute top-0 left-0 right-0 z-50 bg-hwc-dark/90 backdrop-blur-sm text-white">
@@ -494,6 +522,7 @@ export default function PotreeViewer() {
       >
         <div 
           id="potree_render_area"
+          ref={renderAreaRef}
           style={{
             width: "100vw",
             height: "100vh",
@@ -525,7 +554,7 @@ export default function PotreeViewer() {
         #potree_sidebar_container {
           background: rgba(41, 44, 48, 0.95) !important;
           backdrop-filter: blur(10px) !important;
-          border-right: 1px solid rgba(238, 47, 39, 0.3) !important;
+          border-left: 1px solid rgba(238, 47, 39, 0.3) !important;
           position: absolute !important;
           top: 0 !important;
           right: 0 !important;
