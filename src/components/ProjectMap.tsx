@@ -22,6 +22,7 @@ interface LeafletMap {
 interface LeafletMarker {
   on: (event: string, callback: () => void) => void;
   remove: () => void;
+  addTo: (map: LeafletMap) => LeafletMarker;
 }
 
 interface LeafletLatLngBounds {
@@ -193,26 +194,6 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
 
   return (
     <div className="relative h-[calc(100vh-200px)] bg-gray-100 rounded-lg overflow-hidden">
-      {/* Map Controls - Moved to bottom left */}
-      <div className="absolute bottom-4 left-4 z-[1001] flex gap-2">
-        <Button
-          variant={mapType === "street" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setMapType("street")}
-          className="bg-white text-black hover:bg-gray-100 shadow-lg"
-        >
-          Street
-        </Button>
-        <Button
-          variant={mapType === "satellite" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setMapType("satellite")}
-          className="bg-white text-black hover:bg-gray-100 shadow-lg"
-        >
-          Satellite
-        </Button>
-      </div>
-
       {/* OpenStreetMap Container */}
       <div 
         ref={mapContainerRef} 
@@ -221,14 +202,14 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
       />
 
       {/* Project List Sidebar - Fixed z-index and positioning */}
-      <div className="absolute left-4 top-4 bottom-16 w-80 bg-white rounded-lg shadow-lg overflow-hidden z-[1002]">
+      <div className="absolute left-4 top-4 bottom-20 w-80 bg-white rounded-lg shadow-xl overflow-hidden z-[1002] border border-gray-200">
         <div className="p-4 border-b bg-hwc-dark text-white">
           <h3 className="font-semibold flex items-center gap-2">
             <Layers className="h-4 w-4" />
             Projects ({projectsWithLocation.length})
           </h3>
         </div>
-        <div className="overflow-y-auto h-[calc(100%-56px)]">
+        <div className="overflow-y-auto h-[calc(100%-56px)] bg-white">
           {projectsWithLocation.map((project) => (
             <div
               key={project.jobNumber}
@@ -269,10 +250,30 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
         </div>
       </div>
 
+      {/* Map Controls - Moved to bottom left with better positioning */}
+      <div className="absolute bottom-4 left-4 z-[1003] flex gap-2">
+        <Button
+          variant={mapType === "street" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setMapType("street")}
+          className="bg-white text-black hover:bg-gray-100 shadow-lg border border-gray-300"
+        >
+          Street
+        </Button>
+        <Button
+          variant={mapType === "satellite" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setMapType("satellite")}
+          className="bg-white text-black hover:bg-gray-100 shadow-lg border border-gray-300"
+        >
+          Satellite
+        </Button>
+      </div>
+
       {/* Project Details Popup - Fixed z-index */}
       {selectedProject && (
-        <div className="absolute bottom-4 right-4 z-[1003]">
-          <Card className="w-80 shadow-lg bg-white">
+        <div className="absolute bottom-4 right-4 z-[1004]">
+          <Card className="w-80 shadow-xl bg-white border border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-3">
                 <div>
@@ -391,6 +392,11 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
         
         .leaflet-control {
           z-index: 999 !important;
+        }
+
+        /* Force visibility of our custom controls */
+        .leaflet-container {
+          z-index: 1 !important;
         }
       `}</style>
     </div>
