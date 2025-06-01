@@ -65,8 +65,6 @@ export default function PotreeViewer() {
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const viewerRef = useRef<PotreeViewer | null>(null);
-  const renderAreaRef = useRef<HTMLDivElement>(null);
-  const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
@@ -104,40 +102,7 @@ export default function PotreeViewer() {
       console.log("Starting Potree initialization...");
       setLoadingProgress(40);
 
-      // Ensure render area and sidebar elements exist
-      if (!renderAreaRef.current || !sidebarRef.current) {
-        console.log("Render area or sidebar ref not available");
-        return;
-      }
-
-      // Get the render area element
-      const renderArea = document.getElementById("potree_render_area");
-      if (!renderArea) {
-        console.error("Potree render area not found");
-        throw new Error("Potree render area not found");
-      }
-
-      // Force the render area to have dimensions
-      renderArea.style.width = "100%";
-      renderArea.style.height = "100%";
-      renderArea.style.position = "absolute";
-      renderArea.style.left = "0";
-      renderArea.style.top = "0";
-      
-      // Get the sidebar container
-      const sidebarContainer = document.getElementById("potree_sidebar_container");
-      if (!sidebarContainer) {
-        console.error("Potree sidebar container not found");
-        // Not critical, we can continue without the sidebar
-      } else {
-        sidebarContainer.style.width = "100%";
-        sidebarContainer.style.height = "100%";
-        sidebarContainer.style.position = "absolute";
-        sidebarContainer.style.right = "0";
-        sidebarContainer.style.top = "0";
-      }
-      
-      // Load CSS files
+      // Load CSS files first
       const loadCSS = (url: string) => {
         if (document.querySelector(`link[href="${url}"]`)) return;
         const link = document.createElement("link");
@@ -230,6 +195,12 @@ export default function PotreeViewer() {
       
       console.log("Potree is available, creating viewer...");
       
+      // Get the render area element
+      const renderArea = document.getElementById("potree_render_area");
+      if (!renderArea) {
+        throw new Error("Potree render area not found");
+      }
+
       // Verify render area dimensions before creating viewer
       console.log("Render area dimensions before viewer creation:", {
         width: renderArea.clientWidth,
@@ -359,23 +330,8 @@ export default function PotreeViewer() {
       initializePotree();
     }, 1000);
 
-    // Add a resize event listener to ensure the render area is properly sized
-    const handleResize = () => {
-      if (viewerRef.current) {
-        // Force a resize of the viewer if needed
-        const renderArea = document.getElementById("potree_render_area");
-        if (renderArea) {
-          renderArea.style.width = "100%";
-          renderArea.style.height = "100%";
-        }
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-
     return () => {
       clearTimeout(timeoutId);
-      window.removeEventListener("resize", handleResize);
       
       // Clean up
       if (viewerRef.current) {
@@ -633,54 +589,30 @@ export default function PotreeViewer() {
 
       {/* Potree Container */}
       <div className="potree_container" style={{ position: "absolute", width: "100%", height: "100%", left: 0, top: 0 }}>
+        {/* This div will be the actual render area for Potree */}
         <div 
-          ref={renderAreaRef} 
+          id="potree_render_area" 
           style={{ 
             position: "absolute", 
             width: "100%", 
             height: "100%", 
             left: 0, 
-            top: 0,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center"
+            top: 0 
           }}
-        >
-          {/* This div will be the actual render area for Potree */}
-          <div 
-            id="potree_render_area" 
-            style={{ 
-              position: "absolute", 
-              width: "100%", 
-              height: "100%", 
-              left: 0, 
-              top: 0 
-            }}
-          ></div>
-        </div>
+        ></div>
+        
+        {/* This div will be the container for the Potree sidebar */}
         <div 
-          ref={sidebarRef} 
+          id="potree_sidebar_container" 
           style={{ 
             position: "absolute", 
-            top: 0, 
-            right: 0, 
             width: "300px", 
             height: "100%", 
+            top: 0, 
+            right: 0,
             zIndex: 1000 
           }}
-        >
-          {/* This div will be the container for the Potree sidebar */}
-          <div 
-            id="potree_sidebar_container" 
-            style={{ 
-              position: "absolute", 
-              width: "100%", 
-              height: "100%", 
-              top: 0, 
-              right: 0 
-            }}
-          ></div>
-        </div>
+        ></div>
       </div>
 
       {/* Custom Styles */}
