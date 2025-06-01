@@ -102,49 +102,59 @@ export default function PotreeViewer() {
         setLoadingProgress(40);
         console.log("Starting Potree initialization...");
         
-        // Wait for DOM element to be available and properly sized
+        // Wait for DOM element to be available and ensure it has dimensions
         await new Promise<void>((resolve, reject) => {
           let attempts = 0;
-          const maxAttempts = 100; // Increased attempts
+          const maxAttempts = 50; // Reduced attempts
           
           const checkElement = () => {
             const renderArea = renderAreaRef.current || document.getElementById("potree_render_area");
             attempts++;
             
-            console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
-              element: renderArea,
-              offsetWidth: renderArea?.offsetWidth,
-              offsetHeight: renderArea?.offsetHeight,
-              clientWidth: renderArea?.clientWidth,
-              clientHeight: renderArea?.clientHeight
-            });
-            
-            if (renderArea && renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
-              console.log("DOM element found and has dimensions:", {
-                width: renderArea.offsetWidth,
-                height: renderArea.offsetHeight,
-                element: renderArea
+            if (renderArea) {
+              // Force dimensions immediately
+              renderArea.style.width = "100vw";
+              renderArea.style.height = "100vh";
+              renderArea.style.position = "fixed";
+              renderArea.style.top = "0";
+              renderArea.style.left = "0";
+              renderArea.style.zIndex = "1";
+              renderArea.style.display = "block";
+              
+              // Force a reflow
+              renderArea.offsetHeight;
+              
+              console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
+                element: renderArea,
+                offsetWidth: renderArea.offsetWidth,
+                offsetHeight: renderArea.offsetHeight,
+                clientWidth: renderArea.clientWidth,
+                clientHeight: renderArea.clientHeight
               });
-              resolve();
-            } else if (attempts >= maxAttempts) {
-              console.error("DOM element not found or has no dimensions after maximum attempts");
-              reject(new Error("Potree render area not found or not properly sized"));
-            } else {
-              // Force dimensions if element exists but has no size
-              if (renderArea) {
-                renderArea.style.width = "100vw";
-                renderArea.style.height = "100vh";
-                renderArea.style.position = "absolute";
-                renderArea.style.top = "0";
-                renderArea.style.left = "0";
-                renderArea.style.display = "block";
+              
+              if (renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
+                console.log("DOM element found and has dimensions:", {
+                  width: renderArea.offsetWidth,
+                  height: renderArea.offsetHeight,
+                  element: renderArea
+                });
+                resolve();
+              } else if (attempts >= maxAttempts) {
+                console.error("DOM element not found or has no dimensions after maximum attempts");
+                reject(new Error("Potree render area not found or not properly sized"));
+              } else {
+                setTimeout(checkElement, 100);
               }
-              setTimeout(checkElement, 50);
+            } else if (attempts >= maxAttempts) {
+              console.error("DOM element not found after maximum attempts");
+              reject(new Error("Potree render area not found"));
+            } else {
+              setTimeout(checkElement, 100);
             }
           };
           
-          // Start checking immediately
-          checkElement();
+          // Start checking after a small delay
+          setTimeout(checkElement, 200);
         });
 
         setLoadingProgress(45);
@@ -306,7 +316,7 @@ export default function PotreeViewer() {
     const timeoutId = setTimeout(() => {
       console.log("Starting Potree initialization...");
       initializePotree();
-    }, 1000); // Reduced delay to 1 second
+    }, 1500); // Increased delay to 1.5 seconds
 
     return () => {
       clearTimeout(timeoutId);
@@ -507,11 +517,12 @@ export default function PotreeViewer() {
       <div
         className="potree_container"
         style={{
-          position: "absolute",
-          width: "100%",
-          height: "100%",
+          position: "fixed",
+          width: "100vw",
+          height: "100vh",
           left: 0,
           top: 0,
+          zIndex: 1,
           background: "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)"
         }}
       >
@@ -519,10 +530,13 @@ export default function PotreeViewer() {
           ref={renderAreaRef}
           id="potree_render_area"
           style={{
-            width: "100%",
-            height: "100%",
+            width: "100vw",
+            height: "100vh",
             background: "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)",
-            position: "relative"
+            position: "fixed",
+            top: 0,
+            left: 0,
+            zIndex: 1
           }}
         >
           <div id="sidebar_logo"></div>
@@ -532,7 +546,8 @@ export default function PotreeViewer() {
           style={{ 
             display: sidebarVisible ? 'block' : 'none',
             background: 'rgba(41, 44, 48, 0.95)',
-            backdropFilter: 'blur(10px)'
+            backdropFilter: 'blur(10px)',
+            zIndex: 10
           }}
         />
       </div>
