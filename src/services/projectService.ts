@@ -1,6 +1,6 @@
 import { Project, CreateProjectData } from "@/types/project";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4400";
+const API_BASE_URL = "http://localhost:4400";
 
 // Define a type for the raw project data from the API
 interface RawProjectData {

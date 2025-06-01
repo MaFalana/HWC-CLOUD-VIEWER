@@ -46,13 +46,14 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
   };
 
   return (
-    <Card className="group hover:shadow-lg transition-shadow duration-200">
+    <Card className="group hover:shadow-lg transition-shadow duration-200 card-hover">
       <div className="relative aspect-video bg-gray-100 overflow-hidden rounded-t-lg">
         {project.thumbnailUrl && !imageError ? (
           <Image
             src={project.thumbnailUrl}
             alt={project.projectName}
             fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover"
             onError={() => setImageError(true)}
           />
@@ -70,10 +71,10 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
 
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="font-semibold text-lg truncate">{project.projectName}</h3>
+          <h3 className="font-semibold text-lg truncate font-heading text-hwc-dark">{project.projectName}</h3>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-hwc-light/50">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -97,13 +98,13 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
           </DropdownMenu>
         </div>
 
-        <p className="text-sm text-hwc-gray mb-2">Job #{project.jobNumber}</p>
+        <p className="text-sm text-hwc-gray mb-2 font-mono">Job #{project.jobNumber}</p>
         
         {project.description && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{project.description}</p>
+          <p className="text-sm text-gray-600 mb-3 line-clamp-2 font-body">{project.description}</p>
         )}
 
-        <div className="flex items-center gap-4 text-xs text-hwc-gray">
+        <div className="flex items-center gap-4 text-xs text-hwc-gray font-body">
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
             {formatDate(project.createdAt)}
@@ -124,12 +125,12 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
         {project.tags && project.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
             {project.tags.slice(0, 3).map((tag, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
+              <Badge key={index} variant="secondary" className="text-xs bg-hwc-light text-hwc-dark">
                 {tag}
               </Badge>
             ))}
             {project.tags.length > 3 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs bg-hwc-light text-hwc-dark">
                 +{project.tags.length - 3}
               </Badge>
             )}
@@ -138,7 +139,7 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
       </CardContent>
 
       <CardFooter className="p-4 pt-0">
-        <Button onClick={handleOpen} className="w-full bg-hwc-red hover:bg-hwc-red/90">
+        <Button onClick={handleOpen} className="w-full bg-hwc-red hover:bg-hwc-red/90 text-white font-medium">
           <Eye className="h-4 w-4 mr-2" />
           Open
         </Button>

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,9 +32,11 @@ export default function Header({
             alt="HWC Engineering"
             width={120}
             height={40}
-            className="h-10 w-auto"
+            priority
+            style={{ width: "auto", height: "40px" }}
+            className="h-10"
           />
-          <h1 className="text-xl font-semibold">Cloud Viewer</h1>
+          <h1 className="text-xl font-semibold font-heading">Cloud Viewer</h1>
         </div>
 
         <div className="flex items-center gap-4">
@@ -45,12 +46,12 @@ export default function Header({
               placeholder="Search projects..."
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 w-80 bg-white text-black"
+              className="pl-10 w-80 bg-white text-black border-hwc-light focus:border-hwc-red"
             />
           </div>
 
           <Select value={sortBy} onValueChange={onSortChange}>
-            <SelectTrigger className="w-40 bg-white text-black">
+            <SelectTrigger className="w-40 bg-white text-black border-hwc-light">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -66,7 +67,7 @@ export default function Header({
               variant={currentView === "card" ? "default" : "ghost"}
               size="sm"
               onClick={() => onViewChange("card")}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 hover:bg-hwc-light/20"
             >
               <Grid3X3 className="h-4 w-4" />
             </Button>
@@ -74,7 +75,7 @@ export default function Header({
               variant={currentView === "list" ? "default" : "ghost"}
               size="sm"
               onClick={() => onViewChange("list")}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 hover:bg-hwc-light/20"
             >
               <List className="h-4 w-4" />
             </Button>
@@ -82,13 +83,13 @@ export default function Header({
               variant={currentView === "map" ? "default" : "ghost"}
               size="sm"
               onClick={() => onViewChange("map")}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 hover:bg-hwc-light/20"
             >
               <Map className="h-4 w-4" />
             </Button>
           </div>
 
-          <Button onClick={onNewProject} className="bg-hwc-red hover:bg-hwc-red/90">
+          <Button onClick={onNewProject} className="bg-hwc-red hover:bg-hwc-red/90 text-white font-medium">
             <Plus className="h-4 w-4 mr-2" />
             New Project
           </Button>
