@@ -65,6 +65,7 @@ export default function PotreeViewer() {
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const viewerRef = useRef<PotreeViewer | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
@@ -101,6 +102,61 @@ export default function PotreeViewer() {
     try {
       console.log("Starting Potree initialization...");
       setLoadingProgress(40);
+
+      // Ensure container exists
+      if (!containerRef.current) {
+        console.error("Container ref not available");
+        return;
+      }
+
+      // Create render area and sidebar elements if they don't exist
+      let renderArea = document.getElementById("potree_render_area");
+      let sidebarContainer = document.getElementById("potree_sidebar_container");
+
+      if (!renderArea) {
+        console.log("Creating render area element...");
+        renderArea = document.createElement("div");
+        renderArea.id = "potree_render_area";
+        renderArea.style.position = "absolute";
+        renderArea.style.width = "100%";
+        renderArea.style.height = "100%";
+        renderArea.style.left = "0";
+        renderArea.style.top = "0";
+        containerRef.current.appendChild(renderArea);
+      }
+
+      if (!sidebarContainer) {
+        console.log("Creating sidebar element...");
+        sidebarContainer = document.createElement("div");
+        sidebarContainer.id = "potree_sidebar_container";
+        sidebarContainer.style.position = "absolute";
+        sidebarContainer.style.width = "300px";
+        sidebarContainer.style.height = "100%";
+        sidebarContainer.style.top = "0";
+        sidebarContainer.style.right = "0";
+        sidebarContainer.style.zIndex = "1000";
+        containerRef.current.appendChild(sidebarContainer);
+      }
+
+      // Wait for DOM elements to be properly sized
+      await new Promise<void>((resolve) => {
+        const checkElement = () => {
+          const element = document.getElementById("potree_render_area");
+          if (element && element.offsetWidth > 0 && element.offsetHeight > 0) {
+            console.log("DOM element ready with dimensions:", {
+              width: element.offsetWidth,
+              height: element.offsetHeight,
+              clientWidth: element.clientWidth,
+              clientHeight: element.clientHeight
+            });
+            resolve();
+          } else {
+            console.log("DOM element check - waiting for dimensions...");
+            setTimeout(checkElement, 100);
+          }
+        };
+        checkElement();
+      });
 
       // Load CSS files first
       const loadCSS = (url: string) => {
@@ -195,32 +251,22 @@ export default function PotreeViewer() {
       
       console.log("Potree is available, creating viewer...");
       
-      // Get the render area element by ID
-      const renderArea = document.getElementById("potree_render_area");
-      if (!renderArea) {
-        throw new Error("Potree render area not found");
+      // Get the render area element again
+      const finalRenderArea = document.getElementById("potree_render_area");
+      if (!finalRenderArea) {
+        throw new Error("Potree render area not found after creation");
       }
-
-      // Ensure render area has proper dimensions
-      renderArea.style.width = "100%";
-      renderArea.style.height = "100%";
-      renderArea.style.position = "absolute";
-      renderArea.style.top = "0";
-      renderArea.style.left = "0";
-
-      // Wait a bit for the DOM to settle
-      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Verify render area dimensions before creating viewer
       console.log("Render area dimensions before viewer creation:", {
-        width: renderArea.clientWidth,
-        height: renderArea.clientHeight,
-        offsetWidth: renderArea.offsetWidth,
-        offsetHeight: renderArea.offsetHeight
+        width: finalRenderArea.clientWidth,
+        height: finalRenderArea.clientHeight,
+        offsetWidth: finalRenderArea.offsetWidth,
+        offsetHeight: finalRenderArea.offsetHeight
       });
       
       // Create viewer
-      const viewer = new window.Potree.Viewer(renderArea);
+      const viewer = new window.Potree.Viewer(finalRenderArea);
       viewerRef.current = viewer;
       
       // Configure viewer
@@ -338,7 +384,7 @@ export default function PotreeViewer() {
     // Initialize Potree with a delay to ensure DOM is ready
     const timeoutId = setTimeout(() => {
       initializePotree();
-    }, 1500); // Increased delay to ensure DOM is fully ready
+    }, 1000);
 
     return () => {
       clearTimeout(timeoutId);
@@ -598,31 +644,12 @@ export default function PotreeViewer() {
       </div>
 
       {/* Potree Container */}
-      <div className="potree_container" style={{ position: "absolute", width: "100%", height: "100%", left: 0, top: 0 }}>
-        {/* This div will be the actual render area for Potree */}
-        <div 
-          id="potree_render_area" 
-          style={{ 
-            position: "absolute", 
-            width: "100%", 
-            height: "100%", 
-            left: 0, 
-            top: 0 
-          }}
-        ></div>
-        
-        {/* This div will be the container for the Potree sidebar */}
-        <div 
-          id="potree_sidebar_container" 
-          style={{ 
-            position: "absolute", 
-            width: "300px", 
-            height: "100%", 
-            top: 0, 
-            right: 0,
-            zIndex: 1000 
-          }}
-        ></div>
+      <div 
+        ref={containerRef}
+        className="potree_container" 
+        style={{ position: "absolute", width: "100%", height: "100%", left: 0, top: 0 }}
+      >
+        {/* DOM elements will be created dynamically by the initialization function */}
       </div>
 
       {/* Custom Styles */}
