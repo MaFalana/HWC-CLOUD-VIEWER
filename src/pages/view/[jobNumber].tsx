@@ -102,108 +102,26 @@ export default function PotreeViewer() {
         setLoadingProgress(40);
         console.log("Starting Potree initialization...");
         
-        // Create and ensure the render area element exists with proper dimensions
-        const ensureRenderArea = () => {
-          // Remove any existing element first
-          const existingElement = document.getElementById("potree_render_area");
-          if (existingElement) {
-            existingElement.remove();
-          }
-          
-          // Create new element
-          const renderArea = document.createElement("div");
-          renderArea.id = "potree_render_area";
-          
-          // Get window dimensions
-          const windowWidth = window.innerWidth;
-          const windowHeight = window.innerHeight;
-          
-          // Set attributes directly
-          renderArea.setAttribute('style', `
-            width: ${windowWidth}px !important;
-            height: ${windowHeight}px !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            z-index: 1 !important;
-            display: block !important;
-            background: linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%) !important;
-            overflow: hidden !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: none !important;
-          `);
-          
-          // Append to body
-          document.body.appendChild(renderArea);
-          
-          // Force immediate layout calculation
-          void renderArea.offsetHeight;
-          void renderArea.offsetWidth;
-          
-          // Update ref
-          renderAreaRef.current = renderArea;
-          
-          return renderArea;
-        };
+        // Get the render area element
+        const renderArea = document.getElementById("potree_render_area");
+        if (!renderArea) {
+          throw new Error("Potree render area not found");
+        }
         
-        // Wait for DOM element to be available and properly sized
-        await new Promise<void>((resolve, reject) => {
-          let attempts = 0;
-          const maxAttempts = 20;
-          
-          const checkElement = () => {
-            attempts++;
-            
-            // Create element fresh each time
-            const renderArea = ensureRenderArea();
-            
-            console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
-              element: renderArea,
-              offsetWidth: renderArea.offsetWidth,
-              offsetHeight: renderArea.offsetHeight,
-              clientWidth: renderArea.clientWidth,
-              clientHeight: renderArea.clientHeight,
-              windowWidth: window.innerWidth,
-              windowHeight: window.innerHeight,
-              style: renderArea.getAttribute('style')
-            });
-            
-            if (renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
-              console.log("DOM element found and has dimensions:", {
-                width: renderArea.offsetWidth,
-                height: renderArea.offsetHeight
-              });
-              resolve();
-            } else if (attempts >= maxAttempts) {
-              console.error("DOM element not found or has no dimensions after maximum attempts");
-              // Force dimensions one more time before rejecting
-              renderArea.style.width = `${window.innerWidth}px`;
-              renderArea.style.height = `${window.innerHeight}px`;
-              renderArea.style.minWidth = `${window.innerWidth}px`;
-              renderArea.style.minHeight = `${window.innerHeight}px`;
-              
-              // Final check
-              renderArea.offsetHeight; // Force reflow
-              
-              if (renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
-                console.log("DOM element forced to have dimensions:", {
-                  width: renderArea.offsetWidth,
-                  height: renderArea.offsetHeight
-                });
-                resolve();
-              } else {
-                reject(new Error("Potree render area not found or not properly sized"));
-              }
-            } else {
-              setTimeout(checkElement, 300);
-            }
-          };
-          
-          // Start checking immediately
-          checkElement();
+        // Set dimensions explicitly
+        renderArea.style.width = `${window.innerWidth}px`;
+        renderArea.style.height = `${window.innerHeight}px`;
+        
+        // Force layout calculation
+        renderArea.getBoundingClientRect();
+        
+        console.log("Render area dimensions:", {
+          width: renderArea.clientWidth,
+          height: renderArea.clientHeight,
+          offsetWidth: renderArea.offsetWidth,
+          offsetHeight: renderArea.offsetHeight
         });
-
+        
         setLoadingProgress(45);
         console.log("DOM element ready, starting script loading...");
 
@@ -296,7 +214,7 @@ export default function PotreeViewer() {
 
         console.log("Initializing Potree viewer...");
         // Initialize Potree viewer
-        const viewer = new window.Potree.Viewer(renderArea);
+        const viewer = new window.Potree.Viewer(renderAreaRef.current);
         console.log("Potree viewer created:", viewer);
         
         // Create sidebar container if it doesn't exist
@@ -304,18 +222,16 @@ export default function PotreeViewer() {
         if (!sidebarContainer) {
           sidebarContainer = document.createElement("div");
           sidebarContainer.id = "potree_sidebar_container";
-          sidebarContainer.style.cssText = `
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 300px;
-            height: 100%;
-            display: ${sidebarVisible ? 'block' : 'none'};
-            background: rgba(41, 44, 48, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 10;
-            overflow: auto;
-          `;
+          sidebarContainer.style.position = "absolute";
+          sidebarContainer.style.top = "0";
+          sidebarContainer.style.right = "0";
+          sidebarContainer.style.width = "300px";
+          sidebarContainer.style.height = "100%";
+          sidebarContainer.style.display = sidebarVisible ? "block" : "none";
+          sidebarContainer.style.background = "rgba(41, 44, 48, 0.95)";
+          sidebarContainer.style.backdropFilter = "blur(10px)";
+          sidebarContainer.style.zIndex = "10";
+          sidebarContainer.style.overflow = "auto";
           document.body.appendChild(sidebarContainer);
         }
         
@@ -576,7 +492,32 @@ export default function PotreeViewer() {
           overflow: "hidden"
         }}
       >
-        {/* The render area will be created dynamically in the useEffect */}
+        <div 
+          id="potree_render_area"
+          style={{
+            width: "100vw",
+            height: "100vh",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            zIndex: 1
+          }}
+        ></div>
+        <div 
+          id="potree_sidebar_container"
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "300px",
+            height: "100%",
+            display: sidebarVisible ? "block" : "none",
+            background: "rgba(41, 44, 48, 0.95)",
+            backdropFilter: "blur(10px)",
+            zIndex: 10,
+            overflow: "auto"
+          }}
+        ></div>
       </div>
 
       {/* Custom Styles */}
