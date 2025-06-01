@@ -29,6 +29,11 @@ interface PotreeViewer {
     addPointCloud: (pointcloud: PointCloud) => void;
   };
   fitToScreen: (padding?: number) => void;
+  mapView?: {
+    setCenter: (coordinates: [number, number]) => void;
+    setZoom: (zoom: number) => void;
+    setMapType: (type: string) => void;
+  };
 }
 
 interface PotreeLoadEvent {
@@ -105,82 +110,32 @@ export default function PotreeViewer() {
         return;
       }
 
-      // Create and setup render area element
-      const createRenderArea = () => {
-        console.log("Creating render area element...");
-        let renderArea = document.getElementById("potree_render_area");
-        if (!renderArea) {
-          renderArea = document.createElement("div");
-          renderArea.id = "potree_render_area";
-          renderArea.style.position = "absolute";
-          renderArea.style.top = "0";
-          renderArea.style.left = "0";
-          renderArea.style.width = "100%";
-          renderArea.style.height = "100%";
-          renderArea.style.overflow = "hidden";
-          renderAreaRef.current?.appendChild(renderArea);
-        }
-        return renderArea;
-      };
+      // Get the render area element
+      const renderArea = document.getElementById("potree_render_area");
+      if (!renderArea) {
+        console.error("Potree render area not found");
+        throw new Error("Potree render area not found");
+      }
 
-      // Create and setup sidebar element
-      const createSidebarArea = () => {
-        console.log("Creating sidebar element...");
-        let sidebarArea = document.getElementById("potree_sidebar_container");
-        if (!sidebarArea) {
-          sidebarArea = document.createElement("div");
-          sidebarArea.id = "potree_sidebar_container";
-          sidebarArea.style.position = "absolute";
-          sidebarArea.style.top = "0";
-          sidebarArea.style.right = "0";
-          sidebarArea.style.width = "300px";
-          sidebarArea.style.height = "100%";
-          sidebarArea.style.zIndex = "1000";
-          sidebarRef.current?.appendChild(sidebarArea);
-        }
-        return sidebarArea;
-      };
-
-      const renderArea = createRenderArea();
-      createSidebarArea();
-
-      // Wait for DOM elements to have dimensions
-      await new Promise<void>((resolve, reject) => {
-        let attempts = 0;
-        const maxAttempts = 50;
-        
-        const checkElement = () => {
-          attempts++;
-          console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
-            element: renderArea,
-            offsetWidth: renderArea?.offsetWidth,
-            offsetHeight: renderArea?.offsetHeight,
-            clientWidth: renderArea?.clientWidth,
-            clientHeight: renderArea?.clientHeight,
-            parentWidth: renderAreaRef.current?.offsetWidth,
-            parentHeight: renderAreaRef.current?.offsetHeight
-          });
-          
-          if (renderArea && renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
-            console.log("DOM element ready with dimensions");
-            resolve();
-          } else if (attempts >= maxAttempts) {
-            console.error("DOM element not found or has no dimensions after maximum attempts");
-            reject(new Error("Potree render area not found or not properly sized"));
-          } else {
-            // Force layout recalculation
-            if (renderArea && renderAreaRef.current) {
-              renderArea.style.width = "100%";
-              renderArea.style.height = "100%";
-              renderArea.getBoundingClientRect();
-              renderAreaRef.current.getBoundingClientRect();
-            }
-            setTimeout(checkElement, 100);
-          }
-        };
-        
-        checkElement();
-      });
+      // Force the render area to have dimensions
+      renderArea.style.width = "100%";
+      renderArea.style.height = "100%";
+      renderArea.style.position = "absolute";
+      renderArea.style.left = "0";
+      renderArea.style.top = "0";
+      
+      // Get the sidebar container
+      const sidebarContainer = document.getElementById("potree_sidebar_container");
+      if (!sidebarContainer) {
+        console.error("Potree sidebar container not found");
+        // Not critical, we can continue without the sidebar
+      } else {
+        sidebarContainer.style.width = "100%";
+        sidebarContainer.style.height = "100%";
+        sidebarContainer.style.position = "absolute";
+        sidebarContainer.style.right = "0";
+        sidebarContainer.style.top = "0";
+      }
       
       // Load CSS files
       const loadCSS = (url: string) => {
@@ -275,21 +230,16 @@ export default function PotreeViewer() {
       
       console.log("Potree is available, creating viewer...");
       
-      // Get the render area element again
-      const finalRenderArea = document.getElementById("potree_render_area");
-      if (!finalRenderArea) {
-        throw new Error("Potree render area not found");
-      }
-      
+      // Verify render area dimensions before creating viewer
       console.log("Render area dimensions before viewer creation:", {
-        width: finalRenderArea.clientWidth,
-        height: finalRenderArea.clientHeight,
-        offsetWidth: finalRenderArea.offsetWidth,
-        offsetHeight: finalRenderArea.offsetHeight
+        width: renderArea.clientWidth,
+        height: renderArea.clientHeight,
+        offsetWidth: renderArea.offsetWidth,
+        offsetHeight: renderArea.offsetHeight
       });
       
       // Create viewer
-      const viewer = new window.Potree.Viewer(finalRenderArea);
+      const viewer = new window.Potree.Viewer(renderArea);
       viewerRef.current = viewer;
       
       // Configure viewer
@@ -409,8 +359,24 @@ export default function PotreeViewer() {
       initializePotree();
     }, 1000);
 
+    // Add a resize event listener to ensure the render area is properly sized
+    const handleResize = () => {
+      if (viewerRef.current) {
+        // Force a resize of the viewer if needed
+        const renderArea = document.getElementById("potree_render_area");
+        if (renderArea) {
+          renderArea.style.width = "100%";
+          renderArea.style.height = "100%";
+        }
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
     return () => {
       clearTimeout(timeoutId);
+      window.removeEventListener("resize", handleResize);
+      
       // Clean up
       if (viewerRef.current) {
         viewerRef.current = null;
@@ -667,8 +633,54 @@ export default function PotreeViewer() {
 
       {/* Potree Container */}
       <div className="potree_container" style={{ position: "absolute", width: "100%", height: "100%", left: 0, top: 0 }}>
-        <div ref={renderAreaRef} style={{ position: "absolute", width: "100%", height: "100%", left: 0, top: 0 }}></div>
-        <div ref={sidebarRef} style={{ position: "absolute", top: 0, right: 0, width: "300px", height: "100%", zIndex: 1000 }}></div>
+        <div 
+          ref={renderAreaRef} 
+          style={{ 
+            position: "absolute", 
+            width: "100%", 
+            height: "100%", 
+            left: 0, 
+            top: 0,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center"
+          }}
+        >
+          {/* This div will be the actual render area for Potree */}
+          <div 
+            id="potree_render_area" 
+            style={{ 
+              position: "absolute", 
+              width: "100%", 
+              height: "100%", 
+              left: 0, 
+              top: 0 
+            }}
+          ></div>
+        </div>
+        <div 
+          ref={sidebarRef} 
+          style={{ 
+            position: "absolute", 
+            top: 0, 
+            right: 0, 
+            width: "300px", 
+            height: "100%", 
+            zIndex: 1000 
+          }}
+        >
+          {/* This div will be the container for the Potree sidebar */}
+          <div 
+            id="potree_sidebar_container" 
+            style={{ 
+              position: "absolute", 
+              width: "100%", 
+              height: "100%", 
+              top: 0, 
+              right: 0 
+            }}
+          ></div>
+        </div>
       </div>
 
       {/* Custom Styles */}
