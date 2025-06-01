@@ -100,13 +100,17 @@ export default function PotreeViewer() {
       try {
         setLoadingProgress(40);
         
-        // Wait for DOM to be ready
+        // Wait for DOM to be ready and ensure the element exists
         await new Promise(resolve => {
-          if (document.readyState === 'complete') {
-            resolve(undefined);
-          } else {
-            window.addEventListener('load', () => resolve(undefined));
-          }
+          const checkElement = () => {
+            const renderArea = document.getElementById("potree_render_area");
+            if (renderArea && document.readyState === 'complete') {
+              resolve(undefined);
+            } else {
+              setTimeout(checkElement, 50);
+            }
+          };
+          checkElement();
         });
 
         const loadScript = (src: string): Promise<void> =>
@@ -164,14 +168,20 @@ export default function PotreeViewer() {
           throw new Error("Potree render area not found");
         }
 
-        // Wait a bit more to ensure element is fully rendered
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Wait a bit more to ensure element is fully rendered and has dimensions
+        await new Promise(resolve => setTimeout(resolve, 200));
 
-        // Check if element has dimensions
+        // Force dimensions if they're not set
         if (renderArea.clientWidth === 0 || renderArea.clientHeight === 0) {
           console.warn("Render area has no dimensions, setting default size");
           renderArea.style.width = "100%";
           renderArea.style.height = "100vh";
+          renderArea.style.position = "absolute";
+          renderArea.style.top = "0";
+          renderArea.style.left = "0";
+          
+          // Wait for the style changes to take effect
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
 
         setLoadingProgress(80);
@@ -228,13 +238,13 @@ export default function PotreeViewer() {
 
       } catch (err) {
         console.error("Error initializing Potree:", err);
-        setError("Failed to initialize point cloud viewer");
+        setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
         setLoading(false);
       }
     };
 
-    // Add a small delay to ensure DOM is ready
-    const timeoutId = setTimeout(initializePotree, 100);
+    // Add a delay to ensure DOM is ready
+    const timeoutId = setTimeout(initializePotree, 500);
 
     return () => {
       clearTimeout(timeoutId);
