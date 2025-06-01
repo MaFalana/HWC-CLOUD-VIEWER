@@ -2,16 +2,42 @@ import { Project, CreateProjectData } from "@/types/project";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4400";
 
+// Define a type for the raw project data from the API
+interface RawProjectData {
+  _id?: string;
+  jobNumber: string;
+  projectName: string;
+  clientName?: string;
+  acquistionDate: string;
+  description?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
+  crs?: {
+    horizontal: string;
+    vertical?: string;
+    geoidModel?: string;
+  };
+  status: "active" | "completed" | "archived" | "processing";
+  thumbnailUrl?: string;
+  orthoImageUrl?: string;
+  pointCloudUrl?: string;
+  tags?: string[];
+  projectType?: string;
+}
+
 export const projectService = {
   async getAllProjects(): Promise<Project[]> {
     const response = await fetch(`${API_BASE_URL}/view`);
     if (!response.ok) {
       throw new Error("Failed to fetch projects");
     }
-    const data = await response.json();
+    const data = await response.json() as RawProjectData[];
     
     // Transform the data to ensure proper date handling
-    return data.map((project: any) => ({
+    return data.map((project: RawProjectData) => ({
       ...project,
       createdAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
       updatedAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
@@ -24,7 +50,7 @@ export const projectService = {
     if (!response.ok) {
       throw new Error("Failed to fetch project");
     }
-    const data = await response.json();
+    const data = await response.json() as RawProjectData;
     
     // Transform the data to ensure proper date handling
     return {
@@ -51,7 +77,7 @@ export const projectService = {
     if (!response.ok) {
       throw new Error("Failed to create project");
     }
-    const data = await response.json();
+    const data = await response.json() as RawProjectData;
     
     return {
       ...data,
@@ -72,7 +98,7 @@ export const projectService = {
     if (!response.ok) {
       throw new Error("Failed to update project");
     }
-    const data = await response.json();
+    const data = await response.json() as RawProjectData;
     
     return {
       ...data,
