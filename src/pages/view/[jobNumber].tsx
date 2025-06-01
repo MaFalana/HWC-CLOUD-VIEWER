@@ -6,6 +6,14 @@ import { projectService } from "@/services/projectService";
 import { Project } from "@/types/project";
 
 // Define types for Potree
+interface PointCloudMaterial {
+  pointSizeType: number;
+}
+
+interface PointCloud {
+  material: PointCloudMaterial;
+}
+
 interface PotreeViewer {
   setEDLEnabled: (enabled: boolean) => void;
   setFOV: (fov: number) => void;
@@ -15,9 +23,13 @@ interface PotreeViewer {
   setLanguage: (lang: string) => void;
   toggleSidebar: () => void;
   scene: {
-    addPointCloud: (pointcloud: any) => void;
+    addPointCloud: (pointcloud: PointCloud) => void;
   };
   fitToScreen: (padding: number) => void;
+}
+
+interface PotreeLoadEvent {
+  pointcloud: PointCloud;
 }
 
 interface PotreeStatic {
@@ -25,7 +37,7 @@ interface PotreeStatic {
   PointSizeType: {
     ADAPTIVE: number;
   };
-  loadPointCloud: (path: string, name: string, callback: (e: { pointcloud: any }) => void) => void;
+  loadPointCloud: (path: string, name: string, callback: (e: PotreeLoadEvent) => void) => void;
 }
 
 // Extend Window interface to include Potree
@@ -125,7 +137,7 @@ export default function PotreeViewer() {
           viewer.toggleSidebar();
         });
 
-        const loadCallback = (e: { pointcloud: any }) => {
+        const loadCallback = (e: PotreeLoadEvent) => {
           if (e.pointcloud) {
             viewer.scene.addPointCloud(e.pointcloud);
             e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
