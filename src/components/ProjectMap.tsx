@@ -250,8 +250,8 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
         </div>
       </div>
 
-      {/* Map Controls - Moved to bottom right to avoid all conflicts */}
-      <div className="absolute bottom-4 right-4 z-[1003] flex gap-2">
+      {/* Map Controls - Moved to bottom left as requested */}
+      <div className="absolute bottom-4 left-4 z-[1003] flex gap-2">
         <Button
           variant={mapType === "street" ? "default" : "outline"}
           size="sm"
@@ -270,9 +270,9 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
         </Button>
       </div>
 
-      {/* Project Details Popup - Moved to bottom left to avoid conflict with map controls */}
+      {/* Project Details Popup - Moved to avoid conflict with bottom left controls */}
       {selectedProject && (
-        <div className="absolute bottom-4 left-[calc(320px+1rem)] z-[1004]">
+        <div className="absolute bottom-16 left-4 z-[1004]">
           <Card className="w-80 shadow-xl bg-white border border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-3">
@@ -394,10 +394,21 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
           z-index: 999 !important;
         }
 
-        /* Move Leaflet zoom controls to avoid conflict with project list */
+        /* Move Leaflet zoom controls to top right corner as requested */
         .leaflet-control-zoom {
-          margin-left: 340px !important; /* Move right of the project list sidebar */
+          margin-left: auto !important;
+          margin-right: 10px !important;
           margin-top: 10px !important;
+          position: absolute !important;
+          top: 0 !important;
+          right: 0 !important;
+          left: auto !important;
+        }
+
+        /* Ensure zoom controls are positioned correctly */
+        .leaflet-top.leaflet-right {
+          top: 10px !important;
+          right: 10px !important;
         }
 
         /* Force visibility of our custom controls */
