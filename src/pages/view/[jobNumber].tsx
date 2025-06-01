@@ -100,18 +100,21 @@ export default function PotreeViewer() {
       try {
         setLoadingProgress(40);
         
-        // Wait for DOM to be ready and ensure the element exists
-        await new Promise(resolve => {
+        // Wait for DOM element to be available with better detection
+        await new Promise<void>((resolve) => {
           const checkElement = () => {
             const renderArea = document.getElementById("potree_render_area");
-            if (renderArea && document.readyState === 'complete') {
-              resolve(undefined);
+            if (renderArea) {
+              // Element exists, wait a bit more for it to be fully rendered
+              setTimeout(() => resolve(), 100);
             } else {
               setTimeout(checkElement, 50);
             }
           };
           checkElement();
         });
+
+        setLoadingProgress(45);
 
         const loadScript = (src: string): Promise<void> =>
           new Promise((resolve, reject) => {
@@ -151,8 +154,10 @@ export default function PotreeViewer() {
 
         setLoadingProgress(50);
 
-        for (const src of scripts) {
-          await loadScript(src);
+        // Load scripts with progress updates
+        for (let i = 0; i < scripts.length; i++) {
+          await loadScript(scripts[i]);
+          setLoadingProgress(50 + (i + 1) * (20 / scripts.length));
         }
 
         setLoadingProgress(70);
@@ -168,21 +173,15 @@ export default function PotreeViewer() {
           throw new Error("Potree render area not found");
         }
 
-        // Wait a bit more to ensure element is fully rendered and has dimensions
+        // Force dimensions and ensure element is properly sized
+        renderArea.style.width = "100%";
+        renderArea.style.height = "100vh";
+        renderArea.style.position = "absolute";
+        renderArea.style.top = "0";
+        renderArea.style.left = "0";
+        
+        // Wait for the style changes to take effect
         await new Promise(resolve => setTimeout(resolve, 200));
-
-        // Force dimensions if they're not set
-        if (renderArea.clientWidth === 0 || renderArea.clientHeight === 0) {
-          console.warn("Render area has no dimensions, setting default size");
-          renderArea.style.width = "100%";
-          renderArea.style.height = "100vh";
-          renderArea.style.position = "absolute";
-          renderArea.style.top = "0";
-          renderArea.style.left = "0";
-          
-          // Wait for the style changes to take effect
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
 
         setLoadingProgress(80);
 
@@ -193,15 +192,14 @@ export default function PotreeViewer() {
         viewer.setPointBudget(1_000_000);
         viewer.setDescription(project?.projectName || `Project ${jobNumber}`);
         
+        setLoadingProgress(85);
+
         viewer.loadGUI(() => {
           viewer.setLanguage("en");
-          // Don't auto-toggle sidebar, let user control it
+          setLoadingProgress(90);
         });
 
-        setLoadingProgress(90);
-
         // For demo purposes, we'll simulate a successful load without actual point cloud data
-        // In a real implementation, you would load actual point cloud files here
         setTimeout(() => {
           setLoadingProgress(100);
           setTimeout(() => setLoading(false), 500);
@@ -243,8 +241,8 @@ export default function PotreeViewer() {
       }
     };
 
-    // Add a delay to ensure DOM is ready
-    const timeoutId = setTimeout(initializePotree, 500);
+    // Start initialization after a small delay to ensure component is mounted
+    const timeoutId = setTimeout(initializePotree, 200);
 
     return () => {
       clearTimeout(timeoutId);
