@@ -102,14 +102,22 @@ export default function PotreeViewer() {
         setLoadingProgress(40);
         console.log("Starting Potree initialization...");
         
-        // Wait for DOM element to be available using ref
+        // Wait for DOM element to be available and properly sized
         await new Promise<void>((resolve, reject) => {
           let attempts = 0;
-          const maxAttempts = 50; // Reduced attempts since we're using ref
+          const maxAttempts = 100; // Increased attempts
           
           const checkElement = () => {
             const renderArea = renderAreaRef.current || document.getElementById("potree_render_area");
             attempts++;
+            
+            console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
+              element: renderArea,
+              offsetWidth: renderArea?.offsetWidth,
+              offsetHeight: renderArea?.offsetHeight,
+              clientWidth: renderArea?.clientWidth,
+              clientHeight: renderArea?.clientHeight
+            });
             
             if (renderArea && renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
               console.log("DOM element found and has dimensions:", {
@@ -122,13 +130,21 @@ export default function PotreeViewer() {
               console.error("DOM element not found or has no dimensions after maximum attempts");
               reject(new Error("Potree render area not found or not properly sized"));
             } else {
-              console.log(`DOM element check ${attempts}/${maxAttempts}...`);
-              setTimeout(checkElement, 100);
+              // Force dimensions if element exists but has no size
+              if (renderArea) {
+                renderArea.style.width = "100vw";
+                renderArea.style.height = "100vh";
+                renderArea.style.position = "absolute";
+                renderArea.style.top = "0";
+                renderArea.style.left = "0";
+                renderArea.style.display = "block";
+              }
+              setTimeout(checkElement, 50);
             }
           };
           
-          // Start checking after a small delay
-          setTimeout(checkElement, 100);
+          // Start checking immediately
+          checkElement();
         });
 
         setLoadingProgress(45);
@@ -290,7 +306,7 @@ export default function PotreeViewer() {
     const timeoutId = setTimeout(() => {
       console.log("Starting Potree initialization...");
       initializePotree();
-    }, 2000); // Increased delay to 2 seconds
+    }, 1000); // Reduced delay to 1 second
 
     return () => {
       clearTimeout(timeoutId);
