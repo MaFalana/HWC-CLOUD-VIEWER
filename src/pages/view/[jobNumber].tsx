@@ -100,6 +100,15 @@ export default function PotreeViewer() {
       try {
         setLoadingProgress(40);
         
+        // Wait for DOM to be ready
+        await new Promise(resolve => {
+          if (document.readyState === 'complete') {
+            resolve(undefined);
+          } else {
+            window.addEventListener('load', () => resolve(undefined));
+          }
+        });
+
         const loadScript = (src: string): Promise<void> =>
           new Promise((resolve, reject) => {
             if (document.querySelector(`script[src="${src}"]`)) {
@@ -149,10 +158,26 @@ export default function PotreeViewer() {
           throw new Error("Potree library failed to load");
         }
 
+        // Ensure the render area element exists and has dimensions
+        const renderArea = document.getElementById("potree_render_area");
+        if (!renderArea) {
+          throw new Error("Potree render area not found");
+        }
+
+        // Wait a bit more to ensure element is fully rendered
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Check if element has dimensions
+        if (renderArea.clientWidth === 0 || renderArea.clientHeight === 0) {
+          console.warn("Render area has no dimensions, setting default size");
+          renderArea.style.width = "100%";
+          renderArea.style.height = "100vh";
+        }
+
         setLoadingProgress(80);
 
         // Initialize Potree viewer
-        const viewer = new window.Potree.Viewer(document.getElementById("potree_render_area"));
+        const viewer = new window.Potree.Viewer(renderArea);
         viewer.setEDLEnabled(true);
         viewer.setFOV(60);
         viewer.setPointBudget(1_000_000);
@@ -208,9 +233,11 @@ export default function PotreeViewer() {
       }
     };
 
-    initializePotree();
+    // Add a small delay to ensure DOM is ready
+    const timeoutId = setTimeout(initializePotree, 100);
 
     return () => {
+      clearTimeout(timeoutId);
       // Cleanup scripts if needed
       const scripts = document.querySelectorAll('script[src*="/potree/"]');
       scripts.forEach(script => {
