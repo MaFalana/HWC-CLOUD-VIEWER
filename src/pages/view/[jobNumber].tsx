@@ -101,19 +101,29 @@ export default function PotreeViewer() {
         setLoadingProgress(40);
         console.log("Starting Potree initialization...");
         
-        // Wait for DOM element to be available with better detection
-        await new Promise<void>((resolve) => {
+        // Wait for DOM element to be available with timeout
+        await new Promise<void>((resolve, reject) => {
+          let attempts = 0;
+          const maxAttempts = 100; // 5 seconds max
+          
           const checkElement = () => {
             const renderArea = document.getElementById("potree_render_area");
+            attempts++;
+            
             if (renderArea) {
               console.log("DOM element found:", renderArea);
               // Element exists, wait a bit more for it to be fully rendered
               setTimeout(() => resolve(), 100);
+            } else if (attempts >= maxAttempts) {
+              console.error("DOM element not found after maximum attempts");
+              reject(new Error("Potree render area not found after timeout"));
             } else {
-              console.log("DOM element not found, retrying...");
+              console.log(`DOM element not found, retrying... (${attempts}/${maxAttempts})`);
               setTimeout(checkElement, 50);
             }
           };
+          
+          // Start checking immediately
           checkElement();
         });
 
@@ -280,11 +290,11 @@ export default function PotreeViewer() {
       }
     };
 
-    // Start initialization after a small delay to ensure component is mounted
+    // Start initialization after a longer delay to ensure component is fully mounted
     const timeoutId = setTimeout(() => {
       console.log("Starting Potree initialization timeout...");
       initializePotree();
-    }, 200);
+    }, 1000); // Increased delay to 1 second
 
     return () => {
       clearTimeout(timeoutId);
