@@ -1,8 +1,9 @@
-
 export interface Project {
   _id?: string;
   jobNumber: string;
   projectName: string;
+  clientName?: string;
+  acquistionDate: string;
   description?: string;
   location?: {
     latitude: number;
@@ -21,13 +22,14 @@ export interface Project {
   orthoImageUrl?: string;
   pointCloudUrl?: string;
   tags?: string[];
-  client?: string;
   projectType?: string;
 }
 
 export interface CreateProjectData {
   jobNumber: string;
   projectName: string;
+  clientName?: string;
+  acquistionDate?: string;
   description?: string;
   location?: {
     latitude: number;
@@ -39,7 +41,6 @@ export interface CreateProjectData {
     vertical?: string;
     geoidModel?: string;
   };
-  client?: string;
   projectType?: string;
   tags?: string[];
 }

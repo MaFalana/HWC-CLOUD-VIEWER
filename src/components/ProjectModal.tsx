@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -34,7 +33,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
       vertical: "",
       geoidModel: "",
     },
-    client: "",
+    clientName: "",
     projectType: "",
     tags: [],
   });
@@ -52,7 +51,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         description: project.description || "",
         location: project.location || { latitude: 0, longitude: 0, address: "" },
         crs: project.crs || { horizontal: "", vertical: "", geoidModel: "" },
-        client: project.client || "",
+        clientName: project.clientName || "",
         projectType: project.projectType || "",
         tags: project.tags || [],
       });
@@ -63,7 +62,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         description: "",
         location: { latitude: 0, longitude: 0, address: "" },
         crs: { horizontal: "", vertical: "", geoidModel: "" },
-        client: "",
+        clientName: "",
         projectType: "",
         tags: [],
       });
@@ -152,11 +151,11 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="client">Client</Label>
+              <Label htmlFor="clientName">Client</Label>
               <Input
-                id="client"
-                value={formData.client}
-                onChange={(e) => setFormData(prev => ({ ...prev, client: e.target.value }))}
+                id="clientName"
+                value={formData.clientName}
+                onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
               />
             </div>
             <div>

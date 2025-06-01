@@ -44,18 +44,19 @@ export default function Dashboard() {
       // Mock data for development
       setProjects([
         {
-          jobNumber: "2024-001",
-          projectName: "Highway Bridge Survey",
+          jobNumber: "2500-062-A",
+          projectName: "Y45 Washington & Lawndale",
+          clientName: "Centerpoint Energy",
+          acquistionDate: "2024-12-30T16:50:40.866Z",
           description: "Comprehensive survey of the main highway bridge structure",
           status: "active",
-          createdAt: new Date("2024-01-15"),
-          updatedAt: new Date("2024-01-15"),
-          client: "State DOT",
+          createdAt: new Date("2024-12-30"),
+          updatedAt: new Date("2024-12-30"),
           projectType: "survey",
           location: {
             latitude: 39.7684,
             longitude: -86.1581,
-            address: "Indianapolis, IN"
+            address: "Washington & Lawndale, Indianapolis, IN"
           },
           tags: ["bridge", "highway", "infrastructure"],
           thumbnailUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400"
@@ -63,11 +64,12 @@ export default function Dashboard() {
         {
           jobNumber: "2024-002", 
           projectName: "Commercial Building Inspection",
+          clientName: "ABC Development",
+          acquistionDate: "2024-02-01T10:00:00.000Z",
           description: "Detailed inspection of commercial office complex",
           status: "completed",
           createdAt: new Date("2024-02-01"),
           updatedAt: new Date("2024-02-15"),
-          client: "ABC Development",
           projectType: "inspection",
           location: {
             latitude: 39.7817,
@@ -88,7 +90,7 @@ export default function Dashboard() {
       return (
         project.projectName.toLowerCase().includes(searchLower) ||
         project.jobNumber.toLowerCase().includes(searchLower) ||
-        project.client?.toLowerCase().includes(searchLower) ||
+        project.clientName?.toLowerCase().includes(searchLower) ||
         project.description?.toLowerCase().includes(searchLower)
       );
     });
@@ -102,7 +104,7 @@ export default function Dashboard() {
         case "status":
           return a.status.localeCompare(b.status);
         case "client":
-          return (a.client || "").localeCompare(b.client || "");
+          return (a.clientName || "").localeCompare(b.clientName || "");
         default:
           return 0;
       }

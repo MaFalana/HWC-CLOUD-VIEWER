@@ -72,7 +72,7 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
                 </div>
               </TableCell>
               <TableCell className="font-mono text-sm">{project.jobNumber}</TableCell>
-              <TableCell>{project.client || "-"}</TableCell>
+              <TableCell>{project.clientName || "-"}</TableCell>
               <TableCell>
                 {project.projectType ? (
                   <Badge variant="outline" className="capitalize">

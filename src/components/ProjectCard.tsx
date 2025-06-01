@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -109,6 +108,11 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
             <Calendar className="h-3 w-3" />
             {formatDate(project.createdAt)}
           </div>
+          {project.clientName && (
+            <div className="flex items-center gap-1">
+              <span>Client: {project.clientName}</span>
+            </div>
+          )}
           {project.location && (
             <div className="flex items-center gap-1">
               <MapPin className="h-3 w-3" />
