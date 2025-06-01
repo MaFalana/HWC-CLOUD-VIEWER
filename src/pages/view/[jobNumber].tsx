@@ -109,29 +109,49 @@ export default function PotreeViewer() {
           
           // If not, try to get it by ID
           if (!renderArea) {
-            renderArea = document.getElementById("potree_render_area");
+            renderArea = document.getElementById("potree_render_area") as HTMLDivElement | null;
           }
           
           // If still not found, create it
           if (!renderArea) {
             console.log("Creating potree_render_area element");
-            renderArea = document.createElement("div");
-            renderArea.id = "potree_render_area";
-            document.querySelector(".potree_container")?.appendChild(renderArea);
+            const newRenderArea = document.createElement("div");
+            newRenderArea.id = "potree_render_area";
+            const container = document.querySelector(".potree_container");
+            if (container) {
+              container.appendChild(newRenderArea);
+            }
+            renderArea = newRenderArea;
           }
           
-          // Force dimensions and styles
-          renderArea.style.width = "100vw";
-          renderArea.style.height = "100vh";
-          renderArea.style.position = "fixed";
-          renderArea.style.top = "0";
-          renderArea.style.left = "0";
-          renderArea.style.zIndex = "1";
-          renderArea.style.display = "block";
-          renderArea.style.background = "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)";
-          
-          // Force a reflow
-          renderArea.offsetHeight;
+          // Force dimensions and styles immediately with explicit pixel values
+          if (renderArea) {
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            renderArea.style.width = `${windowWidth}px`;
+            renderArea.style.height = `${windowHeight}px`;
+            renderArea.style.position = "fixed";
+            renderArea.style.top = "0px";
+            renderArea.style.left = "0px";
+            renderArea.style.zIndex = "1";
+            renderArea.style.display = "block";
+            renderArea.style.background = "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)";
+            renderArea.style.overflow = "hidden";
+            
+            // Force layout recalculation by accessing layout properties
+            void renderArea.offsetWidth;
+            void renderArea.offsetHeight;
+            void renderArea.clientWidth;
+            void renderArea.clientHeight;
+            
+            // Force another reflow
+            renderArea.style.minWidth = `${windowWidth}px`;
+            renderArea.style.minHeight = `${windowHeight}px`;
+            
+            // Final reflow
+            void renderArea.offsetHeight;
+          }
           
           return renderArea;
         };
@@ -139,37 +159,47 @@ export default function PotreeViewer() {
         // Wait for DOM element to be available and properly sized
         await new Promise<void>((resolve, reject) => {
           let attempts = 0;
-          const maxAttempts = 30;
+          const maxAttempts = 50; // Increased attempts
           
           const checkElement = () => {
             const renderArea = ensureRenderArea();
             attempts++;
             
-            console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
-              element: renderArea,
-              offsetWidth: renderArea.offsetWidth,
-              offsetHeight: renderArea.offsetHeight,
-              clientWidth: renderArea.clientWidth,
-              clientHeight: renderArea.clientHeight
-            });
-            
-            if (renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
-              console.log("DOM element found and has dimensions:", {
-                width: renderArea.offsetWidth,
-                height: renderArea.offsetHeight
+            if (renderArea) {
+              console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
+                element: renderArea,
+                offsetWidth: renderArea.offsetWidth,
+                offsetHeight: renderArea.offsetHeight,
+                clientWidth: renderArea.clientWidth,
+                clientHeight: renderArea.clientHeight,
+                windowWidth: window.innerWidth,
+                windowHeight: window.innerHeight,
+                computedStyle: window.getComputedStyle(renderArea).width
               });
               
-              // Update our ref if it wasn't set
-              if (!renderAreaRef.current) {
-                renderAreaRef.current = renderArea;
+              if (renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
+                console.log("DOM element found and has dimensions:", {
+                  width: renderArea.offsetWidth,
+                  height: renderArea.offsetHeight
+                });
+                
+                // Update our ref if it wasn't set
+                if (!renderAreaRef.current) {
+                  renderAreaRef.current = renderArea;
+                }
+                
+                resolve();
+              } else if (attempts >= maxAttempts) {
+                console.error("DOM element not found or has no dimensions after maximum attempts");
+                reject(new Error("Potree render area not found or not properly sized"));
+              } else {
+                setTimeout(checkElement, 100); // Reduced interval
               }
-              
-              resolve();
             } else if (attempts >= maxAttempts) {
-              console.error("DOM element not found or has no dimensions after maximum attempts");
-              reject(new Error("Potree render area not found or not properly sized"));
+              console.error("DOM element not found after maximum attempts");
+              reject(new Error("Potree render area not found"));
             } else {
-              setTimeout(checkElement, 200);
+              setTimeout(checkElement, 100); // Reduced interval
             }
           };
           
@@ -558,7 +588,8 @@ export default function PotreeViewer() {
             top: 0,
             left: 0,
             zIndex: 1,
-            display: "block"
+            display: "block",
+            overflow: "hidden"
           }}
         >
           <div id="sidebar_logo"></div>
