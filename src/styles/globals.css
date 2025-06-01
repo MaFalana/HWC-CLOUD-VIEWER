@@ -1,28 +1,9 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
 
 @layer base {
   :root {
@@ -32,49 +13,49 @@ body {
     --hwc-gray: #6C6864;
     --hwc-light: #DDD4CC;
     
-    /* Theme Colors */
+    /* Theme Colors using HWC palette - converted to HSL for shadcn compatibility */
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 210 6% 21%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 210 6% 21%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 238 238 238;
-    --primary-foreground: 41 44 48;
-    --secondary: 221 212 204;
-    --secondary-foreground: 41 44 48;
-    --muted: 221 212 204;
-    --muted-foreground: 108 104 100;
-    --accent: 238 47 39;
+    --popover-foreground: 210 6% 21%;
+    --primary: 210 6% 21%;
+    --primary-foreground: 30 15% 85%;
+    --secondary: 30 15% 85%;
+    --secondary-foreground: 210 6% 21%;
+    --muted: 30 15% 85%;
+    --muted-foreground: 25 6% 45%;
+    --accent: 4 85% 55%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 238 47 39;
+    --destructive: 4 85% 55%;
     --destructive-foreground: 0 0% 98%;
-    --border: 221 212 204;
-    --input: 221 212 204;
-    --ring: 238 47 39;
+    --border: 30 15% 85%;
+    --input: 30 15% 85%;
+    --ring: 4 85% 55%;
     --radius: 0.5rem;
   }
   
   .dark {
-    --background: 41 44 48;
-    --foreground: 221 212 204;
-    --card: 41 44 48;
-    --card-foreground: 221 212 204;
-    --popover: 41 44 48;
-    --popover-foreground: 221 212 204;
-    --primary: 221 212 204;
-    --primary-foreground: 41 44 48;
-    --secondary: 108 104 100;
-    --secondary-foreground: 221 212 204;
-    --muted: 108 104 100;
-    --muted-foreground: 221 212 204;
-    --accent: 238 47 39;
-    --accent-foreground: 221 212 204;
-    --destructive: 238 47 39;
-    --destructive-foreground: 221 212 204;
-    --border: 108 104 100;
-    --input: 108 104 100;
-    --ring: 238 47 39;
+    --background: 210 6% 21%;
+    --foreground: 30 15% 85%;
+    --card: 210 6% 21%;
+    --card-foreground: 30 15% 85%;
+    --popover: 210 6% 21%;
+    --popover-foreground: 30 15% 85%;
+    --primary: 30 15% 85%;
+    --primary-foreground: 210 6% 21%;
+    --secondary: 25 6% 45%;
+    --secondary-foreground: 30 15% 85%;
+    --muted: 25 6% 45%;
+    --muted-foreground: 30 15% 85%;
+    --accent: 4 85% 55%;
+    --accent-foreground: 30 15% 85%;
+    --destructive: 4 85% 55%;
+    --destructive-foreground: 30 15% 85%;
+    --border: 25 6% 45%;
+    --input: 25 6% 45%;
+    --ring: 4 85% 55%;
   }
 }
 
@@ -85,12 +66,22 @@ body {
   
   body {
     @apply bg-background text-foreground;
-    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', 'Inter', sans-serif;
     font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+  
+  .font-heading {
+    font-family: 'Poppins', 'Inter', sans-serif;
+  }
+  
+  .font-body {
+    font-family: 'Inter', 'Poppins', sans-serif;
   }
 }
 
@@ -99,19 +90,20 @@ body {
     @apply mx-auto px-4 md:px-6 lg:px-8 max-w-[2000px] w-full;
   }
   
-  .hwc-red {
+  /* HWC Color Utilities */
+  .text-hwc-red {
     color: var(--hwc-red);
   }
   
-  .hwc-dark {
+  .text-hwc-dark {
     color: var(--hwc-dark);
   }
   
-  .hwc-gray {
+  .text-hwc-gray {
     color: var(--hwc-gray);
   }
   
-  .hwc-light {
+  .text-hwc-light {
     color: var(--hwc-light);
   }
   
@@ -130,10 +122,122 @@ body {
   .bg-hwc-light {
     background-color: var(--hwc-light);
   }
+  
+  /* Hover variants */
+  .hover\:bg-hwc-red\/90:hover {
+    background-color: rgb(238 47 39 / 0.9);
+  }
+  
+  .hover\:bg-hwc-red\/80:hover {
+    background-color: rgb(238 47 39 / 0.8);
+  }
+  
+  .hover\:bg-hwc-dark\/90:hover {
+    background-color: rgb(41 44 48 / 0.9);
+  }
+  
+  .hover\:bg-hwc-gray\/90:hover {
+    background-color: rgb(108 104 100 / 0.9);
+  }
+  
+  .hover\:bg-hwc-light\/90:hover {
+    background-color: rgb(221 212 204 / 0.9);
+  }
+  
+  /* Border variants */
+  .border-hwc-red {
+    border-color: var(--hwc-red);
+  }
+  
+  .border-hwc-dark {
+    border-color: var(--hwc-dark);
+  }
+  
+  .border-hwc-gray {
+    border-color: var(--hwc-gray);
+  }
+  
+  .border-hwc-light {
+    border-color: var(--hwc-light);
+  }
+  
+  /* Focus variants */
+  .focus\:ring-hwc-red:focus {
+    --tw-ring-color: var(--hwc-red);
+  }
+  
+  .focus\:border-hwc-red:focus {
+    border-color: var(--hwc-red);
+  }
+  
+  /* Status color utilities */
+  .status-active {
+    @apply bg-green-500 text-white;
+  }
+  
+  .status-completed {
+    @apply bg-blue-500 text-white;
+  }
+  
+  .status-processing {
+    @apply bg-yellow-500 text-white;
+  }
+  
+  .status-archived {
+    @apply bg-gray-500 text-white;
+  }
+  
+  /* Card enhancements */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lg hover:shadow-hwc-gray/10;
+  }
+  
+  /* Button variants */
+  .btn-hwc-primary {
+    @apply bg-hwc-red text-white hover:bg-hwc-red/90 focus:ring-hwc-red;
+  }
+  
+  .btn-hwc-secondary {
+    @apply bg-hwc-gray text-white hover:bg-hwc-gray/90 focus:ring-hwc-gray;
+  }
+  
+  .btn-hwc-outline {
+    @apply border-hwc-red text-hwc-red hover:bg-hwc-red hover:text-white focus:ring-hwc-red;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  /* Typography utilities */
+  .text-gradient-hwc {
+    background: linear-gradient(135deg, var(--hwc-red), var(--hwc-dark));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Loading spinner with HWC colors */
+  .spinner-hwc {
+    border-color: var(--hwc-light);
+    border-top-color: var(--hwc-red);
   }
 }
