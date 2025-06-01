@@ -102,59 +102,79 @@ export default function PotreeViewer() {
         setLoadingProgress(40);
         console.log("Starting Potree initialization...");
         
-        // Wait for DOM element to be available and ensure it has dimensions
+        // Create and ensure the render area element exists with proper dimensions
+        const ensureRenderArea = () => {
+          // First check if our ref has the element
+          let renderArea = renderAreaRef.current;
+          
+          // If not, try to get it by ID
+          if (!renderArea) {
+            renderArea = document.getElementById("potree_render_area");
+          }
+          
+          // If still not found, create it
+          if (!renderArea) {
+            console.log("Creating potree_render_area element");
+            renderArea = document.createElement("div");
+            renderArea.id = "potree_render_area";
+            document.querySelector(".potree_container")?.appendChild(renderArea);
+          }
+          
+          // Force dimensions and styles
+          renderArea.style.width = "100vw";
+          renderArea.style.height = "100vh";
+          renderArea.style.position = "fixed";
+          renderArea.style.top = "0";
+          renderArea.style.left = "0";
+          renderArea.style.zIndex = "1";
+          renderArea.style.display = "block";
+          renderArea.style.background = "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)";
+          
+          // Force a reflow
+          renderArea.offsetHeight;
+          
+          return renderArea;
+        };
+        
+        // Wait for DOM element to be available and properly sized
         await new Promise<void>((resolve, reject) => {
           let attempts = 0;
-          const maxAttempts = 50; // Reduced attempts
+          const maxAttempts = 30;
           
           const checkElement = () => {
-            const renderArea = renderAreaRef.current || document.getElementById("potree_render_area");
+            const renderArea = ensureRenderArea();
             attempts++;
             
-            if (renderArea) {
-              // Force dimensions immediately
-              renderArea.style.width = "100vw";
-              renderArea.style.height = "100vh";
-              renderArea.style.position = "fixed";
-              renderArea.style.top = "0";
-              renderArea.style.left = "0";
-              renderArea.style.zIndex = "1";
-              renderArea.style.display = "block";
-              
-              // Force a reflow
-              renderArea.offsetHeight;
-              
-              console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
-                element: renderArea,
-                offsetWidth: renderArea.offsetWidth,
-                offsetHeight: renderArea.offsetHeight,
-                clientWidth: renderArea.clientWidth,
-                clientHeight: renderArea.clientHeight
+            console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
+              element: renderArea,
+              offsetWidth: renderArea.offsetWidth,
+              offsetHeight: renderArea.offsetHeight,
+              clientWidth: renderArea.clientWidth,
+              clientHeight: renderArea.clientHeight
+            });
+            
+            if (renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
+              console.log("DOM element found and has dimensions:", {
+                width: renderArea.offsetWidth,
+                height: renderArea.offsetHeight
               });
               
-              if (renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
-                console.log("DOM element found and has dimensions:", {
-                  width: renderArea.offsetWidth,
-                  height: renderArea.offsetHeight,
-                  element: renderArea
-                });
-                resolve();
-              } else if (attempts >= maxAttempts) {
-                console.error("DOM element not found or has no dimensions after maximum attempts");
-                reject(new Error("Potree render area not found or not properly sized"));
-              } else {
-                setTimeout(checkElement, 100);
+              // Update our ref if it wasn't set
+              if (!renderAreaRef.current) {
+                renderAreaRef.current = renderArea;
               }
+              
+              resolve();
             } else if (attempts >= maxAttempts) {
-              console.error("DOM element not found after maximum attempts");
-              reject(new Error("Potree render area not found"));
+              console.error("DOM element not found or has no dimensions after maximum attempts");
+              reject(new Error("Potree render area not found or not properly sized"));
             } else {
-              setTimeout(checkElement, 100);
+              setTimeout(checkElement, 200);
             }
           };
           
-          // Start checking after a small delay
-          setTimeout(checkElement, 200);
+          // Start checking immediately
+          checkElement();
         });
 
         setLoadingProgress(45);
@@ -231,7 +251,7 @@ export default function PotreeViewer() {
 
         console.log("Potree is available:", window.Potree);
 
-        // Get the render area element
+        // Get the render area element again to ensure it's still valid
         const renderArea = renderAreaRef.current || document.getElementById("potree_render_area");
         if (!renderArea) {
           throw new Error("Potree render area not found");
@@ -316,7 +336,7 @@ export default function PotreeViewer() {
     const timeoutId = setTimeout(() => {
       console.log("Starting Potree initialization...");
       initializePotree();
-    }, 1500); // Increased delay to 1.5 seconds
+    }, 1000); // Reduced delay to 1 second
 
     return () => {
       clearTimeout(timeoutId);
@@ -523,7 +543,8 @@ export default function PotreeViewer() {
           left: 0,
           top: 0,
           zIndex: 1,
-          background: "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)"
+          background: "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)",
+          overflow: "hidden"
         }}
       >
         <div
@@ -536,7 +557,8 @@ export default function PotreeViewer() {
             position: "fixed",
             top: 0,
             left: 0,
-            zIndex: 1
+            zIndex: 1,
+            display: "block"
           }}
         >
           <div id="sidebar_logo"></div>
