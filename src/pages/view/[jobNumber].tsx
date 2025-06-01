@@ -120,26 +120,26 @@ export default function PotreeViewer() {
           
           // Set attributes directly
           renderArea.setAttribute('style', `
-            width: ${windowWidth}px;
-            height: ${windowHeight}px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 1;
-            display: block;
-            background: linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%);
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-            border: none;
+            width: ${windowWidth}px !important;
+            height: ${windowHeight}px !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 1 !important;
+            display: block !important;
+            background: linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%) !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
           `);
           
           // Append to body
           document.body.appendChild(renderArea);
           
           // Force immediate layout calculation
-          renderArea.offsetHeight;
-          renderArea.offsetWidth;
+          void renderArea.offsetHeight;
+          void renderArea.offsetWidth;
           
           // Update ref
           renderAreaRef.current = renderArea;
@@ -299,6 +299,26 @@ export default function PotreeViewer() {
         const viewer = new window.Potree.Viewer(renderArea);
         console.log("Potree viewer created:", viewer);
         
+        // Create sidebar container if it doesn't exist
+        let sidebarContainer = document.getElementById("potree_sidebar_container");
+        if (!sidebarContainer) {
+          sidebarContainer = document.createElement("div");
+          sidebarContainer.id = "potree_sidebar_container";
+          sidebarContainer.style.cssText = `
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100%;
+            display: ${sidebarVisible ? 'block' : 'none'};
+            background: rgba(41, 44, 48, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+            overflow: auto;
+          `;
+          document.body.appendChild(sidebarContainer);
+        }
+        
         viewer.setEDLEnabled(true);
         viewer.setFOV(60);
         viewer.setPointBudget(1_000_000);
@@ -312,45 +332,27 @@ export default function PotreeViewer() {
           setLoadingProgress(90);
         });
 
-        console.log("Potree initialization complete, simulating point cloud load...");
+        console.log("Potree initialization complete, loading demo point cloud...");
 
-        // For demo purposes, we'll simulate a successful load without actual point cloud data
-        setTimeout(() => {
-          setLoadingProgress(100);
-          setTimeout(() => {
-            console.log("Loading complete, hiding loading screen");
-            setLoading(false);
-          }, 500);
-        }, 1000);
-
-        // Uncomment this section when you have actual point cloud data:
-        /*
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4400";
-        const cloudJsPath = `${baseUrl}/pointclouds/${jobNumber}/cloud.js`;
-        const metadataPath = `${baseUrl}/pointclouds/${jobNumber}/metadata.json`;
-
-        const response = await fetch(cloudJsPath, { method: "HEAD" });
-        const pathToLoad = response.ok ? cloudJsPath : metadataPath;
-
-        const loadCallback = (e: PotreeLoadEvent) => {
+        // For demo purposes, we'll load a sample point cloud
+        const demoPointCloudPath = "/potree/pointclouds/lion/cloud.js";
+        
+        window.Potree.loadPointCloud(demoPointCloudPath, "PointCloud", (e: PotreeLoadEvent) => {
           if (e.pointcloud) {
+            console.log("Point cloud loaded successfully:", e.pointcloud);
             viewer.scene.addPointCloud(e.pointcloud);
             e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
             viewer.fitToScreen(0.5);
             setLoadingProgress(100);
-            setTimeout(() => setLoading(false), 500);
+            setTimeout(() => {
+              console.log("Loading complete, hiding loading screen");
+              setLoading(false);
+            }, 500);
           } else {
             console.error("Failed to load point cloud.");
             setError("Failed to load point cloud data");
           }
-        };
-
-        if (pathToLoad.endsWith("cloud.js")) {
-          window.Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
-        } else {
-          window.Potree.loadPointCloud(metadataPath, jobNumber, loadCallback);
-        }
-        */
+        });
 
       } catch (err) {
         console.error("Error initializing Potree:", err);
@@ -574,63 +576,68 @@ export default function PotreeViewer() {
           overflow: "hidden"
         }}
       >
-        <div
-          ref={renderAreaRef}
-          id="potree_render_area"
-          style={{
-            width: "100vw",
-            height: "100vh",
-            background: "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)",
-            position: "fixed",
-            top: 0,
-            left: 0,
-            zIndex: 1,
-            display: "block",
-            overflow: "hidden"
-          }}
-        >
-          <div id="sidebar_logo"></div>
-        </div>
-        <div 
-          id="potree_sidebar_container" 
-          style={{ 
-            display: sidebarVisible ? 'block' : 'none',
-            background: 'rgba(41, 44, 48, 0.95)',
-            backdropFilter: 'blur(10px)',
-            zIndex: 10
-          }}
-        />
+        {/* The render area will be created dynamically in the useEffect */}
       </div>
 
       {/* Custom Styles */}
       <style jsx global>{`
-        .potree_sidebar_container {
+        #potree_sidebar_container {
           background: rgba(41, 44, 48, 0.95) !important;
           backdrop-filter: blur(10px) !important;
           border-right: 1px solid rgba(238, 47, 39, 0.3) !important;
+          position: absolute !important;
+          top: 0 !important;
+          right: 0 !important;
+          width: 300px !important;
+          height: 100% !important;
+          z-index: 10 !important;
+          overflow: auto !important;
         }
         
-        .potree_sidebar_container .ui-accordion-header {
+        .potree_menu_content {
+          background: rgba(41, 44, 48, 0.95) !important;
+          color: white !important;
+        }
+        
+        .potree_container {
+          position: fixed !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          left: 0 !important;
+          top: 0 !important;
+          z-index: 1 !important;
+        }
+        
+        #potree_render_area {
+          width: 100vw !important;
+          height: 100vh !important;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          z-index: 1 !important;
+        }
+        
+        .ui-accordion-header {
           background: var(--hwc-red) !important;
           color: white !important;
           border: none !important;
         }
         
-        .potree_sidebar_container .ui-accordion-content {
+        .ui-accordion-content {
           background: rgba(41, 44, 48, 0.8) !important;
           color: white !important;
           border: none !important;
         }
         
-        .potree_sidebar_container button,
-        .potree_sidebar_container input,
-        .potree_sidebar_container select {
+        .pv-menu-list button,
+        .pv-menu-list input,
+        .pv-menu-list select {
           background: rgba(108, 104, 100, 0.8) !important;
           color: white !important;
           border: 1px solid rgba(238, 47, 39, 0.3) !important;
         }
         
-        .potree_sidebar_container button:hover {
+        .pv-menu-list button:hover {
           background: var(--hwc-red) !important;
         }
         
