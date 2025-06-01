@@ -250,8 +250,8 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
         </div>
       </div>
 
-      {/* Map Controls - Moved to bottom left with better positioning */}
-      <div className="absolute bottom-4 left-4 z-[1003] flex gap-2">
+      {/* Map Controls - Moved to top right to avoid conflict with project list */}
+      <div className="absolute top-4 right-4 z-[1003] flex gap-2">
         <Button
           variant={mapType === "street" ? "default" : "outline"}
           size="sm"
