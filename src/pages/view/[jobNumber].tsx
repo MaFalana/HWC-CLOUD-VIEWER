@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -104,16 +103,96 @@ export default function PotreeViewer() {
   }, [sidebarVisible]);
 
   const initializePotree = useCallback(async () => {
-    if (!renderAreaRef.current || !sidebarRef.current) {
-      console.error("Render area or sidebar ref not available");
-      setError("Failed to initialize viewer: DOM elements not ready");
-      setLoading(false);
-      return;
-    }
-
     try {
       console.log("Starting Potree initialization...");
       setLoadingProgress(40);
+      
+      // Ensure DOM elements exist and have proper dimensions
+      if (!renderAreaRef.current) {
+        console.log("Creating render area element...");
+        const renderArea = document.createElement("div");
+        renderArea.id = "potree_render_area";
+        renderArea.style.width = "100vw";
+        renderArea.style.height = "100vh";
+        renderArea.style.position = "fixed";
+        renderArea.style.top = "0";
+        renderArea.style.left = "0";
+        renderArea.style.zIndex = "1";
+        renderArea.style.margin = "0";
+        renderArea.style.padding = "0";
+        renderArea.style.background = "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)";
+        
+        if (containerRef.current) {
+          containerRef.current.appendChild(renderArea);
+          renderAreaRef.current = renderArea;
+        } else {
+          document.body.appendChild(renderArea);
+          renderAreaRef.current = renderArea;
+        }
+      }
+
+      if (!sidebarRef.current) {
+        console.log("Creating sidebar element...");
+        const sidebar = document.createElement("div");
+        sidebar.id = "potree_sidebar_container";
+        sidebar.style.position = "absolute";
+        sidebar.style.top = "0";
+        sidebar.style.right = "0";
+        sidebar.style.width = "300px";
+        sidebar.style.height = "100%";
+        sidebar.style.display = sidebarVisible ? "block" : "none";
+        sidebar.style.background = "rgba(41, 44, 48, 0.95)";
+        sidebar.style.backdropFilter = "blur(10px)";
+        sidebar.style.zIndex = "10";
+        sidebar.style.overflow = "auto";
+        sidebar.style.borderLeft = "1px solid rgba(238, 47, 39, 0.3)";
+        
+        if (containerRef.current) {
+          containerRef.current.appendChild(sidebar);
+          sidebarRef.current = sidebar;
+        } else {
+          document.body.appendChild(sidebar);
+          sidebarRef.current = sidebar;
+        }
+      }
+
+      // Wait for elements to have dimensions
+      await new Promise<void>((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 50;
+        
+        const checkElement = () => {
+          attempts++;
+          console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
+            element: renderAreaRef.current,
+            offsetWidth: renderAreaRef.current?.offsetWidth,
+            offsetHeight: renderAreaRef.current?.offsetHeight,
+            clientWidth: renderAreaRef.current?.clientWidth,
+            clientHeight: renderAreaRef.current?.clientHeight,
+            containerExists: !!containerRef.current
+          });
+          
+          if (renderAreaRef.current && 
+              renderAreaRef.current.offsetWidth > 0 && 
+              renderAreaRef.current.offsetHeight > 0) {
+            console.log("DOM element ready with dimensions");
+            resolve();
+          } else if (attempts >= maxAttempts) {
+            console.error("DOM element not found or has no dimensions after maximum attempts");
+            reject(new Error("Potree render area not found or not properly sized"));
+          } else {
+            // Force layout recalculation
+            if (renderAreaRef.current) {
+              renderAreaRef.current.style.width = "100vw";
+              renderAreaRef.current.style.height = "100vh";
+              renderAreaRef.current.getBoundingClientRect();
+            }
+            setTimeout(checkElement, 100);
+          }
+        };
+        
+        checkElement();
+      });
       
       // Load CSS files
       const loadCSS = (url: string) => {
@@ -235,33 +314,69 @@ export default function PotreeViewer() {
         setLoadingProgress(90);
       });
       
-      // Load point cloud
+      // Try to load point cloud from multiple sources
       console.log("Loading point cloud...");
-      const demoPointCloudPath = "/potree/pointclouds/lion/cloud.js";
       
-      window.Potree.loadPointCloud(demoPointCloudPath, "PointCloud", (e: PotreeLoadEvent) => {
-        if (e.pointcloud) {
-          console.log("Point cloud loaded successfully");
-          viewer.scene.addPointCloud(e.pointcloud);
-          e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
-          viewer.fitToScreen(0.5);
-          setLoadingProgress(100);
-          
-          // Hide loading screen
-          setTimeout(() => {
-            setLoading(false);
-          }, 500);
-        } else {
-          throw new Error("Failed to load point cloud");
+      // First try the project-specific point cloud
+      const projectPointCloudPath = `/potree/pointclouds/${jobNumber}/cloud.js`;
+      const demoPointCloudPath = "/potree/examples/lion.html";
+      const fallbackPointCloudPath = "/potree/pointclouds/lion/cloud.js";
+      
+      const tryLoadPointCloud = (path: string, name: string): Promise<boolean> => {
+        return new Promise((resolve) => {
+          window.Potree.loadPointCloud(path, name, (e: PotreeLoadEvent) => {
+            if (e.pointcloud) {
+              console.log(`Point cloud loaded successfully from ${path}`);
+              viewer.scene.addPointCloud(e.pointcloud);
+              e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
+              viewer.fitToScreen(0.5);
+              resolve(true);
+            } else {
+              console.log(`Failed to load point cloud from ${path}`);
+              resolve(false);
+            }
+          });
+        });
+      };
+      
+      // Try loading point clouds in order of preference
+      let loaded = false;
+      
+      try {
+        loaded = await tryLoadPointCloud(projectPointCloudPath, `Project ${jobNumber}`);
+      } catch (error) {
+        console.log("Project-specific point cloud not found, trying fallback...");
+      }
+      
+      if (!loaded) {
+        try {
+          loaded = await tryLoadPointCloud(fallbackPointCloudPath, "Demo PointCloud");
+        } catch (error) {
+          console.log("Demo point cloud not found");
         }
-      });
+      }
+      
+      if (loaded) {
+        setLoadingProgress(100);
+        // Hide loading screen
+        setTimeout(() => {
+          setLoading(false);
+        }, 500);
+      } else {
+        // Show viewer even without point cloud
+        console.log("No point cloud loaded, showing empty viewer");
+        setLoadingProgress(100);
+        setTimeout(() => {
+          setLoading(false);
+        }, 500);
+      }
       
     } catch (err) {
       console.error("Error initializing Potree:", err);
       setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setLoading(false);
     }
-  }, [jobNumber, project]);
+  }, [jobNumber, project, sidebarVisible]);
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string" || !project) return;
