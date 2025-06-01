@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -169,6 +168,8 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
             setSelectedProject(project);
           });
 
+          // Add marker to map
+          marker.addTo(map);
           markersRef.current.push(marker);
           bounds.extend([project.location.latitude, project.location.longitude]);
         }
@@ -192,13 +193,13 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
 
   return (
     <div className="relative h-[calc(100vh-200px)] bg-gray-100 rounded-lg overflow-hidden">
-      {/* Map Controls */}
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
+      {/* Map Controls - Moved to bottom left */}
+      <div className="absolute bottom-4 left-4 z-[1001] flex gap-2">
         <Button
           variant={mapType === "street" ? "default" : "outline"}
           size="sm"
           onClick={() => setMapType("street")}
-          className="bg-white text-black hover:bg-gray-100"
+          className="bg-white text-black hover:bg-gray-100 shadow-lg"
         >
           Street
         </Button>
@@ -206,7 +207,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
           variant={mapType === "satellite" ? "default" : "outline"}
           size="sm"
           onClick={() => setMapType("satellite")}
-          className="bg-white text-black hover:bg-gray-100"
+          className="bg-white text-black hover:bg-gray-100 shadow-lg"
         >
           Satellite
         </Button>
@@ -216,10 +217,11 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
       <div 
         ref={mapContainerRef} 
         className="w-full h-full"
+        style={{ zIndex: 1 }}
       />
 
-      {/* Project List Sidebar */}
-      <div className="absolute left-4 top-4 bottom-4 w-80 bg-white rounded-lg shadow-lg overflow-hidden">
+      {/* Project List Sidebar - Fixed z-index and positioning */}
+      <div className="absolute left-4 top-4 bottom-16 w-80 bg-white rounded-lg shadow-lg overflow-hidden z-[1002]">
         <div className="p-4 border-b bg-hwc-dark text-white">
           <h3 className="font-semibold flex items-center gap-2">
             <Layers className="h-4 w-4" />
@@ -230,7 +232,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
           {projectsWithLocation.map((project) => (
             <div
               key={project.jobNumber}
-              className={`p-3 border-b cursor-pointer hover:bg-gray-50 ${
+              className={`p-3 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
                 selectedProject?.jobNumber === project.jobNumber ? "bg-blue-50 border-blue-200" : ""
               }`}
               onClick={() => setSelectedProject(project)}
@@ -257,7 +259,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
                     e.stopPropagation();
                     handleOpen(project.jobNumber);
                   }}
-                  className="h-6 w-6 p-0"
+                  className="h-6 w-6 p-0 hover:bg-gray-200"
                 >
                   <Eye className="h-3 w-3" />
                 </Button>
@@ -267,10 +269,10 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
         </div>
       </div>
 
-      {/* Project Details Popup */}
+      {/* Project Details Popup - Fixed z-index */}
       {selectedProject && (
-        <div className="absolute bottom-4 right-4 z-20">
-          <Card className="w-80 shadow-lg">
+        <div className="absolute bottom-4 right-4 z-[1003]">
+          <Card className="w-80 shadow-lg bg-white">
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-3">
                 <div>
@@ -281,7 +283,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedProject(null)}
-                  className="h-6 w-6 p-0"
+                  className="h-6 w-6 p-0 hover:bg-gray-200"
                 >
                   ×
                 </Button>
@@ -323,6 +325,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
                   variant="outline"
                   onClick={() => onEdit(selectedProject)}
                   size="sm"
+                  className="hover:bg-gray-100"
                 >
                   <Edit className="h-3 w-3" />
                 </Button>
@@ -330,7 +333,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
                   variant="outline"
                   onClick={() => onDelete(selectedProject.jobNumber)}
                   size="sm"
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
@@ -352,6 +355,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
           left: 50%;
           top: 50%;
           margin: -15px 0 0 -15px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
         .marker-pin::after {
@@ -378,6 +382,15 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
 
         .gray-500 {
           background: #6b7280;
+        }
+
+        /* Ensure Leaflet controls don't interfere */
+        .leaflet-control-container {
+          z-index: 999 !important;
+        }
+        
+        .leaflet-control {
+          z-index: 999 !important;
         }
       `}</style>
     </div>
