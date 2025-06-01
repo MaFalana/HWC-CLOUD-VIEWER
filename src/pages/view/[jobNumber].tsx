@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -333,6 +332,22 @@ export default function PotreeViewer() {
             e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
             viewer.fitToScreen();
             
+            // If project has location data, position the map view accordingly
+            if (project?.location?.latitude && project?.location?.longitude) {
+              // Set the map view to the project location
+              try {
+                // Access the map view if available in the Potree viewer
+                const mapView = viewer.mapView;
+                if (mapView) {
+                  // Set the map center to the project location
+                  mapView.setCenter([project.location.longitude, project.location.latitude]);
+                  mapView.setZoom(15); // Adjust zoom level as needed
+                }
+              } catch (mapErr) {
+                console.error("Failed to set map location:", mapErr);
+              }
+            }
+            
             setLoadingProgress(100);
             setTimeout(() => {
               setLoading(false);
@@ -550,7 +565,21 @@ export default function PotreeViewer() {
               <Button
                 variant={mapType === "default" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setMapType("default")}
+                onClick={() => {
+                  setMapType("default");
+                  if (viewerRef.current) {
+                    try {
+                      // Change map type if the viewer has a map view
+                      const mapView = viewerRef.current.mapView;
+                      if (mapView) {
+                        // Reset to default map type
+                        mapView.setMapType("DEFAULT");
+                      }
+                    } catch (err) {
+                      console.error("Failed to change map type:", err);
+                    }
+                  }
+                }}
                 className="text-xs h-8 bg-hwc-dark text-white"
               >
                 Default
@@ -558,7 +587,21 @@ export default function PotreeViewer() {
               <Button
                 variant={mapType === "terrain" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setMapType("terrain")}
+                onClick={() => {
+                  setMapType("terrain");
+                  if (viewerRef.current) {
+                    try {
+                      // Change map type if the viewer has a map view
+                      const mapView = viewerRef.current.mapView;
+                      if (mapView) {
+                        // Set to terrain map type
+                        mapView.setMapType("TERRAIN");
+                      }
+                    } catch (err) {
+                      console.error("Failed to change map type:", err);
+                    }
+                  }
+                }}
                 className="text-xs h-8"
               >
                 Terrain
@@ -566,7 +609,21 @@ export default function PotreeViewer() {
               <Button
                 variant={mapType === "satellite" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setMapType("satellite")}
+                onClick={() => {
+                  setMapType("satellite");
+                  if (viewerRef.current) {
+                    try {
+                      // Change map type if the viewer has a map view
+                      const mapView = viewerRef.current.mapView;
+                      if (mapView) {
+                        // Set to satellite map type
+                        mapView.setMapType("SATELLITE");
+                      }
+                    } catch (err) {
+                      console.error("Failed to change map type:", err);
+                    }
+                  }
+                }}
                 className="text-xs h-8"
               >
                 Satellite
@@ -574,7 +631,21 @@ export default function PotreeViewer() {
               <Button
                 variant={mapType === "openstreet" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setMapType("openstreet")}
+                onClick={() => {
+                  setMapType("openstreet");
+                  if (viewerRef.current) {
+                    try {
+                      // Change map type if the viewer has a map view
+                      const mapView = viewerRef.current.mapView;
+                      if (mapView) {
+                        // Set to OpenStreetMap type
+                        mapView.setMapType("OPENSTREETMAP");
+                      }
+                    } catch (err) {
+                      console.error("Failed to change map type:", err);
+                    }
+                  }
+                }}
                 className="text-xs h-8"
               >
                 OpenStreet
