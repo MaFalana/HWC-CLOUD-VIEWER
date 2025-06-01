@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -98,6 +97,42 @@ export default function PotreeViewer() {
       console.log("Starting Potree initialization...");
       setLoadingProgress(40);
       
+      // Wait for DOM element to be available
+      await new Promise<void>((resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 50;
+        
+        const checkElement = () => {
+          attempts++;
+          const renderArea = document.getElementById("potree_render_area");
+          console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
+            element: renderArea,
+            offsetWidth: renderArea?.offsetWidth,
+            offsetHeight: renderArea?.offsetHeight,
+            clientWidth: renderArea?.clientWidth,
+            clientHeight: renderArea?.clientHeight
+          });
+          
+          if (renderArea && renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
+            console.log("DOM element ready with dimensions");
+            resolve();
+          } else if (attempts >= maxAttempts) {
+            console.error("DOM element not found or has no dimensions after maximum attempts");
+            reject(new Error("Potree render area not found or not properly sized"));
+          } else {
+            // Force layout recalculation
+            if (renderArea) {
+              renderArea.style.width = "100%";
+              renderArea.style.height = "100%";
+              renderArea.getBoundingClientRect();
+            }
+            setTimeout(checkElement, 100);
+          }
+        };
+        
+        checkElement();
+      });
+      
       // Load CSS files
       const loadCSS = (url: string) => {
         if (document.querySelector(`link[href="${url}"]`)) return;
@@ -191,12 +226,20 @@ export default function PotreeViewer() {
       
       console.log("Potree is available, creating viewer...");
       
-      // Create viewer
+      // Get the render area element
       const renderArea = document.getElementById("potree_render_area");
       if (!renderArea) {
         throw new Error("Potree render area not found");
       }
       
+      console.log("Render area dimensions before viewer creation:", {
+        width: renderArea.clientWidth,
+        height: renderArea.clientHeight,
+        offsetWidth: renderArea.offsetWidth,
+        offsetHeight: renderArea.offsetHeight
+      });
+      
+      // Create viewer
       const viewer = new window.Potree.Viewer(renderArea);
       viewerRef.current = viewer;
       
@@ -215,29 +258,51 @@ export default function PotreeViewer() {
         setLoadingProgress(90);
       });
       
-      // Try to load point cloud from multiple sources
+      // Try to load point cloud
       console.log("Loading point cloud...");
       
-      // Use the lion demo point cloud as fallback
-      const fallbackPointCloudPath = "/potree/pointclouds/lion/cloud.js";
-      
-      window.Potree.loadPointCloud(fallbackPointCloudPath, "Demo PointCloud", (e) => {
-        if (e.pointcloud) {
-          console.log("Point cloud loaded successfully");
-          viewer.scene.addPointCloud(e.pointcloud);
-          e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
-          viewer.fitToScreen();
-          
-          setLoadingProgress(100);
-          setTimeout(() => {
-            setLoading(false);
-          }, 500);
-        } else {
-          console.error("Failed to load point cloud");
-          setError("Failed to load point cloud data");
-          setLoading(false);
+      // Check if lion demo point cloud exists, otherwise show empty viewer
+      const checkPointCloudExists = async (url: string): Promise<boolean> => {
+        try {
+          const response = await fetch(url, { method: 'HEAD' });
+          return response.ok;
+        } catch {
+          return false;
         }
-      });
+      };
+      
+      const lionCloudPath = "/potree/pointclouds/lion/cloud.js";
+      const lionExists = await checkPointCloudExists(lionCloudPath);
+      
+      if (lionExists) {
+        window.Potree.loadPointCloud(lionCloudPath, "Demo PointCloud", (e) => {
+          if (e.pointcloud) {
+            console.log("Point cloud loaded successfully");
+            viewer.scene.addPointCloud(e.pointcloud);
+            e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
+            viewer.fitToScreen();
+            
+            setLoadingProgress(100);
+            setTimeout(() => {
+              setLoading(false);
+            }, 500);
+          } else {
+            console.log("Point cloud object not found in response");
+            // Show viewer without point cloud
+            setLoadingProgress(100);
+            setTimeout(() => {
+              setLoading(false);
+            }, 500);
+          }
+        });
+      } else {
+        console.log("No point cloud files found, showing empty viewer");
+        // Show viewer without point cloud
+        setLoadingProgress(100);
+        setTimeout(() => {
+          setLoading(false);
+        }, 500);
+      }
       
     } catch (err) {
       console.error("Error initializing Potree:", err);
@@ -249,10 +314,10 @@ export default function PotreeViewer() {
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string" || !project) return;
 
-    // Initialize Potree with a delay to ensure DOM is ready
+    // Initialize Potree with a longer delay to ensure DOM is ready
     const timeoutId = setTimeout(() => {
       initializePotree();
-    }, 1000);
+    }, 2000);
 
     return () => {
       clearTimeout(timeoutId);
