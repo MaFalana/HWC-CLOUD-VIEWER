@@ -250,8 +250,8 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
         </div>
       </div>
 
-      {/* Map Controls - Moved to top right to avoid conflict with project list */}
-      <div className="absolute top-4 right-4 z-[1003] flex gap-2">
+      {/* Map Controls - Moved to bottom right to avoid all conflicts */}
+      <div className="absolute bottom-4 right-4 z-[1003] flex gap-2">
         <Button
           variant={mapType === "street" ? "default" : "outline"}
           size="sm"
@@ -270,9 +270,9 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
         </Button>
       </div>
 
-      {/* Project Details Popup - Fixed z-index */}
+      {/* Project Details Popup - Moved to bottom left to avoid conflict with map controls */}
       {selectedProject && (
-        <div className="absolute bottom-4 right-4 z-[1004]">
+        <div className="absolute bottom-4 left-[calc(320px+1rem)] z-[1004]">
           <Card className="w-80 shadow-xl bg-white border border-gray-200">
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-3">
