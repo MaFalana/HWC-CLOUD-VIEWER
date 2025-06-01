@@ -1,8 +1,7 @@
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
-import Script from "next/script";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,7 +37,7 @@ interface PotreeLoadEvent {
 }
 
 interface PotreeStatic {
-  Viewer: new (element: HTMLElement | null) => PotreeViewer;
+  Viewer: new (element: HTMLElement) => PotreeViewer;
   PointSizeType: {
     ADAPTIVE: number;
   };
@@ -61,8 +60,10 @@ export default function PotreeViewer() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const renderAreaRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<PotreeViewer | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const renderAreaRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
@@ -76,7 +77,6 @@ export default function PotreeViewer() {
         setLoadingProgress(30);
       } catch (err) {
         console.error("Failed to load project:", err);
-        setError("Failed to load project data");
         // Set mock project data for development when API fails
         setProject({
           jobNumber: jobNumber as string,
@@ -98,119 +98,43 @@ export default function PotreeViewer() {
 
   // Effect to handle sidebar visibility changes
   useEffect(() => {
-    const sidebarContainer = document.getElementById("potree_sidebar_container");
-    if (sidebarContainer) {
-      sidebarContainer.style.display = sidebarVisible ? "block" : "none";
+    if (sidebarRef.current) {
+      sidebarRef.current.style.display = sidebarVisible ? "block" : "none";
     }
   }, [sidebarVisible]);
 
-  useEffect(() => {
-    if (!jobNumber || typeof jobNumber !== "string" || !project) return;
+  const initializePotree = useCallback(async () => {
+    if (!renderAreaRef.current || !sidebarRef.current) {
+      console.error("Render area or sidebar ref not available");
+      setError("Failed to initialize viewer: DOM elements not ready");
+      setLoading(false);
+      return;
+    }
 
-    // Load CSS files
-    const loadCSS = (url: string) => {
-      if (document.querySelector(`link[href="${url}"]`)) return;
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = url;
-      document.head.appendChild(link);
-    };
-
-    const cssFiles = [
-      "/potree/build/potree/potree.css",
-      "/potree/libs/jquery-ui/jquery-ui.min.css",
-      "/potree/libs/openlayers3/ol.css",
-      "/potree/libs/spectrum/spectrum.css",
-      "/potree/libs/jstree/themes/mixed/style.css",
-      "/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css",
-      "/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css"
-    ];
-
-    cssFiles.forEach(loadCSS);
-
-    // Initialize Potree with a delay to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      initializePotree();
-    }, 1000);
-
-    return () => {
-      clearTimeout(timeoutId);
-      // Clean up
-      if (viewerRef.current) {
-        viewerRef.current = null;
-      }
-      
-      // Remove scripts
-      document.querySelectorAll('script[src*="/potree/"]').forEach(script => {
-        if (script.parentNode) {
-          script.parentNode.removeChild(script);
-        }
-      });
-      
-      // Remove CSS
-      document.querySelectorAll('link[href*="/potree/"]').forEach(link => {
-        if (link.parentNode) {
-          link.parentNode.removeChild(link);
-        }
-      });
-    };
-  }, [jobNumber, project]);
-
-  const initializePotree = async () => {
     try {
       console.log("Starting Potree initialization...");
       setLoadingProgress(40);
       
-      // Prepare DOM elements
-      // First, ensure the container exists
-      const container = document.querySelector(".potree_container");
-      if (!container) {
-        throw new Error("Potree container not found");
-      }
-      
-      // Create render area if it doesn't exist
-      let renderArea = document.getElementById("potree_render_area");
-      if (!renderArea) {
-        renderArea = document.createElement("div");
-        renderArea.id = "potree_render_area";
-        container.appendChild(renderArea);
-      }
-      
-      // Set explicit dimensions and styles
-      renderArea.style.width = "100vw";
-      renderArea.style.height = "100vh";
-      renderArea.style.position = "fixed";
-      renderArea.style.top = "0";
-      renderArea.style.left = "0";
-      renderArea.style.zIndex = "1";
-      renderArea.style.margin = "0";
-      renderArea.style.padding = "0";
-      renderArea.style.background = "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)";
-      
-      // Force layout calculation
-      renderArea.getBoundingClientRect();
-      
-      // Create sidebar container if it doesn't exist
-      let sidebarContainer = document.getElementById("potree_sidebar_container");
-      if (!sidebarContainer) {
-        sidebarContainer = document.createElement("div");
-        sidebarContainer.id = "potree_sidebar_container";
-        sidebarContainer.style.position = "absolute";
-        sidebarContainer.style.top = "0";
-        sidebarContainer.style.right = "0";
-        sidebarContainer.style.width = "300px";
-        sidebarContainer.style.height = "100%";
-        sidebarContainer.style.display = sidebarVisible ? "block" : "none";
-        sidebarContainer.style.background = "rgba(41, 44, 48, 0.95)";
-        sidebarContainer.style.backdropFilter = "blur(10px)";
-        sidebarContainer.style.zIndex = "10";
-        sidebarContainer.style.overflow = "auto";
-        sidebarContainer.style.borderLeft = "1px solid rgba(238, 47, 39, 0.3)";
-        container.appendChild(sidebarContainer);
-      }
-      
-      // Update ref
-      renderAreaRef.current = renderArea as HTMLDivElement;
+      // Load CSS files
+      const loadCSS = (url: string) => {
+        if (document.querySelector(`link[href="${url}"]`)) return;
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = url;
+        document.head.appendChild(link);
+      };
+
+      const cssFiles = [
+        "/potree/build/potree/potree.css",
+        "/potree/libs/jquery-ui/jquery-ui.min.css",
+        "/potree/libs/openlayers3/ol.css",
+        "/potree/libs/spectrum/spectrum.css",
+        "/potree/libs/jstree/themes/mixed/style.css",
+        "/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css",
+        "/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css"
+      ];
+
+      cssFiles.forEach(loadCSS);
       
       // Load scripts sequentially
       setLoadingProgress(45);
@@ -284,11 +208,6 @@ export default function PotreeViewer() {
       
       console.log("Potree is available, creating viewer...");
       
-      // Create Potree viewer
-      if (!renderAreaRef.current) {
-        throw new Error("Render area ref not available");
-      }
-      
       // Double-check dimensions
       console.log("Render area dimensions before viewer creation:", {
         width: renderAreaRef.current.clientWidth,
@@ -342,7 +261,38 @@ export default function PotreeViewer() {
       setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setLoading(false);
     }
-  };
+  }, [jobNumber, project]);
+
+  useEffect(() => {
+    if (!jobNumber || typeof jobNumber !== "string" || !project) return;
+
+    // Initialize Potree with a delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      initializePotree();
+    }, 1000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      // Clean up
+      if (viewerRef.current) {
+        viewerRef.current = null;
+      }
+      
+      // Remove scripts
+      document.querySelectorAll('script[src*="/potree/"]').forEach(script => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      });
+      
+      // Remove CSS
+      document.querySelectorAll('link[href*="/potree/"]').forEach(link => {
+        if (link.parentNode) {
+          link.parentNode.removeChild(link);
+        }
+      });
+    };
+  }, [jobNumber, project, initializePotree]);
 
   if (loading) {
     return (
@@ -449,6 +399,7 @@ export default function PotreeViewer() {
               height={27}
               priority
               className="h-7 w-auto"
+              style={{ width: "auto" }}
             />
           </div>
         </div>
@@ -507,7 +458,8 @@ export default function PotreeViewer() {
       </div>
 
       {/* Main Potree Container */}
-      <div
+      <div 
+        ref={containerRef}
         className="potree_container"
         style={{
           position: "fixed",
@@ -521,18 +473,21 @@ export default function PotreeViewer() {
         }}
       >
         <div 
-          id="potree_render_area"
           ref={renderAreaRef}
+          id="potree_render_area"
           style={{
             width: "100vw",
             height: "100vh",
             position: "fixed",
             top: 0,
             left: 0,
-            zIndex: 1
+            zIndex: 1,
+            margin: 0,
+            padding: 0
           }}
         ></div>
         <div 
+          ref={sidebarRef}
           id="potree_sidebar_container"
           style={{
             position: "absolute",
@@ -544,7 +499,8 @@ export default function PotreeViewer() {
             background: "rgba(41, 44, 48, 0.95)",
             backdropFilter: "blur(10px)",
             zIndex: 10,
-            overflow: "auto"
+            overflow: "auto",
+            borderLeft: "1px solid rgba(238, 47, 39, 0.3)"
           }}
         ></div>
       </div>
@@ -576,6 +532,8 @@ export default function PotreeViewer() {
           left: 0 !important;
           top: 0 !important;
           z-index: 1 !important;
+          background: linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%) !important;
+          overflow: hidden !important;
         }
         
         #potree_render_area {
