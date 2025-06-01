@@ -189,7 +189,11 @@
   
   /* Card enhancements */
   .card-hover {
-    @apply transition-all duration-200 hover:shadow-lg hover:shadow-hwc-gray/10;
+    @apply transition-all duration-200 hover:shadow-lg;
+  }
+  
+  .card-hover:hover {
+    box-shadow: 0 10px 15px -3px rgb(108 104 100 / 0.1), 0 4px 6px -2px rgb(108 104 100 / 0.05);
   }
   
   /* Button variants */
