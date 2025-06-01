@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -28,7 +29,7 @@ interface PotreeViewer {
   scene: {
     addPointCloud: (pointcloud: PointCloud) => void;
   };
-  fitToScreen: (padding: number) => void;
+  fitToScreen: (padding?: number) => void;
 }
 
 interface PotreeLoadEvent {
@@ -60,9 +61,6 @@ export default function PotreeViewer() {
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const viewerRef = useRef<PotreeViewer | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const renderAreaRef = useRef<HTMLDivElement>(null);
-  const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
@@ -95,104 +93,10 @@ export default function PotreeViewer() {
     loadProject();
   }, [jobNumber]);
 
-  // Effect to handle sidebar visibility changes
-  useEffect(() => {
-    if (sidebarRef.current) {
-      sidebarRef.current.style.display = sidebarVisible ? "block" : "none";
-    }
-  }, [sidebarVisible]);
-
   const initializePotree = useCallback(async () => {
     try {
       console.log("Starting Potree initialization...");
       setLoadingProgress(40);
-      
-      // Ensure DOM elements exist and have proper dimensions
-      if (!renderAreaRef.current) {
-        console.log("Creating render area element...");
-        const renderArea = document.createElement("div");
-        renderArea.id = "potree_render_area";
-        renderArea.style.width = "100vw";
-        renderArea.style.height = "100vh";
-        renderArea.style.position = "fixed";
-        renderArea.style.top = "0";
-        renderArea.style.left = "0";
-        renderArea.style.zIndex = "1";
-        renderArea.style.margin = "0";
-        renderArea.style.padding = "0";
-        renderArea.style.background = "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)";
-        
-        if (containerRef.current) {
-          containerRef.current.appendChild(renderArea);
-          renderAreaRef.current = renderArea;
-        } else {
-          document.body.appendChild(renderArea);
-          renderAreaRef.current = renderArea;
-        }
-      }
-
-      if (!sidebarRef.current) {
-        console.log("Creating sidebar element...");
-        const sidebar = document.createElement("div");
-        sidebar.id = "potree_sidebar_container";
-        sidebar.style.position = "absolute";
-        sidebar.style.top = "0";
-        sidebar.style.right = "0";
-        sidebar.style.width = "300px";
-        sidebar.style.height = "100%";
-        sidebar.style.display = sidebarVisible ? "block" : "none";
-        sidebar.style.background = "rgba(41, 44, 48, 0.95)";
-        sidebar.style.backdropFilter = "blur(10px)";
-        sidebar.style.zIndex = "10";
-        sidebar.style.overflow = "auto";
-        sidebar.style.borderLeft = "1px solid rgba(238, 47, 39, 0.3)";
-        
-        if (containerRef.current) {
-          containerRef.current.appendChild(sidebar);
-          sidebarRef.current = sidebar;
-        } else {
-          document.body.appendChild(sidebar);
-          sidebarRef.current = sidebar;
-        }
-      }
-
-      // Wait for elements to have dimensions
-      await new Promise<void>((resolve, reject) => {
-        let attempts = 0;
-        const maxAttempts = 50;
-        
-        const checkElement = () => {
-          attempts++;
-          console.log(`DOM element check ${attempts}/${maxAttempts}...`, {
-            element: renderAreaRef.current,
-            offsetWidth: renderAreaRef.current?.offsetWidth,
-            offsetHeight: renderAreaRef.current?.offsetHeight,
-            clientWidth: renderAreaRef.current?.clientWidth,
-            clientHeight: renderAreaRef.current?.clientHeight,
-            containerExists: !!containerRef.current
-          });
-          
-          if (renderAreaRef.current && 
-              renderAreaRef.current.offsetWidth > 0 && 
-              renderAreaRef.current.offsetHeight > 0) {
-            console.log("DOM element ready with dimensions");
-            resolve();
-          } else if (attempts >= maxAttempts) {
-            console.error("DOM element not found or has no dimensions after maximum attempts");
-            reject(new Error("Potree render area not found or not properly sized"));
-          } else {
-            // Force layout recalculation
-            if (renderAreaRef.current) {
-              renderAreaRef.current.style.width = "100vw";
-              renderAreaRef.current.style.height = "100vh";
-              renderAreaRef.current.getBoundingClientRect();
-            }
-            setTimeout(checkElement, 100);
-          }
-        };
-        
-        checkElement();
-      });
       
       // Load CSS files
       const loadCSS = (url: string) => {
@@ -259,8 +163,8 @@ export default function PotreeViewer() {
         try {
           await loadScript(scripts[i]);
           setLoadingProgress(50 + Math.floor((i / scripts.length) * 30));
-        } catch (error) {
-          console.error(`Failed to load script ${scripts[i]}:`, error);
+        } catch (err) {
+          console.error(`Failed to load script ${scripts[i]}:`, err);
         }
       }
       
@@ -287,16 +191,13 @@ export default function PotreeViewer() {
       
       console.log("Potree is available, creating viewer...");
       
-      // Double-check dimensions
-      console.log("Render area dimensions before viewer creation:", {
-        width: renderAreaRef.current.clientWidth,
-        height: renderAreaRef.current.clientHeight,
-        offsetWidth: renderAreaRef.current.offsetWidth,
-        offsetHeight: renderAreaRef.current.offsetHeight
-      });
-      
       // Create viewer
-      const viewer = new window.Potree.Viewer(renderAreaRef.current);
+      const renderArea = document.getElementById("potree_render_area");
+      if (!renderArea) {
+        throw new Error("Potree render area not found");
+      }
+      
+      const viewer = new window.Potree.Viewer(renderArea);
       viewerRef.current = viewer;
       
       // Configure viewer
@@ -317,66 +218,33 @@ export default function PotreeViewer() {
       // Try to load point cloud from multiple sources
       console.log("Loading point cloud...");
       
-      // First try the project-specific point cloud
-      const projectPointCloudPath = `/potree/pointclouds/${jobNumber}/cloud.js`;
-      const demoPointCloudPath = "/potree/examples/lion.html";
+      // Use the lion demo point cloud as fallback
       const fallbackPointCloudPath = "/potree/pointclouds/lion/cloud.js";
       
-      const tryLoadPointCloud = (path: string, name: string): Promise<boolean> => {
-        return new Promise((resolve) => {
-          window.Potree.loadPointCloud(path, name, (e: PotreeLoadEvent) => {
-            if (e.pointcloud) {
-              console.log(`Point cloud loaded successfully from ${path}`);
-              viewer.scene.addPointCloud(e.pointcloud);
-              e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
-              viewer.fitToScreen(0.5);
-              resolve(true);
-            } else {
-              console.log(`Failed to load point cloud from ${path}`);
-              resolve(false);
-            }
-          });
-        });
-      };
-      
-      // Try loading point clouds in order of preference
-      let loaded = false;
-      
-      try {
-        loaded = await tryLoadPointCloud(projectPointCloudPath, `Project ${jobNumber}`);
-      } catch (error) {
-        console.log("Project-specific point cloud not found, trying fallback...");
-      }
-      
-      if (!loaded) {
-        try {
-          loaded = await tryLoadPointCloud(fallbackPointCloudPath, "Demo PointCloud");
-        } catch (error) {
-          console.log("Demo point cloud not found");
+      window.Potree.loadPointCloud(fallbackPointCloudPath, "Demo PointCloud", (e) => {
+        if (e.pointcloud) {
+          console.log("Point cloud loaded successfully");
+          viewer.scene.addPointCloud(e.pointcloud);
+          e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
+          viewer.fitToScreen();
+          
+          setLoadingProgress(100);
+          setTimeout(() => {
+            setLoading(false);
+          }, 500);
+        } else {
+          console.error("Failed to load point cloud");
+          setError("Failed to load point cloud data");
+          setLoading(false);
         }
-      }
-      
-      if (loaded) {
-        setLoadingProgress(100);
-        // Hide loading screen
-        setTimeout(() => {
-          setLoading(false);
-        }, 500);
-      } else {
-        // Show viewer even without point cloud
-        console.log("No point cloud loaded, showing empty viewer");
-        setLoadingProgress(100);
-        setTimeout(() => {
-          setLoading(false);
-        }, 500);
-      }
+      });
       
     } catch (err) {
       console.error("Error initializing Potree:", err);
       setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setLoading(false);
     }
-  }, [jobNumber, project, sidebarVisible]);
+  }, [jobNumber, project]);
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string" || !project) return;
@@ -421,6 +289,7 @@ export default function PotreeViewer() {
               height={67}
               priority
               className="mx-auto mb-4"
+              style={{ height: "auto" }}
             />
             <h1 className="text-2xl font-semibold mb-2">
               {project?.projectName || `Project ${jobNumber}`}
@@ -456,6 +325,7 @@ export default function PotreeViewer() {
             height={67}
             priority
             className="mx-auto mb-8"
+            style={{ height: "auto" }}
           />
           <h1 className="text-2xl font-bold mb-4">Error Loading Viewer</h1>
           <p className="mb-6 text-hwc-light">{error}</p>
@@ -502,7 +372,12 @@ export default function PotreeViewer() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setSidebarVisible(!sidebarVisible)}
+              onClick={() => {
+                if (viewerRef.current) {
+                  viewerRef.current.toggleSidebar();
+                }
+                setSidebarVisible(!sidebarVisible);
+              }}
               className="text-white hover:bg-hwc-red/20"
             >
               {sidebarVisible ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -513,8 +388,8 @@ export default function PotreeViewer() {
               width={80}
               height={27}
               priority
-              className="h-7 w-auto"
-              style={{ width: "auto" }}
+              className="h-7"
+              style={{ width: "auto", height: "27px" }}
             />
           </div>
         </div>
@@ -572,92 +447,29 @@ export default function PotreeViewer() {
         </div>
       </div>
 
-      {/* Main Potree Container */}
-      <div 
-        ref={containerRef}
-        className="potree_container"
-        style={{
-          position: "fixed",
-          width: "100vw",
-          height: "100vh",
-          left: 0,
-          top: 0,
-          zIndex: 1,
-          background: "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)",
-          overflow: "hidden"
-        }}
-      >
-        <div 
-          ref={renderAreaRef}
-          id="potree_render_area"
-          style={{
-            width: "100vw",
-            height: "100vh",
-            position: "fixed",
-            top: 0,
-            left: 0,
-            zIndex: 1,
-            margin: 0,
-            padding: 0
-          }}
-        ></div>
-        <div 
-          ref={sidebarRef}
-          id="potree_sidebar_container"
-          style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: "300px",
-            height: "100%",
-            display: sidebarVisible ? "block" : "none",
-            background: "rgba(41, 44, 48, 0.95)",
-            backdropFilter: "blur(10px)",
-            zIndex: 10,
-            overflow: "auto",
-            borderLeft: "1px solid rgba(238, 47, 39, 0.3)"
-          }}
-        ></div>
+      {/* Potree Container */}
+      <div className="potree_container" style={{ position: "absolute", width: "100%", height: "100%", left: 0, top: 0 }}>
+        <div id="potree_render_area" style={{ width: "100%", height: "100%" }}></div>
+        <div id="potree_sidebar_container"></div>
       </div>
 
       {/* Custom Styles */}
       <style jsx global>{`
+        body {
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+        }
+        
         #potree_sidebar_container {
           background: rgba(41, 44, 48, 0.95) !important;
           backdrop-filter: blur(10px) !important;
           border-left: 1px solid rgba(238, 47, 39, 0.3) !important;
-          position: absolute !important;
-          top: 0 !important;
-          right: 0 !important;
-          width: 300px !important;
-          height: 100% !important;
-          z-index: 10 !important;
-          overflow: auto !important;
         }
         
         .potree_menu_content {
           background: rgba(41, 44, 48, 0.95) !important;
           color: white !important;
-        }
-        
-        .potree_container {
-          position: fixed !important;
-          width: 100vw !important;
-          height: 100vh !important;
-          left: 0 !important;
-          top: 0 !important;
-          z-index: 1 !important;
-          background: linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%) !important;
-          overflow: hidden !important;
-        }
-        
-        #potree_render_area {
-          width: 100vw !important;
-          height: 100vh !important;
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          z-index: 1 !important;
         }
         
         .ui-accordion-header {
@@ -682,10 +494,6 @@ export default function PotreeViewer() {
         
         .pv-menu-list button:hover {
           background: var(--hwc-red) !important;
-        }
-        
-        #potree_render_area canvas {
-          border-radius: 0 !important;
         }
       `}</style>
     </>
