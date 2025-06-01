@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Script from "next/script";
@@ -60,6 +60,7 @@ export default function PotreeViewer() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const renderAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
@@ -101,30 +102,33 @@ export default function PotreeViewer() {
         setLoadingProgress(40);
         console.log("Starting Potree initialization...");
         
-        // Wait for DOM element to be available with timeout
+        // Wait for DOM element to be available using ref
         await new Promise<void>((resolve, reject) => {
           let attempts = 0;
-          const maxAttempts = 100; // 5 seconds max
+          const maxAttempts = 50; // Reduced attempts since we're using ref
           
           const checkElement = () => {
-            const renderArea = document.getElementById("potree_render_area");
+            const renderArea = renderAreaRef.current || document.getElementById("potree_render_area");
             attempts++;
             
-            if (renderArea) {
-              console.log("DOM element found:", renderArea);
-              // Element exists, wait a bit more for it to be fully rendered
-              setTimeout(() => resolve(), 100);
+            if (renderArea && renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0) {
+              console.log("DOM element found and has dimensions:", {
+                width: renderArea.offsetWidth,
+                height: renderArea.offsetHeight,
+                element: renderArea
+              });
+              resolve();
             } else if (attempts >= maxAttempts) {
-              console.error("DOM element not found after maximum attempts");
-              reject(new Error("Potree render area not found after timeout"));
+              console.error("DOM element not found or has no dimensions after maximum attempts");
+              reject(new Error("Potree render area not found or not properly sized"));
             } else {
-              console.log(`DOM element not found, retrying... (${attempts}/${maxAttempts})`);
-              setTimeout(checkElement, 50);
+              console.log(`DOM element check ${attempts}/${maxAttempts}...`);
+              setTimeout(checkElement, 100);
             }
           };
           
-          // Start checking immediately
-          checkElement();
+          // Start checking after a small delay
+          setTimeout(checkElement, 100);
         });
 
         setLoadingProgress(45);
@@ -190,6 +194,9 @@ export default function PotreeViewer() {
         setLoadingProgress(70);
         console.log("All scripts loaded, checking Potree availability...");
 
+        // Wait a bit more for Potree to be fully initialized
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         // Check if Potree is available
         if (!window.Potree) {
           console.error("Potree not available on window object");
@@ -198,24 +205,13 @@ export default function PotreeViewer() {
 
         console.log("Potree is available:", window.Potree);
 
-        // Ensure the render area element exists and has dimensions
-        const renderArea = document.getElementById("potree_render_area");
+        // Get the render area element
+        const renderArea = renderAreaRef.current || document.getElementById("potree_render_area");
         if (!renderArea) {
           throw new Error("Potree render area not found");
         }
 
-        console.log("Render area found, setting up dimensions...");
-
-        // Force dimensions and ensure element is properly sized
-        renderArea.style.width = "100%";
-        renderArea.style.height = "100vh";
-        renderArea.style.position = "absolute";
-        renderArea.style.top = "0";
-        renderArea.style.left = "0";
-        
-        // Wait for the style changes to take effect
-        await new Promise(resolve => setTimeout(resolve, 200));
-
+        console.log("Render area found, final dimensions check...");
         console.log("Render area dimensions:", {
           width: renderArea.clientWidth,
           height: renderArea.clientHeight,
@@ -290,11 +286,11 @@ export default function PotreeViewer() {
       }
     };
 
-    // Start initialization after a longer delay to ensure component is fully mounted
+    // Start initialization after component is fully mounted
     const timeoutId = setTimeout(() => {
-      console.log("Starting Potree initialization timeout...");
+      console.log("Starting Potree initialization...");
       initializePotree();
-    }, 1000); // Increased delay to 1 second
+    }, 2000); // Increased delay to 2 seconds
 
     return () => {
       clearTimeout(timeoutId);
@@ -504,11 +500,13 @@ export default function PotreeViewer() {
         }}
       >
         <div
+          ref={renderAreaRef}
           id="potree_render_area"
           style={{
             width: "100%",
             height: "100%",
-            background: "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)"
+            background: "linear-gradient(135deg, #2a3f5f 0%, #1a2332 100%)",
+            position: "relative"
           }}
         >
           <div id="sidebar_logo"></div>
