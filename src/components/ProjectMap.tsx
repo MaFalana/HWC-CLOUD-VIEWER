@@ -394,6 +394,12 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
           z-index: 999 !important;
         }
 
+        /* Move Leaflet zoom controls to avoid conflict with project list */
+        .leaflet-control-zoom {
+          margin-left: 340px !important; /* Move right of the project list sidebar */
+          margin-top: 10px !important;
+        }
+
         /* Force visibility of our custom controls */
         .leaflet-container {
           z-index: 1 !important;
