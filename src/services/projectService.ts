@@ -41,7 +41,7 @@ export const projectService = {
       ...project,
       createdAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
       updatedAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
-      client: project.clientName, // Map clientName to client for backward compatibility
+      // Remove client mapping as it's not in the Project interface
     }));
   },
 
@@ -57,7 +57,7 @@ export const projectService = {
       ...data,
       createdAt: data.acquistionDate ? new Date(data.acquistionDate.split('TypeError')[0]) : new Date(),
       updatedAt: data.acquistionDate ? new Date(data.acquistionDate.split('TypeError')[0]) : new Date(),
-      client: data.clientName, // Map clientName to client for backward compatibility
+      // Remove client mapping as it's not in the Project interface
     };
   },
 
@@ -83,7 +83,7 @@ export const projectService = {
       ...data,
       createdAt: new Date(data.acquistionDate || new Date()),
       updatedAt: new Date(data.acquistionDate || new Date()),
-      client: data.clientName,
+      // Remove client mapping as it's not in the Project interface
     };
   },
 
@@ -104,7 +104,7 @@ export const projectService = {
       ...data,
       createdAt: new Date(data.acquistionDate || new Date()),
       updatedAt: new Date(data.acquistionDate || new Date()),
-      client: data.clientName,
+      // Remove client mapping as it's not in the Project interface
     };
   },
 
