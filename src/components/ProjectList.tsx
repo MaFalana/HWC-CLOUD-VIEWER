@@ -1,4 +1,3 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +54,7 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
             <TableHead>Status</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Created</TableHead>
+            <TableHead>Acquisition Date</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -102,6 +102,16 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
                 <div className="flex items-center gap-1 text-sm">
                   <Calendar className="h-3 w-3" />
                   {formatDate(project.createdAt)}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1 text-sm">
+                  <Calendar className="h-3 w-3" />
+                  {new Date(project.acquistionDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
                 </div>
               </TableCell>
               <TableCell>

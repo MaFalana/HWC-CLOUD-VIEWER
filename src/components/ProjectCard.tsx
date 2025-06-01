@@ -107,7 +107,11 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
         <div className="flex items-center gap-4 text-xs text-hwc-gray font-body">
           <div className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
-            {formatDate(project.createdAt)}
+            {new Date(project.acquistionDate).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
           </div>
           {project.clientName && (
             <div className="flex items-center gap-1">

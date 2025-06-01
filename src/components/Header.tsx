@@ -27,15 +27,22 @@ export default function Header({
     <header className="bg-hwc-dark text-white px-6 py-4">
       <div className="container flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Image
-            src="/hwc-logo-4c-mbe1obbx.png"
-            alt="HWC Engineering"
-            width={120}
-            height={40}
-            priority
-            style={{ width: "auto", height: "40px" }}
-            className="h-10"
-          />
+          <a 
+            href="https://www.hwcengineering.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="cursor-pointer"
+          >
+            <Image
+              src="/hwc-logo-4c-mbe1obbx.png"
+              alt="HWC Engineering"
+              width={120}
+              height={40}
+              priority
+              style={{ width: "auto", height: "40px" }}
+              className="h-10 hover:opacity-80 transition-opacity"
+            />
+          </a>
           <h1 className="text-xl font-semibold font-heading">Cloud Viewer</h1>
         </div>
 

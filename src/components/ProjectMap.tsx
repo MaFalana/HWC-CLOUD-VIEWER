@@ -1,8 +1,9 @@
-import { useState } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Eye, Edit, Trash2, Layers } from "lucide-react";
+import { Eye, Edit, Trash2, Layers } from "lucide-react";
 import { Project } from "@/types/project";
 import { useRouter } from "next/router";
 
@@ -12,10 +13,54 @@ interface ProjectMapProps {
   onDelete: (jobNumber: string) => void;
 }
 
+// Leaflet types
+interface LeafletMap {
+  setView: (center: [number, number], zoom: number) => LeafletMap;
+  remove: () => void;
+  fitBounds: (bounds: LeafletLatLngBounds, options?: { padding: [number, number] }) => void;
+}
+
+interface LeafletMarker {
+  on: (event: string, callback: () => void) => void;
+  remove: () => void;
+}
+
+interface LeafletLatLngBounds {
+  extend: (latlng: [number, number]) => void;
+}
+
+interface LeafletTileLayer {
+  addTo: (map: LeafletMap) => LeafletTileLayer;
+}
+
+interface LeafletDivIcon {
+  className: string;
+  html: string;
+  iconSize: [number, number];
+  iconAnchor: [number, number];
+}
+
+interface LeafletStatic {
+  map: (element: HTMLElement) => LeafletMap;
+  tileLayer: (url: string, options: { attribution: string }) => LeafletTileLayer;
+  latLngBounds: (bounds: never[]) => LeafletLatLngBounds;
+  divIcon: (options: LeafletDivIcon) => LeafletDivIcon;
+  marker: (latlng: [number, number], options: { icon: LeafletDivIcon }) => LeafletMarker;
+}
+
+declare global {
+  interface Window {
+    L: LeafletStatic;
+  }
+}
+
 export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapProps) {
   const router = useRouter();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [mapType, setMapType] = useState<"street" | "satellite">("street");
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markersRef = useRef<LeafletMarker[]>([]);
 
   const handleOpen = (jobNumber: string) => {
     router.push(`/view/${jobNumber}`);
@@ -36,15 +81,114 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
     }
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
   const projectsWithLocation = projects.filter(p => p.location && p.location.latitude && p.location.longitude);
+
+  // Initialize OpenStreetMap
+  useEffect(() => {
+    // Load OpenStreetMap CSS
+    const loadCSS = () => {
+      if (!document.querySelector('link[href*="leaflet.css"]')) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        link.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
+        link.crossOrigin = "";
+        document.head.appendChild(link);
+      }
+    };
+
+    // Load OpenStreetMap JS
+    const loadScript = (): Promise<void> => {
+      return new Promise((resolve) => {
+        if (window.L) {
+          resolve();
+          return;
+        }
+
+        if (!document.querySelector('script[src*="leaflet.js"]')) {
+          const script = document.createElement("script");
+          script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+          script.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+          script.crossOrigin = "";
+          script.onload = () => resolve();
+          document.body.appendChild(script);
+        } else {
+          resolve();
+        }
+      });
+    };
+
+    const initMap = async () => {
+      loadCSS();
+      await loadScript();
+
+      if (!mapContainerRef.current || !window.L) return;
+
+      // Clear existing map
+      if (mapRef.current) {
+        mapRef.current.remove();
+      }
+
+      // Create map
+      const map = window.L.map(mapContainerRef.current).setView([39.7684, -86.1581], 10);
+      mapRef.current = map;
+
+      // Add tile layer based on selected map type
+      if (mapType === "satellite") {
+        window.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        }).addTo(map);
+      } else {
+        window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+      }
+
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+
+      // Add markers for projects
+      const bounds = window.L.latLngBounds([]);
+      
+      projectsWithLocation.forEach(project => {
+        if (project.location && project.location.latitude && project.location.longitude) {
+          const markerIcon = window.L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div class="marker-pin ${getStatusColor(project.status).replace('bg-', '')}"></div>`,
+            iconSize: [30, 42],
+            iconAnchor: [15, 42]
+          });
+
+          const marker = window.L.marker(
+            [project.location.latitude, project.location.longitude],
+            { icon: markerIcon }
+          );
+
+          marker.on('click', () => {
+            setSelectedProject(project);
+          });
+
+          markersRef.current.push(marker);
+          bounds.extend([project.location.latitude, project.location.longitude]);
+        }
+      });
+
+      // Fit map to bounds if there are markers
+      if (markersRef.current.length > 0) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+    };
+
+    initMap();
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [projects, mapType, projectsWithLocation]);
 
   return (
     <div className="relative h-[calc(100vh-200px)] bg-gray-100 rounded-lg overflow-hidden">
@@ -68,36 +212,11 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
         </Button>
       </div>
 
-      {/* Placeholder Map Background */}
-      <div className="w-full h-full bg-gradient-to-br from-green-100 to-blue-100 relative">
-        <div className="absolute inset-0 opacity-20">
-          <svg width="100%" height="100%" className="text-gray-400">
-            <defs>
-              <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="currentColor" strokeWidth="1"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
-        
-        {/* Project Markers */}
-        {projectsWithLocation.map((project, index) => (
-          <div
-            key={project.jobNumber}
-            className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: `${20 + (index % 5) * 15}%`,
-              top: `${30 + Math.floor(index / 5) * 20}%`,
-            }}
-            onClick={() => setSelectedProject(project)}
-          >
-            <div className={`w-8 h-8 rounded-full ${getStatusColor(project.status)} flex items-center justify-center shadow-lg hover:scale-110 transition-transform`}>
-              <MapPin className="h-4 w-4 text-white" />
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* OpenStreetMap Container */}
+      <div 
+        ref={mapContainerRef} 
+        className="w-full h-full"
+      />
 
       {/* Project List Sidebar */}
       <div className="absolute left-4 top-4 bottom-4 w-80 bg-white rounded-lg shadow-lg overflow-hidden">
@@ -107,7 +226,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
             Projects ({projectsWithLocation.length})
           </h3>
         </div>
-        <div className="overflow-y-auto h-full">
+        <div className="overflow-y-auto h-[calc(100%-56px)]">
           {projectsWithLocation.map((project) => (
             <div
               key={project.jobNumber}
@@ -184,7 +303,11 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
               </div>
               
               <div className="text-xs text-gray-500 mb-3">
-                Created: {formatDate(selectedProject.createdAt)}
+                Acquired: {new Date(selectedProject.acquistionDate).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
               </div>
               
               <div className="flex gap-2">
@@ -216,6 +339,47 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
           </Card>
         </div>
       )}
+
+      {/* Custom Marker Styles */}
+      <style jsx global>{`
+        .marker-pin {
+          width: 30px;
+          height: 30px;
+          border-radius: 50% 50% 50% 0;
+          background: #c30b82;
+          position: absolute;
+          transform: rotate(-45deg);
+          left: 50%;
+          top: 50%;
+          margin: -15px 0 0 -15px;
+        }
+
+        .marker-pin::after {
+          content: '';
+          width: 24px;
+          height: 24px;
+          margin: 3px 0 0 3px;
+          background: #fff;
+          position: absolute;
+          border-radius: 50%;
+        }
+
+        .green-500 {
+          background: #10b981;
+        }
+
+        .blue-500 {
+          background: #3b82f6;
+        }
+
+        .yellow-500 {
+          background: #eab308;
+        }
+
+        .gray-500 {
+          background: #6b7280;
+        }
+      `}</style>
     </div>
   );
 }

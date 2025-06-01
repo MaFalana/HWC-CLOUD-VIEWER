@@ -409,9 +409,9 @@ export default function PotreeViewer() {
   return (
     <>
       <Head>
-        <title>{project?.projectName || `Project ${jobNumber}`} - HWC Cloud Viewer</title>
+        <title>{project?.projectName || `Project ${jobNumber}`} - HWC Engineering Cloud Viewer</title>
         <meta name="description" content="Point cloud viewer" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/HWC-angle-logo-16px.png" />
       </Head>
 
       {/* Custom Header */}
@@ -447,15 +447,22 @@ export default function PotreeViewer() {
             >
               {sidebarVisible ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </Button>
-            <Image
-              src="/hwc-logo-4c-mbe1obbx.png"
-              alt="HWC Engineering"
-              width={80}
-              height={27}
-              priority
-              className="h-7"
-              style={{ width: "auto", height: "27px" }}
-            />
+            <a 
+              href="https://www.hwcengineering.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="cursor-pointer"
+            >
+              <Image
+                src="/hwc-logo-4c-mbe1obbx.png"
+                alt="HWC Engineering"
+                width={80}
+                height={27}
+                priority
+                className="h-7 hover:opacity-80 transition-opacity"
+                style={{ width: "auto", height: "27px" }}
+              />
+            </a>
           </div>
         </div>
       </div>

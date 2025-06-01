@@ -159,6 +159,18 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
               />
             </div>
             <div>
+              <Label htmlFor="acquistionDate">Acquisition Date</Label>
+              <Input
+                id="acquistionDate"
+                type="date"
+                value={formData.acquistionDate ? new Date(formData.acquistionDate).toISOString().split('T')[0] : ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, acquistionDate: e.target.value ? new Date(e.target.value).toISOString() : "" }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            <div>
               <Label htmlFor="projectType">Project Type</Label>
               <Select
                 value={formData.projectType}
