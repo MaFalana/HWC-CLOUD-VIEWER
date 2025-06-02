@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -179,11 +180,6 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
       option.name.toLowerCase().includes(search) ||
       (option.description && option.description.toLowerCase().includes(search))
     );
-  };
-
-  // Close dropdown when clicking outside
-  const handleClickOutside = (setIsOpen: (open: boolean) => void) => {
-    return () => setIsOpen(false);
   };
 
   const renderCRSSelect = (
