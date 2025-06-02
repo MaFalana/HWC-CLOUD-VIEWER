@@ -56,13 +56,13 @@ declare global {
 }
 
 // Define a type for project data
-interface ProjectData extends Project {
+interface ProjectData extends Omit<Project, 'location'> {
   location?: {
     latitude: number;
     longitude: number;
     address?: string;
-    source?: string;
-    confidence?: string;
+    source?: 'potree_metadata' | 'potree_bounds' | 'crs_derived' | 'manual' | 'fallback';
+    confidence?: 'high' | 'medium' | 'low';
   };
 }
 
@@ -93,7 +93,7 @@ export default function PotreeViewer() {
         setLoadingProgress(10);
         const potreeProjectData = await potreeLocationService.getProjectInfo(jobNumber);
         
-        let projectData: ProjectData = {
+        let projectData: Partial<Project> = {
           jobNumber: jobNumber as string,
           projectName: `Project ${jobNumber}`,
           clientName: "Demo Client",
@@ -107,8 +107,8 @@ export default function PotreeViewer() {
             latitude: 39.7684,
             longitude: -86.1581,
             address: "Indianapolis, IN",
-            source: "fallback",
-            confidence: "low"
+            source: "fallback" as const,
+            confidence: "low" as const
           }
         };
 
@@ -118,8 +118,8 @@ export default function PotreeViewer() {
           console.log("Using Potree project data:", projectData);
         }
 
-        setProject(projectData);
-        setProjectName(projectData.projectName);
+        setProject(projectData as Project);
+        setProjectName(projectData.projectName || "");
         setLoadingProgress(15);
         
         // Create render area element if it doesn't exist
@@ -254,7 +254,7 @@ export default function PotreeViewer() {
           console.log("No project info found, using mock data");
         }
         
-        setProject(projectData);
+        setProject(projectData as Project);
         setLoadingProgress(85);
         
         // Create the Potree viewer

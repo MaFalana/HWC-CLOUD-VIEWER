@@ -67,8 +67,10 @@ export const potreeLocationService = {
         if (metadataResponse.ok) {
           metadata = await metadataResponse.json();
           console.log("Found Potree metadata.json:", metadata);
+        } else {
+          console.log("No metadata.json found or not accessible, trying cloud.js");
         }
-      } catch (error) {
+      } catch (_) {
         console.log("No metadata.json found, trying cloud.js");
       }
 
@@ -115,9 +117,13 @@ export const potreeLocationService = {
                   uz: cloudData.tightBoundingBox.max[2]
                 };
               }
+            } else {
+              console.log("Could not parse cloud.js content");
             }
+          } else {
+            console.log("No cloud.js found or not accessible");
           }
-        } catch (error) {
+        } catch (_) {
           console.log("No cloud.js found either");
         }
       }
@@ -174,21 +180,21 @@ export const potreeLocationService = {
         return {
           latitude: centerY,
           longitude: centerX,
-          source: "potree_bounds",
-          confidence: "medium"
+          source: "potree_bounds" as const,
+          confidence: "medium" as const
         };
       }
 
       // Check if coordinates look like projected coordinates that need conversion
       if (this.isProjectedCoordinates(centerX, centerY)) {
         // Try to convert using known Indiana projections
-        const converted = this.convertProjectedToGeographic(centerX, centerY, metadata.projection);
+        const converted = this.convertProjectedToGeographic(centerX, centerY);
         if (converted) {
           return {
             latitude: converted.lat,
             longitude: converted.lon,
-            source: "potree_bounds",
-            confidence: "medium"
+            source: "potree_bounds" as const,
+            confidence: "medium" as const
           };
         }
       }
@@ -198,12 +204,12 @@ export const potreeLocationService = {
       return {
         latitude: centerY,
         longitude: centerX,
-        source: "potree_bounds",
-        confidence: "low"
+        source: "potree_bounds" as const,
+        confidence: "low" as const
       };
 
-    } catch (error) {
-      console.error("Error extracting location from bounds:", error);
+    } catch (_) {
+      console.error("Error extracting location from bounds");
       return null;
     }
   },
@@ -237,8 +243,8 @@ export const potreeLocationService = {
       }
 
       return null;
-    } catch (error) {
-      console.error("Error extracting CRS from metadata:", error);
+    } catch (_) {
+      console.error("Error extracting CRS from metadata");
       return null;
     }
   },
@@ -271,7 +277,7 @@ export const potreeLocationService = {
    * Convert projected coordinates to geographic coordinates
    * This is a simplified conversion - in production you'd use proj4js
    */
-  convertProjectedToGeographic(x: number, y: number, projection?: string): { lat: number; lon: number } | null {
+  convertProjectedToGeographic(x: number, y: number): { lat: number; lon: number } | null {
     try {
       // This is a very rough approximation for Indiana State Plane coordinates
       // In a real implementation, you'd use proj4js with proper projection definitions
@@ -297,8 +303,8 @@ export const potreeLocationService = {
       }
       
       return null;
-    } catch (error) {
-      console.error("Error converting projected coordinates:", error);
+    } catch (_) {
+      console.error("Error converting projected coordinates");
       return null;
     }
   },
@@ -326,8 +332,8 @@ export const potreeLocationService = {
         updatedAt: new Date()
       };
 
-    } catch (error) {
-      console.error("Error getting project info:", error);
+    } catch (_) {
+      console.error("Error getting project info");
       return null;
     }
   }

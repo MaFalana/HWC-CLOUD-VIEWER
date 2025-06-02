@@ -1,0 +1,29 @@
+
+{
+  "version": "1.8",
+  "octreeDir": "data",
+  "points": 5000000,
+  "boundingBox": {
+    "lx": -86.1581,
+    "ly": 39.7684,
+    "lz": 200.0,
+    "ux": -86.1480,
+    "uy": 39.7780,
+    "uz": 250.0
+  },
+  "tightBoundingBox": {
+    "lx": -86.1581,
+    "ly": 39.7684,
+    "lz": 200.0,
+    "ux": -86.1480,
+    "uy": 39.7780,
+    "uz": 250.0
+  },
+  "pointAttributes": ["POSITION_CARTESIAN", "COLOR_PACKED", "INTENSITY"],
+  "spacing": 1.0,
+  "scale": [0.001, 0.001, 0.001],
+  "hierarchyStepSize": 5,
+  "projection": "EPSG:4326",
+  "coordinateSystem": "WGS84",
+  "crs": "EPSG:4326"
+}
