@@ -399,25 +399,96 @@ export const arcgisService = {
    */
   async getHorizontalCRS(): Promise<CRSOption[]> {
     try {
-      // Common horizontal CRS codes that are widely used
+      // Comprehensive list of Indiana coordinate systems and common CRS
       const commonHorizontalCodes = [
+        // Indiana State Plane Zones
+        2965, // NAD83 / Indiana East (ftUS)
+        2966, // NAD83 / Indiana West (ftUS)
+        6342, // NAD83(2011) / Indiana East (ftUS)
+        6343, // NAD83(2011) / Indiana West (ftUS)
+        
+        // Indiana County Coordinate Systems (some examples)
+        3532, // NAD83 / Indiana East (ftUS) - alternative
+        3533, // NAD83 / Indiana West (ftUS) - alternative
+        
+        // Common Geographic Systems
         4326, // WGS84
         4269, // NAD83
         4267, // NAD27
-        3857, // Web Mercator
-        2965, // NAD83 Indiana East (ftUS)
-        2966, // NAD83 Indiana West (ftUS)
+        
+        // UTM Zones covering Indiana
         26916, // UTM Zone 16N NAD83
         26917, // UTM Zone 17N NAD83
         32616, // UTM Zone 16N WGS84
         32617, // UTM Zone 17N WGS84
-        6342, // NAD83(2011) Indiana East (ftUS)
-        6343, // NAD83(2011) Indiana West (ftUS)
+        
+        // Web Mercator
+        3857, // Web Mercator
+        
+        // Additional Indiana systems
+        6458, // NAD83(2011) / Indiana East
+        6459, // NAD83(2011) / Indiana East (ftUS)
+        6460, // NAD83(2011) / Indiana West
+        6461, // NAD83(2011) / Indiana West (ftUS)
       ];
 
       const horizontalSystems: CRSOption[] = [];
 
+      // Add hardcoded Indiana systems first to ensure they're available
+      const indianaSystems = [
+        {
+          code: "EPSG:6458",
+          name: "NAD83(2011) / Indiana East",
+          type: "horizontal" as const,
+          recommended: false,
+          description: "Indiana State Plane East Zone (meters)"
+        },
+        {
+          code: "EPSG:6459",
+          name: "NAD83(2011) / Indiana East (ftUS)",
+          type: "horizontal" as const,
+          recommended: true,
+          description: "Indiana State Plane East Zone (US Survey Feet)"
+        },
+        {
+          code: "EPSG:6460",
+          name: "NAD83(2011) / Indiana West",
+          type: "horizontal" as const,
+          recommended: false,
+          description: "Indiana State Plane West Zone (meters)"
+        },
+        {
+          code: "EPSG:6461",
+          name: "NAD83(2011) / Indiana West (ftUS)",
+          type: "horizontal" as const,
+          recommended: true,
+          description: "Indiana State Plane West Zone (US Survey Feet)"
+        },
+        {
+          code: "EPSG:2965",
+          name: "NAD83 / Indiana East (ftUS)",
+          type: "horizontal" as const,
+          recommended: true,
+          description: "Indiana State Plane East Zone (US Survey Feet)"
+        },
+        {
+          code: "EPSG:2966",
+          name: "NAD83 / Indiana West (ftUS)",
+          type: "horizontal" as const,
+          recommended: true,
+          description: "Indiana State Plane West Zone (US Survey Feet)"
+        }
+      ];
+
+      horizontalSystems.push(...indianaSystems);
+
+      // Try to fetch details for other systems
       for (const code of commonHorizontalCodes) {
+        // Skip if we already added this system
+        if (horizontalSystems.some(sys => sys.code === `EPSG:${code}`)) {
+          continue;
+        }
+
         try {
           const srInfo = await this.getSpatialReferenceDetails(code);
           if (srInfo) {
@@ -431,13 +502,22 @@ export const arcgisService = {
           }
         } catch (error) {
           console.warn(`Failed to get details for EPSG:${code}:`, error);
+          // Add basic fallback
+          horizontalSystems.push({
+            code: `EPSG:${code}`,
+            name: `EPSG:${code}`,
+            type: "horizontal",
+            recommended: this.isRecommendedHorizontal(code),
+            description: undefined
+          });
         }
       }
 
       return horizontalSystems;
     } catch (error) {
       console.error('Error getting horizontal CRS:', error);
-      return [];
+      // Return fallback Indiana systems
+      return this.getFallbackCRSOptions().horizontal;
     }
   },
 
@@ -546,7 +626,7 @@ export const arcgisService = {
           wkid: epsgCode,
           latestWkid: epsgCode,
           name: data.name || `EPSG:${epsgCode}`,
-          description: data.area || data.scope
+          description: data.area || data.scope || data.remarks
         };
       }
 
@@ -554,14 +634,16 @@ export const arcgisService = {
       return {
         wkid: epsgCode,
         latestWkid: epsgCode,
-        name: `EPSG:${epsgCode}`
+        name: this.getKnownCRSName(epsgCode) || `EPSG:${epsgCode}`,
+        description: this.getKnownCRSDescription(epsgCode)
       };
     } catch (error) {
       console.warn(`Failed to get details for EPSG:${epsgCode}:`, error);
       return {
         wkid: epsgCode,
         latestWkid: epsgCode,
-        name: `EPSG:${epsgCode}`
+        name: this.getKnownCRSName(epsgCode) || `EPSG:${epsgCode}`,
+        description: this.getKnownCRSDescription(epsgCode)
       };
     }
   },
@@ -647,5 +729,55 @@ export const arcgisService = {
         }
       ]
     };
+  },
+
+  /**
+   * Get known CRS names for common systems
+   */
+  getKnownCRSName(epsgCode: number): string | undefined {
+    const knownNames: Record<number, string> = {
+      4326: "WGS84",
+      4269: "NAD83",
+      4267: "NAD27",
+      3857: "WGS 84 / Pseudo-Mercator",
+      2965: "NAD83 / Indiana East (ftUS)",
+      2966: "NAD83 / Indiana West (ftUS)",
+      6342: "NAD83(2011) / Indiana East (ftUS)",
+      6343: "NAD83(2011) / Indiana West (ftUS)",
+      6458: "NAD83(2011) / Indiana East",
+      6459: "NAD83(2011) / Indiana East (ftUS)",
+      6460: "NAD83(2011) / Indiana West",
+      6461: "NAD83(2011) / Indiana West (ftUS)",
+      26916: "NAD83 / UTM zone 16N",
+      26917: "NAD83 / UTM zone 17N",
+      32616: "WGS 84 / UTM zone 16N",
+      32617: "WGS 84 / UTM zone 17N"
+    };
+    return knownNames[epsgCode];
+  },
+
+  /**
+   * Get known CRS descriptions for common systems
+   */
+  getKnownCRSDescription(epsgCode: number): string | undefined {
+    const knownDescriptions: Record<number, string> = {
+      4326: "World Geodetic System 1984",
+      4269: "North American Datum 1983",
+      4267: "North American Datum 1927",
+      3857: "Web Mercator projection",
+      2965: "Indiana State Plane East Zone in US Survey Feet",
+      2966: "Indiana State Plane West Zone in US Survey Feet",
+      6342: "Indiana State Plane East Zone in US Survey Feet (NAD83 2011)",
+      6343: "Indiana State Plane West Zone in US Survey Feet (NAD83 2011)",
+      6458: "Indiana State Plane East Zone in meters (NAD83 2011)",
+      6459: "Indiana State Plane East Zone in US Survey Feet (NAD83 2011)",
+      6460: "Indiana State Plane West Zone in meters (NAD83 2011)",
+      6461: "Indiana State Plane West Zone in US Survey Feet (NAD83 2011)",
+      26916: "UTM Zone 16 North (NAD83)",
+      26917: "UTM Zone 17 North (NAD83)",
+      32616: "UTM Zone 16 North (WGS84)",
+      32617: "UTM Zone 17 North (WGS84)"
+    };
+    return knownDescriptions[epsgCode];
   },
 };
