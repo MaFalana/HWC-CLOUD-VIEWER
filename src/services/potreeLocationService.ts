@@ -1,5 +1,7 @@
 import { Project } from "@/types/project";
 import { sourcesJsonService } from "@/services/sourcesJsonService";
+import { worldFileService } from "@/services/worldFileService";
+import { projFileService } from "@/services/projFileService";
 
 interface PotreeMetadata {
   version: string;
@@ -60,7 +62,29 @@ export const potreeLocationService = {
     try {
       const baseUrl = "http://localhost:4400/pointclouds/";
       
-      // Try to fetch sources.json first (highest priority)
+      // Try to fetch world file first (highest priority)
+      try {
+        const worldFileData = await worldFileService.extractLocationFromWorldFile(jobNumber);
+        if (worldFileData) {
+          console.log("Found world file data, using for location");
+          return worldFileData;
+        }
+      } catch (error) {
+        console.log("No world file found or error processing it:", error instanceof Error ? error.message : "Unknown error");
+      }
+      
+      // Try to fetch .prj file next
+      try {
+        const projFileData = await projFileService.extractLocationFromProjFile(jobNumber);
+        if (projFileData) {
+          console.log("Found .prj file data, using for location");
+          return projFileData;
+        }
+      } catch (error) {
+        console.log("No .prj file found or error processing it:", error instanceof Error ? error.message : "Unknown error");
+      }
+      
+      // Try to fetch sources.json next
       try {
         const sourcesResponse = await fetch(`${baseUrl}${jobNumber}/sources.json`);
         if (sourcesResponse.ok) {
@@ -293,24 +317,17 @@ export const potreeLocationService = {
       // This is a very rough approximation for Indiana State Plane coordinates
       // In a real implementation, you'd use proj4js with proper projection definitions
       
-      // Rough conversion for Indiana West State Plane (EPSG:2965)
-      // These are approximate values for demonstration
-      const originLat = 37.5; // Approximate latitude of origin
-      const originLon = -87.08333333; // Approximate longitude of origin
-      const falseEasting = 900000; // False easting in feet
-      const falseNorthing = 0; // False northing in feet
-      
-      // Very rough conversion (not accurate, just for demonstration)
-      const deltaX = x - falseEasting;
-      const deltaY = y - falseNorthing;
-      
-      // Convert feet to degrees (very rough approximation)
-      const lat = originLat + (deltaY / 364000); // Rough feet to degrees conversion
-      const lon = originLon + (deltaX / 288000); // Rough feet to degrees conversion
-      
-      // Check if result is reasonable for Indiana
-      if (lat >= 37.5 && lat <= 41.8 && lon >= -88.1 && lon <= -84.8) {
-        return { lat, lon };
+      // Check if coordinates are in the range for Indiana State Plane
+      if (x >= 3000000 && x <= 4000000 && y >= 1000000 && y <= 2000000) {
+        // Very rough conversion for Indiana coordinates
+        // These are approximate values for demonstration
+        const lat = 39.76 + ((y - 1725000) / 100000) * 0.9;
+        const lon = -86.15 + ((x - 3155000) / 100000) * 1.1;
+        
+        // Check if result is reasonable for Indiana
+        if (lat >= 37.5 && lat <= 41.8 && lon >= -88.1 && lon <= -84.8) {
+          return { lat, lon };
+        }
       }
       
       return null;

@@ -1,4 +1,3 @@
-
 import { Project } from "@/types/project";
 
 interface SourcesBounds {
@@ -191,7 +190,8 @@ export const sourcesJsonService = {
       // Check if coordinates are in the range for Indiana State Plane
       if (x >= 3000000 && x <= 4000000 && y >= 1000000 && y <= 2000000) {
         // Very rough conversion for Indiana coordinates
-        // These are approximate values for demonstration
+        // These are approximate values specifically for the example data
+        // Calibrated based on the known location of the Peabody West 1 project
         const lat = 39.76 + ((y - 1725000) / 100000) * 0.9;
         const lon = -86.15 + ((x - 3155000) / 100000) * 1.1;
         

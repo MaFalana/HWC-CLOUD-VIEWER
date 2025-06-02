@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -7,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Menu, X, MapPin, Info } from "lucide-react";
 import { Project } from "@/types/project";
 import { potreeLocationService } from "@/services/potreeLocationService";
-import { sourcesJsonService } from "@/services/sourcesJsonService";
 
 // Define types for Potree
 interface PointCloudMaterial {
@@ -54,17 +54,6 @@ declare global {
   interface Window {
     Potree: PotreeStatic;
   }
-}
-
-// Define a type for project data
-interface ProjectData extends Omit<Project, 'location'> {
-  location?: {
-    latitude: number;
-    longitude: number;
-    address?: string;
-    source?: 'potree_metadata' | 'potree_bounds' | 'crs_derived' | 'manual' | 'fallback';
-    confidence?: 'high' | 'medium' | 'low';
-  };
 }
 
 export default function PotreeViewer() {
@@ -251,8 +240,8 @@ export default function PotreeViewer() {
             setProjectName(data.projectName);
             projectData = { ...projectData, ...data };
           }
-        } catch {
-          console.log("No project info found, using mock data");
+        } catch (error) {
+          console.log("No project info found, using mock data", error);
         }
         
         setProject(projectData as Project);
@@ -271,7 +260,7 @@ export default function PotreeViewer() {
         viewer.setEDLEnabled(true);
         viewer.setFOV(60);
         viewer.setPointBudget(1_000_000);
-        viewer.setDescription(projectData.projectName);
+        viewer.setDescription(projectData.projectName || "");
         
         viewer.loadGUI(() => {
           viewer.setLanguage("en");
@@ -404,6 +393,23 @@ export default function PotreeViewer() {
       clearTimeout(timeoutId);
     };
   }, [jobNumber, mapType]);
+
+  // Effect to update map type when it changes
+  useEffect(() => {
+    if (!loading && project && window.Potree) {
+      try {
+        const renderAreaElement = document.getElementById("potree_render_area");
+        if (renderAreaElement) {
+          const viewer = new window.Potree.Viewer(renderAreaElement);
+          if (viewer.mapView && typeof viewer.mapView.setMapType === "function") {
+            viewer.mapView.setMapType(mapType);
+          }
+        }
+      } catch (error) {
+        console.log("Error updating map type:", error);
+      }
+    }
+  }, [mapType, loading, project]);
 
   if (loading) {
     return (
