@@ -157,29 +157,33 @@ export const projectService = {
         throw new Error('Project name is required');
       }
 
+      // Get the existing project to preserve data that shouldn't be overwritten
+      const existingProject = await this.getProject(jobNumber);
+
       // Update project with CRS data
       const updatedProject: Project = {
+        ...existingProject,
         jobNumber: jobNumber,
         projectName: projectData.projectName,
-        description: projectData.description || "",
-        clientName: projectData.clientName || "",
-        acquistionDate: projectData.acquistionDate || new Date().toISOString(),
-        projectType: projectData.projectType || "survey",
-        status: "active",
-        createdAt: new Date(), // In real implementation, preserve original createdAt
+        description: projectData.description || existingProject.description || "",
+        clientName: projectData.clientName || existingProject.clientName || "",
+        acquistionDate: projectData.acquistionDate || existingProject.acquistionDate || new Date().toISOString(),
+        projectType: projectData.projectType || existingProject.projectType || "survey",
+        status: existingProject.status || "active",
+        createdAt: existingProject.createdAt || new Date(),
         updatedAt: new Date(),
-        location: projectData.location || {
+        location: projectData.location || existingProject.location || {
           latitude: 0,
           longitude: 0,
           address: ""
         },
-        crs: projectData.crs || {
+        crs: projectData.crs || existingProject.crs || {
           horizontal: "",
           vertical: "",
           geoidModel: ""
         },
-        tags: projectData.tags || [],
-        thumbnailUrl: projectData.thumbnailUrl
+        tags: projectData.tags || existingProject.tags || [],
+        thumbnailUrl: projectData.thumbnailUrl || existingProject.thumbnailUrl
       };
 
       // Log the CRS data being sent

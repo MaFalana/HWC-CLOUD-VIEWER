@@ -119,6 +119,22 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         projectType: project.projectType || "",
         tags: project.tags || [],
       });
+      
+      // Set search fields to empty to ensure dropdowns show all options
+      setHorizontalSearch("");
+      setVerticalSearch("");
+      setGeoidSearch("");
+      
+      // Open dropdowns when editing to make selection more obvious
+      if (project.crs?.horizontal) {
+        setHorizontalOpen(true);
+      }
+      if (project.crs?.vertical) {
+        setVerticalOpen(true);
+      }
+      if (project.crs?.geoidModel) {
+        setGeoidOpen(true);
+      }
     } else if (mode === "create") {
       setFormData({
         jobNumber: "",

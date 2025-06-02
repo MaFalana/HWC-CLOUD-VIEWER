@@ -87,27 +87,31 @@ export interface CRSOption {
 }
 
 // Type guard function to validate parsed PRJ data
-export function isValidParsedPrj(obj: any): obj is ParsedPRJ {
+export function isValidParsedPrj(obj: unknown): obj is ParsedPRJ {
+  if (!obj || typeof obj !== "object") return false;
+  
+  const candidate = obj as Record<string, unknown>;
   return (
-    obj &&
-    typeof obj.projcs === "string" &&
-    typeof obj.geogcs === "string" &&
-    typeof obj.datum === "string" &&
-    typeof obj.spheroid === "string" &&
-    typeof obj.projection === "string" &&
-    typeof obj.parameters === "object" &&
-    typeof obj.unit === "string" &&
-    typeof obj.authority === "string"
+    typeof candidate.projcs === "string" &&
+    typeof candidate.geogcs === "string" &&
+    typeof candidate.datum === "string" &&
+    typeof candidate.spheroid === "string" &&
+    typeof candidate.projection === "string" &&
+    typeof candidate.parameters === "object" && candidate.parameters !== null &&
+    typeof candidate.unit === "string" &&
+    typeof candidate.authority === "string"
   );
 }
 
 // Type guard function to validate parsed world file data
-export function isValidParsedWorldFile(obj: any): obj is ParsedWorldFile {
+export function isValidParsedWorldFile(obj: unknown): obj is ParsedWorldFile {
+  if (!obj || typeof obj !== "object") return false;
+  
+  const candidate = obj as Record<string, unknown>;
   return (
-    obj &&
-    typeof obj.upperLeftX === "number" &&
-    typeof obj.upperLeftY === "number" &&
-    typeof obj.pixelSizeX === "number" &&
-    typeof obj.pixelSizeY === "number"
+    typeof candidate.upperLeftX === "number" &&
+    typeof candidate.upperLeftY === "number" &&
+    typeof candidate.pixelSizeX === "number" &&
+    typeof candidate.pixelSizeY === "number"
   );
 }
