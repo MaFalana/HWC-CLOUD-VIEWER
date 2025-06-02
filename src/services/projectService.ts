@@ -45,16 +45,20 @@ export const projectService = {
     }
     const data = await response.json() as RawProjectData[];
     
-    // Transform the data without trying to fetch .proj files for each project
+    // Transform the data and ensure CRS is properly handled
     const projects = data.map((project: RawProjectData) => {
       const transformedProject: Project = {
         ...project,
         createdAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
         updatedAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
+        // Ensure CRS is properly mapped
+        crs: project.crs || {
+          horizontal: "",
+          vertical: "",
+          geoidModel: ""
+        }
       };
 
-      // Skip file processing entirely if CRS is already set via the UI
-      // This prevents the projection errors you're experiencing
       console.log(`Project ${project.jobNumber} loaded with CRS:`, transformedProject.crs);
       
       return transformedProject;
@@ -70,14 +74,19 @@ export const projectService = {
     }
     const data = await response.json() as RawProjectData;
     
-    // Transform the data to ensure proper date handling
+    // Transform the data to ensure proper date handling and CRS mapping
     const project: Project = {
       ...data,
       createdAt: data.acquistionDate ? new Date(data.acquistionDate.split('TypeError')[0]) : new Date(),
       updatedAt: data.acquistionDate ? new Date(data.acquistionDate.split('TypeError')[0]) : new Date(),
+      // Ensure CRS is properly mapped
+      crs: data.crs || {
+        horizontal: "",
+        vertical: "",
+        geoidModel: ""
+      }
     };
 
-    // Skip file processing if CRS is already set
     console.log(`Project ${jobNumber} loaded with CRS:`, project.crs);
 
     return project;

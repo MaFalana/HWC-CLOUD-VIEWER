@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -182,6 +181,11 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     );
   };
 
+  // Close dropdown when clicking outside
+  const handleClickOutside = (setIsOpen: (open: boolean) => void) => {
+    return () => setIsOpen(false);
+  };
+
   const renderCRSSelect = (
     label: string,
     options: CRSOption[],
@@ -208,10 +212,10 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
               value={searchValue}
               onChange={(e) => {
                 setSearchValue(e.target.value);
-                setIsOpen(true);
+                if (!isOpen) setIsOpen(true);
               }}
+              onFocus={() => setIsOpen(true)}
               className="pl-10"
-              onClick={() => setIsOpen(true)}
             />
           </div>
           <Button
@@ -219,11 +223,11 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             variant="outline"
             onClick={() => {
               setSearchValue("");
-              setIsOpen(true);
+              setIsOpen(!isOpen);
             }}
             className="px-3"
           >
-            Clear
+            {isOpen ? "Close" : "Show All"}
           </Button>
         </div>
 
@@ -253,7 +257,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
         {/* Options List */}
         {isOpen && (
-          <div className="border rounded-md max-h-[300px] overflow-y-auto">
+          <div className="border rounded-md max-h-[300px] overflow-y-auto bg-white shadow-lg">
             {crsLoading ? (
               <div className="flex items-center justify-center p-4">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -267,12 +271,13 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
               filteredOptions.map((option) => (
                 <div
                   key={option.code}
-                  className={`flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${
-                    value === option.code ? "bg-blue-50" : ""
+                  className={`flex items-start gap-3 p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                    value === option.code ? "bg-blue-100" : ""
                   }`}
                   onClick={() => {
                     onChange(option.code);
                     setIsOpen(false);
+                    setSearchValue("");
                   }}
                 >
                   <Check
