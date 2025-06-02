@@ -6,9 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X, Search } from "lucide-react";
-import { Project, CreateProjectData } from "@/types/project";
-import { horizontalCRSOptions, verticalCRSOptions, geoidOptions } from "@/data/crsOptions";
+import { X, Search, Loader2 } from "lucide-react";
+import { Project, CreateProjectData, CRSOption } from "@/types/project";
+import { arcgisService } from "@/services/arcgisService";
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -43,6 +43,65 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   const [verticalSearch, setVerticalSearch] = useState("");
   const [geoidSearch, setGeoidSearch] = useState("");
 
+  // CRS options from ArcGIS API
+  const [crsOptions, setCrsOptions] = useState<{
+    horizontal: CRSOption[];
+    vertical: CRSOption[];
+    geoid: CRSOption[];
+  }>({
+    horizontal: [],
+    vertical: [],
+    geoid: []
+  });
+
+  const [crsLoading, setCrsLoading] = useState(false);
+  const [crsError, setCrsError] = useState<string | null>(null);
+
+  // Load CRS options when modal opens
+  useEffect(() => {
+    if (isOpen && crsOptions.horizontal.length === 0) {
+      loadCRSOptions();
+    }
+  }, [isOpen]);
+
+  // Set default CRS values for new projects
+  useEffect(() => {
+    if (mode === "create" && crsOptions.horizontal.length > 0 && !formData.crs?.horizontal) {
+      // Set recommended defaults: Indiana East (ftUS) + NAVD88 (ftUS) + GEOID18
+      const defaultHorizontal = crsOptions.horizontal.find(opt => opt.recommended)?.code || crsOptions.horizontal[0]?.code;
+      const defaultVertical = crsOptions.vertical.find(opt => opt.recommended)?.code || crsOptions.vertical[0]?.code;
+      const defaultGeoid = crsOptions.geoid.find(opt => opt.recommended)?.code || crsOptions.geoid[0]?.code;
+
+      setFormData(prev => ({
+        ...prev,
+        crs: {
+          horizontal: defaultHorizontal || "",
+          vertical: defaultVertical || "",
+          geoidModel: defaultGeoid || ""
+        }
+      }));
+    }
+  }, [mode, crsOptions, formData.crs?.horizontal]);
+
+  const loadCRSOptions = async () => {
+    setCrsLoading(true);
+    setCrsError(null);
+    
+    try {
+      const options = await arcgisService.getCRSOptions();
+      setCrsOptions(options);
+    } catch (error) {
+      console.error("Failed to load CRS options:", error);
+      setCrsError("Failed to load coordinate reference systems. Using fallback options.");
+      
+      // Use fallback options
+      const fallback = arcgisService.getFallbackCRSOptions();
+      setCrsOptions(fallback);
+    } finally {
+      setCrsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (project && mode === "edit") {
       setFormData({
@@ -55,7 +114,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         projectType: project.projectType || "",
         tags: project.tags || [],
       });
-    } else {
+    } else if (mode === "create") {
       setFormData({
         jobNumber: "",
         projectName: "",
@@ -92,19 +151,83 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     }));
   };
 
-  const filteredHorizontalOptions = horizontalCRSOptions.filter(option =>
+  const filteredHorizontalOptions = crsOptions.horizontal.filter(option =>
     option.name.toLowerCase().includes(horizontalSearch.toLowerCase()) ||
     option.code.toLowerCase().includes(horizontalSearch.toLowerCase())
   );
 
-  const filteredVerticalOptions = verticalCRSOptions.filter(option =>
+  const filteredVerticalOptions = crsOptions.vertical.filter(option =>
     option.name.toLowerCase().includes(verticalSearch.toLowerCase()) ||
     option.code.toLowerCase().includes(verticalSearch.toLowerCase())
   );
 
-  const filteredGeoidOptions = geoidOptions.filter(option =>
+  const filteredGeoidOptions = crsOptions.geoid.filter(option =>
     option.name.toLowerCase().includes(geoidSearch.toLowerCase()) ||
     option.code.toLowerCase().includes(geoidSearch.toLowerCase())
+  );
+
+  const renderCRSSelect = (
+    label: string,
+    placeholder: string,
+    searchValue: string,
+    onSearchChange: (value: string) => void,
+    selectValue: string | undefined,
+    onSelectChange: (value: string) => void,
+    options: CRSOption[],
+    loading: boolean
+  ) => (
+    <div>
+      <Label>{label}</Label>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          placeholder={`Search ${label.toLowerCase()}...`}
+          value={searchValue}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="pl-10 mb-2"
+          disabled={loading}
+        />
+      </div>
+      <Select
+        value={selectValue}
+        onValueChange={onSelectChange}
+        disabled={loading}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder={loading ? "Loading..." : placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {loading ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              Loading options...
+            </div>
+          ) : options.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">
+              No options available
+            </div>
+          ) : (
+            options.map((option) => (
+              <SelectItem key={option.code} value={option.code}>
+                <div className="flex items-center gap-2">
+                  {option.recommended && (
+                    <span className="text-xs bg-green-100 text-green-800 px-1 rounded">
+                      Recommended
+                    </span>
+                  )}
+                  <span>{option.code} - {option.name}</span>
+                </div>
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
+      {options.find(opt => opt.code === selectValue)?.description && (
+        <p className="text-xs text-gray-500 mt-1">
+          {options.find(opt => opt.code === selectValue)?.description}
+        </p>
+      )}
+    </div>
   );
 
   return (
@@ -234,100 +357,63 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Coordinate Reference System</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Coordinate Reference System</h3>
+              {crsLoading && (
+                <div className="flex items-center text-sm text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Loading CRS options...
+                </div>
+              )}
+            </div>
+
+            {crsError && (
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-sm text-yellow-800">{crsError}</p>
+              </div>
+            )}
             
-            <div>
-              <Label>Horizontal CRS</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search horizontal CRS..."
-                  value={horizontalSearch}
-                  onChange={(e) => setHorizontalSearch(e.target.value)}
-                  className="pl-10 mb-2"
-                />
-              </div>
-              <Select
-                value={formData.crs?.horizontal}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  crs: { ...prev.crs!, horizontal: value }
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select horizontal CRS" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredHorizontalOptions.map((option) => (
-                    <SelectItem key={option.code} value={option.code}>
-                      {option.code} - {option.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {renderCRSSelect(
+              "Horizontal CRS",
+              "Select horizontal CRS",
+              horizontalSearch,
+              setHorizontalSearch,
+              formData.crs?.horizontal,
+              (value) => setFormData(prev => ({
+                ...prev,
+                crs: { ...prev.crs!, horizontal: value }
+              })),
+              filteredHorizontalOptions,
+              crsLoading
+            )}
 
-            <div>
-              <Label>Vertical CRS</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search vertical CRS..."
-                  value={verticalSearch}
-                  onChange={(e) => setVerticalSearch(e.target.value)}
-                  className="pl-10 mb-2"
-                />
-              </div>
-              <Select
-                value={formData.crs?.vertical}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  crs: { ...prev.crs!, vertical: value }
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select vertical CRS" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredVerticalOptions.map((option) => (
-                    <SelectItem key={option.code} value={option.code}>
-                      {option.code} - {option.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {renderCRSSelect(
+              "Vertical CRS",
+              "Select vertical CRS",
+              verticalSearch,
+              setVerticalSearch,
+              formData.crs?.vertical,
+              (value) => setFormData(prev => ({
+                ...prev,
+                crs: { ...prev.crs!, vertical: value }
+              })),
+              filteredVerticalOptions,
+              crsLoading
+            )}
 
-            <div>
-              <Label>Geoid Model</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search geoid model..."
-                  value={geoidSearch}
-                  onChange={(e) => setGeoidSearch(e.target.value)}
-                  className="pl-10 mb-2"
-                />
-              </div>
-              <Select
-                value={formData.crs?.geoidModel}
-                onValueChange={(value) => setFormData(prev => ({
-                  ...prev,
-                  crs: { ...prev.crs!, geoidModel: value }
-                }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select geoid model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredGeoidOptions.map((option) => (
-                    <SelectItem key={option.code} value={option.code}>
-                      {option.code} - {option.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {renderCRSSelect(
+              "Geoid Model",
+              "Select geoid model",
+              geoidSearch,
+              setGeoidSearch,
+              formData.crs?.geoidModel,
+              (value) => setFormData(prev => ({
+                ...prev,
+                crs: { ...prev.crs!, geoidModel: value }
+              })),
+              filteredGeoidOptions,
+              crsLoading
+            )}
           </div>
 
           <div>
