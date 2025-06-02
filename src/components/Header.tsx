@@ -39,7 +39,7 @@ export default function Header({
               width={120}
               height={40}
               priority
-              style={{ width: "auto", height: "40px" }}
+              style={{ width: "auto", height: "auto" }}
               className="h-10 hover:opacity-80 transition-opacity"
             />
           </a>

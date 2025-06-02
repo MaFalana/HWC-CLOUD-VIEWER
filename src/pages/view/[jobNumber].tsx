@@ -322,7 +322,7 @@ export default function PotreeViewer() {
               height={67}
               priority
               className="mx-auto mb-4"
-              style={{ height: "auto" }}
+              style={{ width: "auto", height: "auto" }}
             />
             <h1 className="text-2xl font-semibold mb-2">
               {projectName || project?.projectName || `Project ${jobNumber}`}
@@ -358,7 +358,7 @@ export default function PotreeViewer() {
             height={67}
             priority
             className="mx-auto mb-8"
-            style={{ height: "auto" }}
+            style={{ width: "auto", height: "auto" }}
           />
           <h1 className="text-2xl font-bold mb-4">Error Loading Viewer</h1>
           <p className="mb-6 text-hwc-light">{error}</p>
@@ -433,7 +433,7 @@ export default function PotreeViewer() {
                 height={27}
                 priority
                 className="h-7 hover:opacity-80 transition-opacity"
-                style={{ width: "auto", height: "27px" }}
+                style={{ width: "auto", height: "auto" }}
               />
             </a>
           </div>
