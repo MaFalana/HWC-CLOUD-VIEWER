@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
@@ -68,44 +68,13 @@ export default function PotreeViewer() {
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showProjectInfo, setShowProjectInfo] = useState(false);
-  const viewerRef = useRef<PotreeViewer | null>(null);
-
-  // Cleanup function to remove existing Potree elements
-  const cleanupPotree = () => {
-    try {
-      // Destroy existing viewer if it exists
-      if (window.potreeViewer && typeof window.potreeViewer.destroy === 'function') {
-        window.potreeViewer.destroy();
-      }
-      window.potreeViewer = undefined;
-      viewerRef.current = null;
-
-      // Remove existing Potree DOM elements
-      const existingElements = document.querySelectorAll('.potree_container, #potree_render_area, #potree_sidebar_container, .potree_compass, .potree_navigation_cube');
-      existingElements.forEach(el => el.remove());
-
-      // Remove any scripts that might cause conflicts
-      const potreeScripts = document.querySelectorAll('script[src*="potree"]');
-      potreeScripts.forEach(script => {
-        if (script.parentNode) {
-          script.parentNode.removeChild(script);
-        }
-      });
-
-      console.log("Cleaned up existing Potree elements");
-    } catch (error) {
-      console.log("Error during cleanup:", error);
-    }
-  };
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
 
-    // Cleanup any existing Potree instances
-    cleanupPotree();
+    const scriptsLoaded: HTMLScriptElement[] = [];
 
-    // Create a simple initialization function that will be called after a delay
-    const initializePotree = async () => {
+    const fetchProjectAndLoad = async () => {
       try {
         console.log("Starting Potree initialization...");
         
@@ -141,79 +110,42 @@ export default function PotreeViewer() {
         setProject(projectData as Project);
         setProjectName(projectData.projectName || "");
         setLoadingProgress(15);
-        
-        // Create fresh Potree container structure
-        console.log("Creating fresh Potree container structure...");
-        
-        // Create main container
-        const container = document.createElement("div");
-        container.className = "potree_container";
-        container.style.position = "absolute";
-        container.style.width = "100%";
-        container.style.height = "100%";
-        container.style.left = "0";
-        container.style.top = "0";
-        container.style.zIndex = "1";
-        document.body.appendChild(container);
-        
-        // Create render area
-        const renderArea = document.createElement("div");
-        renderArea.id = "potree_render_area";
-        renderArea.style.width = "100%";
-        renderArea.style.height = "100vh";
-        renderArea.style.position = "absolute";
-        renderArea.style.top = "0";
-        renderArea.style.left = "0";
-        renderArea.style.backgroundImage = "url('/potree/build/potree/resources/images/background.jpg')";
-        container.appendChild(renderArea);
-        
-        // Create sidebar logo element
-        const sidebarLogo = document.createElement("div");
-        sidebarLogo.id = "sidebar_logo";
-        renderArea.appendChild(sidebarLogo);
-        
-        // Create sidebar container
-        const sidebarContainer = document.createElement("div");
-        sidebarContainer.id = "potree_sidebar_container";
-        container.appendChild(sidebarContainer);
-        
-        // Load CSS files
-        const loadCSS = (href: string): void => {
-          if (document.querySelector(`link[href="${href}"]`)) return;
-          const link = document.createElement("link");
-          link.rel = "stylesheet";
-          link.href = href;
-          document.head.appendChild(link);
-        };
-        
-        // Load required CSS files
-        loadCSS("/potree/build/potree/potree.css");
-        loadCSS("/potree/libs/jquery-ui/jquery-ui.min.css");
-        loadCSS("/potree/libs/openlayers3/ol.css");
-        loadCSS("/potree/libs/spectrum/spectrum.css");
-        loadCSS("/potree/libs/jstree/themes/mixed/style.css");
-        loadCSS("/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css");
-        loadCSS("/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css");
-        
-        // Load scripts sequentially
+
+        // Try to fetch project info from API
+        try {
+          const res = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/info.json`);
+          if (res.ok) {
+            const data = await res.json();
+            console.log("Project data:", data);
+            setProjectName(data.projectName);
+            projectData = { ...projectData, ...data };
+            setProject(projectData as Project);
+          }
+        } catch (error) {
+          console.log("No project info found, using extracted data", error);
+        }
+
         const loadScript = (src: string): Promise<void> =>
           new Promise((resolve, reject) => {
             if (document.querySelector(`script[src="${src}"]`)) {
               resolve();
               return;
             }
-            
+
             const script = document.createElement("script");
             script.src = src;
             script.async = false;
-            script.onload = () => resolve();
+            script.onload = () => {
+              scriptsLoaded.push(script);
+              resolve();
+            };
             script.onerror = () => reject(new Error(`Failed to load script ${src}`));
             document.body.appendChild(script);
           });
-        
+
         console.log("Loading scripts...");
         setLoadingProgress(20);
-        
+
         const scripts = [
           "/potree/libs/jquery/jquery-3.1.1.min.js",
           "/potree/libs/spectrum/spectrum.js",
@@ -234,45 +166,69 @@ export default function PotreeViewer() {
           "/potree/libs/panzoom/panzoom.min.js",
           "/potree/libs/papa/papaparse.js"
         ];
-        
+
         for (let i = 0; i < scripts.length; i++) {
           await loadScript(scripts[i]);
           setLoadingProgress(20 + Math.floor((i / scripts.length) * 60));
         }
-        
+
         // Wait for Potree to be available
         if (!window.Potree) {
           throw new Error("Potree not available after loading scripts");
         }
+
+        setLoadingProgress(85);
+
+        const base = "http://localhost:4400/pointclouds/";
+        const cloudJsPath = `${base}${jobNumber}/cloud.js`;
+        const metadataPath = `${base}${jobNumber}/metadata.json`;
+        const sourcesJsonPath = `${base}${jobNumber}/sources.json`;
+
+        // Check which files exist
+        let pathToLoad = null;
         
-        // Try to fetch project info from API
         try {
-          const res = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/info.json`);
-          if (res.ok) {
-            const data = await res.json();
-            console.log("Project data:", data);
-            setProjectName(data.projectName);
-            projectData = { ...projectData, ...data };
+          const response = await fetch(cloudJsPath, { method: "HEAD" });
+          if (response.ok) {
+            pathToLoad = cloudJsPath;
+            console.log("Using cloud.js for point cloud loading");
           }
         } catch (error) {
-          console.log("No project info found, using mock data", error);
+          console.log("No cloud.js found");
         }
-        
-        setProject(projectData as Project);
-        setLoadingProgress(85);
-        
-        // Create the Potree viewer
-        console.log("Potree is available, creating viewer...");
-        
-        // Get the render area element
-        const renderAreaElement = document.getElementById("potree_render_area");
-        if (!renderAreaElement) {
-          throw new Error("Potree render area not found");
+
+        if (!pathToLoad) {
+          try {
+            const response = await fetch(metadataPath, { method: "HEAD" });
+            if (response.ok) {
+              pathToLoad = metadataPath;
+              console.log("Using metadata.json for point cloud loading");
+            }
+          } catch (error) {
+            console.log("No metadata.json found");
+          }
         }
-        
-        // Create single viewer instance
-        const viewer = new window.Potree.Viewer(renderAreaElement);
-        viewerRef.current = viewer;
+
+        if (!pathToLoad) {
+          try {
+            const response = await fetch(sourcesJsonPath, { method: "HEAD" });
+            if (response.ok) {
+              // For sources.json, use example metadata.json as fallback
+              pathToLoad = "/pointclouds/example/metadata.json";
+              console.log("Using example metadata.json for point cloud loading (sources.json found)");
+            }
+          } catch (error) {
+            console.log("No sources.json found");
+          }
+        }
+
+        if (!pathToLoad) {
+          // If none exists, use example metadata.json
+          pathToLoad = "/pointclouds/example/metadata.json";
+          console.log("Using example metadata.json for point cloud loading (no files found)");
+        }
+
+        const viewer = new window.Potree.Viewer(document.getElementById("potree_render_area"));
         window.potreeViewer = viewer;
         
         viewer.setEDLEnabled(true);
@@ -284,139 +240,76 @@ export default function PotreeViewer() {
           viewer.setLanguage("en");
           console.log("Potree GUI loaded");
         });
-        
-        // Load point cloud
-        console.log("Loading point cloud...");
-        const base = "http://localhost:4400/pointclouds/";
-        const cloudJsPath = `${base}${jobNumber}/cloud.js`;
-        const metadataPath = `${base}${jobNumber}/metadata.json`;
-        const sourcesJsonPath = `${base}${jobNumber}/sources.json`;
-        
-        try {
-          // Check which files exist
-          let cloudJsExists = false;
-          let metadataExists = false;
-          let sourcesJsonExists = false;
-          
-          try {
-            const response = await fetch(cloudJsPath, { method: "HEAD" });
-            cloudJsExists = response.ok;
-          } catch (error) {
-            console.log("Error checking cloud.js:", error);
-          }
-          
-          try {
-            const response = await fetch(metadataPath, { method: "HEAD" });
-            metadataExists = response.ok;
-          } catch (error) {
-            console.log("Error checking metadata.json:", error);
-          }
-          
-          try {
-            const response = await fetch(sourcesJsonPath, { method: "HEAD" });
-            sourcesJsonExists = response.ok;
-          } catch (error) {
-            console.log("Error checking sources.json:", error);
-          }
-          
-          // Determine which file to load
-          let pathToLoad = null;
-          
-          if (cloudJsExists) {
-            pathToLoad = cloudJsPath;
-            console.log("Using cloud.js for point cloud loading");
-          } else if (metadataExists) {
-            pathToLoad = metadataPath;
-            console.log("Using metadata.json for point cloud loading");
-          } else if (sourcesJsonExists) {
-            // For sources.json, we'll use the example metadata.json as a fallback
-            // since sources.json doesn't contain all the data needed for Potree
-            pathToLoad = "/pointclouds/example/metadata.json";
-            console.log("Using example metadata.json for point cloud loading (sources.json found)");
-          } else {
-            // If none exists, use example metadata.json
-            pathToLoad = "/pointclouds/example/metadata.json";
-            console.log("Using example metadata.json for point cloud loading (no files found)");
-          }
-          
-          if (!pathToLoad) {
-            throw new Error("No point cloud data found");
-          }
-          
-          const loadCallback = (e: PotreeLoadEvent) => {
-            if (e.pointcloud) {
-              console.log("Point cloud loaded successfully");
-              viewer.scene.addPointCloud(e.pointcloud);
-              e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
-              viewer.fitToScreen(0.5);
-              
-              // If project has location data, position the map view accordingly
-              if (projectData.location?.latitude && projectData.location?.longitude) {
-                try {
-                  const mapView = viewer.mapView;
-                  if (mapView && typeof mapView.setCenter === "function") {
-                    mapView.setCenter([projectData.location.longitude, projectData.location.latitude]);
-                    if (typeof mapView.setZoom === "function") {
-                      mapView.setZoom(15);
-                    }
-                    if (typeof mapView.setMapType === "function" && mapType !== "default") {
-                      mapView.setMapType(mapType);
-                    }
-                    console.log(`Map positioned at: ${projectData.location.latitude}, ${projectData.location.longitude} (source: ${projectData.location.source})`);
+
+        const loadCallback = (e: PotreeLoadEvent) => {
+          if (e.pointcloud) {
+            console.log("Point cloud loaded successfully");
+            viewer.scene.addPointCloud(e.pointcloud);
+            e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
+            viewer.fitToScreen(0.5);
+            
+            // If project has location data, position the map view accordingly
+            if (projectData.location?.latitude && projectData.location?.longitude) {
+              try {
+                const mapView = viewer.mapView;
+                if (mapView && typeof mapView.setCenter === "function") {
+                  mapView.setCenter([projectData.location.longitude, projectData.location.latitude]);
+                  if (typeof mapView.setZoom === "function") {
+                    mapView.setZoom(15);
                   }
-                } catch (mapError) {
-                  console.error("Failed to set map location:", mapError);
+                  if (typeof mapView.setMapType === "function" && mapType !== "default") {
+                    mapView.setMapType(mapType);
+                  }
+                  console.log(`Map positioned at: ${projectData.location.latitude}, ${projectData.location.longitude} (source: ${projectData.location.source})`);
                 }
+              } catch (mapError) {
+                console.error("Failed to set map location:", mapError);
               }
-              
-              setLoadingProgress(100);
-              setTimeout(() => {
-                setLoading(false);
-              }, 500);
-            } else {
-              console.error("Failed to load point cloud");
-              setLoadingProgress(100);
-              setTimeout(() => {
-                setLoading(false);
-              }, 500);
             }
-          };
-          
-          if (pathToLoad.endsWith("cloud.js")) {
-            window.Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
+            
+            setLoadingProgress(100);
+            setTimeout(() => {
+              setLoading(false);
+            }, 500);
           } else {
-            window.Potree.loadPointCloud(pathToLoad, jobNumber as string, loadCallback);
+            console.error("Failed to load point cloud");
+            setLoadingProgress(100);
+            setTimeout(() => {
+              setLoading(false);
+            }, 500);
           }
-        } catch (loadError) {
-          console.error("Error loading point cloud:", loadError);
-          setLoadingProgress(100);
-          setTimeout(() => {
-            setLoading(false);
-          }, 500);
+        };
+
+        if (pathToLoad.endsWith("cloud.js")) {
+          window.Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
+        } else {
+          window.Potree.loadPointCloud(pathToLoad, jobNumber as string, loadCallback);
         }
+
       } catch (err) {
-        console.error("Error initializing Potree:", err);
+        console.error("Error loading viewer:", err);
         setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : "Unknown error"}`);
         setLoading(false);
       }
     };
-    
-    // Start initialization after a delay to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      initializePotree();
-    }, 1000);
-    
+
+    fetchProjectAndLoad();
+
+    // Cleanup function
     return () => {
-      clearTimeout(timeoutId);
-      cleanupPotree();
+      scriptsLoaded.forEach((script) => {
+        if (script && script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      });
     };
   }, [jobNumber]);
 
   // Effect to update map type when it changes
   useEffect(() => {
-    if (!loading && project && viewerRef.current) {
+    if (!loading && project && window.potreeViewer) {
       try {
-        const viewer = viewerRef.current;
+        const viewer = window.potreeViewer;
         if (viewer.mapView && typeof viewer.mapView.setMapType === "function") {
           viewer.mapView.setMapType(mapType);
         }
@@ -500,6 +393,15 @@ export default function PotreeViewer() {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        
+        {/* Potree CSS */}
+        <link rel="stylesheet" href="/potree/build/potree/potree.css" />
+        <link rel="stylesheet" href="/potree/libs/jquery-ui/jquery-ui.min.css" />
+        <link rel="stylesheet" type="text/css" href="/potree/libs/openlayers3/ol.css"/>
+        <link rel="stylesheet" type="text/css" href="/potree/libs/spectrum/spectrum.css"/>
+        <link rel="stylesheet" type="text/css" href="/potree/libs/jstree/themes/mixed/style.css"/>
+        <link rel="stylesheet" type="text/css" href="/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css"/>
+        <link rel="stylesheet" type="text/css" href="/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css"/>
       </Head>
 
       {/* Custom Header */}
@@ -543,6 +445,19 @@ export default function PotreeViewer() {
             >
               <Info className="h-4 w-4" />
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSidebarVisible(!sidebarVisible);
+                if (window.potreeViewer && typeof window.potreeViewer.toggleSidebar === 'function') {
+                  window.potreeViewer.toggleSidebar();
+                }
+              }}
+              className="text-white hover:bg-hwc-red/20"
+            >
+              {sidebarVisible ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </Button>
             <a 
               href="https://www.hwcengineering.com" 
               target="_blank" 
@@ -563,32 +478,9 @@ export default function PotreeViewer() {
         </div>
       </div>
 
-      {/* Custom Sidebar Toggle Button - positioned correctly */}
-      <div className="absolute top-20 right-6 z-40">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setSidebarVisible(!sidebarVisible);
-            // Custom sidebar toggle implementation
-            const sidebar = document.getElementById('potree_sidebar_container');
-            if (sidebar) {
-              if (sidebarVisible) {
-                sidebar.style.display = 'none';
-              } else {
-                sidebar.style.display = 'block';
-              }
-            }
-          }}
-          className="text-white hover:bg-hwc-red/20 bg-hwc-dark/95 backdrop-blur-md border border-hwc-red/20"
-        >
-          {sidebarVisible ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </Button>
-      </div>
-
       {/* Project Info Panel */}
       {showProjectInfo && project && (
-        <div className="absolute top-20 right-20 z-40 w-96">
+        <div className="absolute top-20 right-6 z-40 w-96">
           <Card className="bg-hwc-dark/95 backdrop-blur-md border border-hwc-red/20 text-white">
             <CardContent className="p-6">
               <h3 className="font-semibold mb-4 text-lg">Project Information</h3>
@@ -686,7 +578,31 @@ export default function PotreeViewer() {
         </Card>
       </div>
 
-      {/* Custom Styles */}
+      {/* Potree Container - following your original structure */}
+      <div
+        className="potree_container"
+        style={{
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+          left: 0,
+          top: 0
+        }}
+      >
+        <div
+          id="potree_render_area"
+          style={{
+            backgroundImage: "url('/potree/build/potree/resources/images/background.jpg')",
+            width: "100%",
+            height: "100%"
+          }}
+        >
+          <div id="sidebar_logo"></div>
+        </div>
+        <div id="potree_sidebar_container" />
+      </div>
+
+      {/* Custom Styles with HWC Color Palette */}
       <style jsx global>{`
         * {
           font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -710,11 +626,11 @@ export default function PotreeViewer() {
           background: #292C30 !important;
         }
         
-        /* Fix Potree sidebar with modern styling - ensure it starts below header */
+        /* Fix Potree sidebar with HWC styling - positioned below header */
         #potree_sidebar_container {
           background: rgba(41, 44, 48, 0.98) !important;
           backdrop-filter: blur(20px) !important;
-          border-left: 1px solid rgba(238, 47, 39, 0.2) !important;
+          border-left: 2px solid rgba(238, 47, 39, 0.3) !important;
           z-index: 30 !important;
           overflow-y: auto !important;
           max-height: calc(100vh - 80px) !important;
@@ -722,8 +638,7 @@ export default function PotreeViewer() {
           right: 0 !important;
           top: 80px !important;
           width: 320px !important;
-          box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3) !important;
-          display: ${sidebarVisible ? 'block' : 'none'} !important;
+          box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4) !important;
         }
         
         /* Sidebar content styling */
@@ -733,17 +648,7 @@ export default function PotreeViewer() {
           padding: 20px !important;
         }
         
-        /* Accordion styling with modern design */
-        #potree_sidebar_container .ui-accordion .ui-accordion-content {
-          overflow-y: auto !important;
-          max-height: 400px !important;
-          padding: 16px !important;
-          background: rgba(221, 212, 204, 0.05) !important;
-          border-radius: 8px !important;
-          margin-top: 8px !important;
-        }
-        
-        /* Custom scrollbar */
+        /* Custom scrollbar with HWC colors */
         #potree_sidebar_container::-webkit-scrollbar {
           width: 6px !important;
         }
@@ -754,15 +659,15 @@ export default function PotreeViewer() {
         }
         
         #potree_sidebar_container::-webkit-scrollbar-thumb {
-          background: rgba(238, 47, 39, 0.6) !important;
+          background: rgba(238, 47, 39, 0.7) !important;
           border-radius: 3px !important;
         }
         
         #potree_sidebar_container::-webkit-scrollbar-thumb:hover {
-          background: rgba(238, 47, 39, 0.8) !important;
+          background: rgba(238, 47, 39, 0.9) !important;
         }
         
-        /* Modern accordion headers */
+        /* Modern accordion headers with HWC red */
         .ui-accordion-header {
           background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7)) !important;
           color: white !important;
@@ -770,21 +675,22 @@ export default function PotreeViewer() {
           border-radius: 8px !important;
           margin-bottom: 4px !important;
           padding: 12px 16px !important;
-          font-weight: 500 !important;
+          font-weight: 600 !important;
           font-size: 14px !important;
           z-index: 31 !important;
           transition: all 0.2s ease !important;
+          letter-spacing: -0.025em !important;
         }
         
         .ui-accordion-header:hover {
           background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important;
           transform: translateY(-1px) !important;
-          box-shadow: 0 4px 12px rgba(238, 47, 39, 0.3) !important;
+          box-shadow: 0 4px 12px rgba(238, 47, 39, 0.4) !important;
         }
         
         .ui-accordion-content {
-          background: rgba(41, 44, 48, 0.9) !important;
-          color: white !important;
+          background: rgba(41, 44, 48, 0.95) !important;
+          color: rgba(221, 212, 204, 1) !important;
           border: none !important;
           border-radius: 8px !important;
           z-index: 31 !important;
@@ -792,37 +698,7 @@ export default function PotreeViewer() {
           max-height: 400px !important;
         }
         
-        /* Menu content styling */
-        .potree_menu_content {
-          background: transparent !important;
-          color: white !important;
-          overflow-y: auto !important;
-        }
-        
-        /* Menu list styling */
-        .pv-menu-list {
-          overflow-y: auto !important;
-          max-height: 350px !important;
-        }
-        
-        .pv-menu-list button,
-        .pv-menu-list input,
-        .pv-menu-list select {
-          background: rgba(221, 212, 204, 0.1) !important;
-          color: white !important;
-          border: 1px solid rgba(238, 47, 39, 0.3) !important;
-          border-radius: 6px !important;
-          padding: 8px 12px !important;
-          font-size: 13px !important;
-          transition: all 0.2s ease !important;
-        }
-        
-        .pv-menu-list button:hover {
-          background: rgba(238, 47, 39, 0.2) !important;
-          border-color: rgba(238, 47, 39, 0.6) !important;
-        }
-        
-        /* Modern tools grid layout - CRITICAL FIX */
+        /* Tools grid layout - CRITICAL FIX for proper grid display */
         .potree_toolbar,
         .potree_menu_tools,
         .pv-menu-tools,
@@ -832,23 +708,14 @@ export default function PotreeViewer() {
           grid-template-columns: repeat(4, 1fr) !important;
           gap: 8px !important;
           padding: 16px !important;
-          background: rgba(221, 212, 204, 0.05) !important;
+          background: rgba(221, 212, 204, 0.08) !important;
           border-radius: 12px !important;
           margin: 8px 0 !important;
           width: 100% !important;
           box-sizing: border-box !important;
         }
         
-        /* Force grid layout for measurement tools specifically */
-        div[class*="measurement"] .potree_toolbar,
-        div[class*="measurement"] .potree_menu_tools,
-        div[class*="measurement"] .pv-menu-tools {
-          display: grid !important;
-          grid-template-columns: repeat(4, 1fr) !important;
-          gap: 6px !important;
-        }
-        
-        /* Modern tool buttons */
+        /* Tool buttons with HWC styling */
         .potree_toolbar button,
         .potree_menu_tools button,
         .pv-menu-tools button,
@@ -863,10 +730,10 @@ export default function PotreeViewer() {
           height: 44px !important;
           margin: 0 !important;
           padding: 8px !important;
-          background: rgba(221, 212, 204, 0.1) !important;
-          border: 1px solid rgba(238, 47, 39, 0.2) !important;
+          background: rgba(221, 212, 204, 0.12) !important;
+          border: 1px solid rgba(238, 47, 39, 0.25) !important;
           border-radius: 8px !important;
-          color: white !important;
+          color: rgba(221, 212, 204, 1) !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
@@ -889,12 +756,13 @@ export default function PotreeViewer() {
         div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button:hover,
         div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button:hover {
           background: rgba(238, 47, 39, 0.2) !important;
-          border-color: rgba(238, 47, 39, 0.5) !important;
+          border-color: rgba(238, 47, 39, 0.6) !important;
           transform: translateY(-2px) !important;
-          box-shadow: 0 4px 12px rgba(238, 47, 39, 0.2) !important;
+          box-shadow: 0 4px 12px rgba(238, 47, 39, 0.25) !important;
+          color: white !important;
         }
         
-        /* Active tool button styling */
+        /* Active tool button styling with HWC red */
         .potree_toolbar button.active,
         .potree_menu_tools button.active,
         .pv-menu-tools button.active,
@@ -917,7 +785,7 @@ export default function PotreeViewer() {
         div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.selected {
           background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7)) !important;
           border: 2px solid rgba(238, 47, 39, 1) !important;
-          box-shadow: 0 0 16px rgba(238, 47, 39, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+          box-shadow: 0 0 16px rgba(238, 47, 39, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
           color: white !important;
           transform: translateY(-1px) !important;
         }
@@ -938,50 +806,17 @@ export default function PotreeViewer() {
           filter: brightness(0) invert(1) !important;
         }
         
-        /* Render area styling */
-        #potree_render_area {
-          position: absolute !important;
-          width: 100% !important;
-          height: 100% !important;
-          top: 0 !important;
-          left: 0 !important;
-          z-index: 1 !important;
-          background: linear-gradient(135deg, #292C30, #1a1d21) !important;
-        }
-        
-        /* Perfect scrollbar styling */
-        .ps__rail-y {
-          z-index: 32 !important;
-          opacity: 0.6 !important;
-        }
-        
-        .ps__thumb-y {
-          background-color: rgba(238, 47, 39, 0.8) !important;
-          border-radius: 3px !important;
-        }
-        
-        /* Dropdown and select styling */
-        #potree_sidebar_container select,
-        #potree_sidebar_container .ui-selectmenu-button {
-          z-index: 33 !important;
-          background: rgba(221, 212, 204, 0.1) !important;
-          color: white !important;
-          border: 1px solid rgba(238, 47, 39, 0.3) !important;
-          border-radius: 6px !important;
-          padding: 8px 12px !important;
-        }
-        
-        /* Modern compass and navigation controls - positioned in bottom left */
+        /* Compass and navigation controls - FIXED positioning in bottom left */
         .potree_compass {
           z-index: 35 !important;
           position: fixed !important;
           bottom: 24px !important;
           left: 24px !important;
           background: rgba(41, 44, 48, 0.95) !important;
-          border: 2px solid rgba(238, 47, 39, 0.6) !important;
+          border: 2px solid rgba(238, 47, 39, 0.7) !important;
           border-radius: 50% !important;
           padding: 12px !important;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(238, 47, 39, 0.2) !important;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3) !important;
           pointer-events: auto !important;
           width: 64px !important;
           height: 64px !important;
@@ -994,59 +829,55 @@ export default function PotreeViewer() {
           bottom: 24px !important;
           left: 104px !important;
           background: rgba(41, 44, 48, 0.95) !important;
-          border: 2px solid rgba(238, 47, 39, 0.6) !important;
+          border: 2px solid rgba(238, 47, 39, 0.7) !important;
           border-radius: 12px !important;
           padding: 12px !important;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(238, 47, 39, 0.2) !important;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3) !important;
           pointer-events: auto !important;
           backdrop-filter: blur(20px) !important;
         }
         
-        /* Canvas styling */
-        .potree_compass canvas,
-        .potree_navigation_cube canvas {
+        /* Render area styling */
+        #potree_render_area {
+          position: absolute !important;
+          width: 100% !important;
+          height: 100% !important;
+          top: 0 !important;
+          left: 0 !important;
+          z-index: 1 !important;
+          background: linear-gradient(135deg, #292C30, #1a1d21) !important;
+        }
+        
+        /* Form elements with HWC styling */
+        #potree_sidebar_container input[type="text"],
+        #potree_sidebar_container input[type="number"],
+        #potree_sidebar_container select {
+          background: rgba(221, 212, 204, 0.1) !important;
+          color: rgba(221, 212, 204, 1) !important;
+          border: 1px solid rgba(238, 47, 39, 0.3) !important;
           border-radius: 6px !important;
+          padding: 8px 12px !important;
+          font-size: 13px !important;
+          transition: all 0.2s ease !important;
         }
         
-        /* Menu and toolbar styling */
-        .potree_menu,
-        .potree_toolbar {
-          z-index: 31 !important;
-          background: rgba(41, 44, 48, 0.95) !important;
-          border: 1px solid rgba(238, 47, 39, 0.2) !important;
-          border-radius: 12px !important;
-          backdrop-filter: blur(20px) !important;
+        #potree_sidebar_container input[type="text"]:focus,
+        #potree_sidebar_container input[type="number"]:focus,
+        #potree_sidebar_container select:focus {
+          border-color: rgba(238, 47, 39, 0.8) !important;
+          outline: none !important;
+          box-shadow: 0 0 0 3px rgba(238, 47, 39, 0.15) !important;
         }
         
-        /* Overlay styling */
-        .potree_container .ui-widget-overlay {
-          z-index: 29 !important;
-        }
-        
-        /* Scrollbar for sidebar content */
-        #potree_sidebar_container * {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(238, 47, 39, 0.6) rgba(108, 104, 100, 0.3);
-        }
-        
-        #potree_sidebar_container .pv-menu-list {
-          z-index: 32 !important;
-        }
-        
-        /* Measurement tools and annotations */
-        .potree_annotation,
-        .potree_measurement {
-          color: rgba(238, 47, 39, 1) !important;
-          background: rgba(41, 44, 48, 0.9) !important;
-          border: 1px solid rgba(238, 47, 39, 0.5) !important;
-          border-radius: 6px !important;
-          padding: 6px 12px !important;
-          font-size: 12px !important;
+        /* Labels with HWC light color */
+        #potree_sidebar_container label,
+        #potree_sidebar_container .potree_label {
+          color: rgba(221, 212, 204, 0.9) !important;
           font-weight: 500 !important;
-          backdrop-filter: blur(10px) !important;
+          font-size: 13px !important;
         }
         
-        /* Modern range inputs */
+        /* Range inputs with HWC red */
         input[type="range"] {
           -webkit-appearance: none !important;
           background: rgba(221, 212, 204, 0.2) !important;
@@ -1061,53 +892,16 @@ export default function PotreeViewer() {
           background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important;
           border-radius: 50% !important;
           cursor: pointer !important;
-          box-shadow: 0 2px 8px rgba(238, 47, 39, 0.3) !important;
+          box-shadow: 0 2px 8px rgba(238, 47, 39, 0.4) !important;
         }
         
-        input[type="range"]::-moz-range-thumb {
-          width: 18px !important;
-          height: 18px !important;
-          background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important;
-          border-radius: 50% !important;
-          cursor: pointer !important;
-          border: none !important;
-          box-shadow: 0 2px 8px rgba(238, 47, 39, 0.3) !important;
-        }
-        
-        /* Checkbox and radio styling */
+        /* Checkbox and radio with HWC red */
         input[type="checkbox"],
         input[type="radio"] {
           accent-color: rgba(238, 47, 39, 1) !important;
         }
         
-        /* Text input styling */
-        #potree_sidebar_container input[type="text"],
-        #potree_sidebar_container input[type="number"] {
-          background: rgba(221, 212, 204, 0.1) !important;
-          color: white !important;
-          border: 1px solid rgba(238, 47, 39, 0.3) !important;
-          border-radius: 6px !important;
-          padding: 8px 12px !important;
-          font-size: 13px !important;
-          transition: all 0.2s ease !important;
-        }
-        
-        #potree_sidebar_container input[type="text"]:focus,
-        #potree_sidebar_container input[type="number"]:focus {
-          border-color: rgba(238, 47, 39, 0.8) !important;
-          outline: none !important;
-          box-shadow: 0 0 0 3px rgba(238, 47, 39, 0.1) !important;
-        }
-        
-        /* Label styling */
-        #potree_sidebar_container label,
-        #potree_sidebar_container .potree_label {
-          color: rgba(221, 212, 204, 0.9) !important;
-          font-weight: 500 !important;
-          font-size: 13px !important;
-        }
-        
-        /* Progress bar styling */
+        /* Progress bars with HWC red */
         .potree_progress,
         .progress {
           background: rgba(221, 212, 204, 0.2) !important;
@@ -1122,11 +916,6 @@ export default function PotreeViewer() {
           border-radius: 6px !important;
         }
         
-        /* Loading screen styling */
-        .loading-screen {
-          background: linear-gradient(135deg, #292C30, #1a1d21) !important;
-        }
-        
         /* Typography improvements */
         h1, h2, h3, h4, h5, h6 {
           font-weight: 600 !important;
@@ -1137,6 +926,29 @@ export default function PotreeViewer() {
         button {
           font-weight: 500 !important;
           transition: all 0.2s ease !important;
+        }
+        
+        /* Menu list styling */
+        .pv-menu-list {
+          overflow-y: auto !important;
+          max-height: 350px !important;
+        }
+        
+        .pv-menu-list button,
+        .pv-menu-list input,
+        .pv-menu-list select {
+          background: rgba(221, 212, 204, 0.1) !important;
+          color: rgba(221, 212, 204, 1) !important;
+          border: 1px solid rgba(238, 47, 39, 0.3) !important;
+          border-radius: 6px !important;
+          padding: 8px 12px !important;
+          font-size: 13px !important;
+          transition: all 0.2s ease !important;
+        }
+        
+        .pv-menu-list button:hover {
+          background: rgba(238, 47, 39, 0.2) !important;
+          border-color: rgba(238, 47, 39, 0.6) !important;
         }
       `}</style>
     </>
