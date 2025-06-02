@@ -70,8 +70,8 @@ export const potreeLocationService = {
         } else {
           console.log("No metadata.json found or not accessible, trying cloud.js");
         }
-      } catch (_) {
-        console.log("No metadata.json found, trying cloud.js");
+      } catch (error) {
+        console.log("No metadata.json found, trying cloud.js", error instanceof Error ? error.message : "Unknown error");
       }
 
       // If no metadata.json, try cloud.js
@@ -123,8 +123,8 @@ export const potreeLocationService = {
           } else {
             console.log("No cloud.js found or not accessible");
           }
-        } catch (_) {
-          console.log("No cloud.js found either");
+        } catch (error) {
+          console.log("No cloud.js found either", error instanceof Error ? error.message : "Unknown error");
         }
       }
 
@@ -208,8 +208,8 @@ export const potreeLocationService = {
         confidence: "low" as const
       };
 
-    } catch (_) {
-      console.error("Error extracting location from bounds");
+    } catch (error) {
+      console.error("Error extracting location from bounds:", error);
       return null;
     }
   },
@@ -243,8 +243,8 @@ export const potreeLocationService = {
       }
 
       return null;
-    } catch (_) {
-      console.error("Error extracting CRS from metadata");
+    } catch (error) {
+      console.error("Error extracting CRS from metadata:", error);
       return null;
     }
   },
@@ -303,8 +303,8 @@ export const potreeLocationService = {
       }
       
       return null;
-    } catch (_) {
-      console.error("Error converting projected coordinates");
+    } catch (error) {
+      console.error("Error converting projected coordinates:", error);
       return null;
     }
   },
@@ -332,8 +332,8 @@ export const potreeLocationService = {
         updatedAt: new Date()
       };
 
-    } catch (_) {
-      console.error("Error getting project info");
+    } catch (error) {
+      console.error("Error getting project info:", error);
       return null;
     }
   }
