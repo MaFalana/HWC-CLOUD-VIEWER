@@ -1,3 +1,4 @@
+
 import { arcgisService } from "./arcgisService";
 
 export interface WorldFileData {
@@ -15,8 +16,7 @@ export const worldFileService = {
    */
   parseWorldFile(content: string): WorldFileData | null {
     try {
-      const lines = content.trim().split('
-').map(line => line.trim());
+      const lines = content.trim().split('\n').map(line => line.trim());
       
       if (lines.length < 6) {
         console.error('World file must contain 6 lines');
