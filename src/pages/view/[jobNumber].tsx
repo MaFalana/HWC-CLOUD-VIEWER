@@ -69,9 +69,6 @@ export default function PotreeViewer() {
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showProjectInfo, setShowProjectInfo] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const renderAreaRef = useRef<HTMLDivElement>(null);
-  const sidebarRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<PotreeViewer | null>(null);
 
   // Cleanup function to remove existing Potree elements
@@ -85,20 +82,16 @@ export default function PotreeViewer() {
       viewerRef.current = null;
 
       // Remove existing Potree DOM elements
-      const existingContainer = document.querySelector('.potree_container');
-      if (existingContainer) {
-        existingContainer.remove();
-      }
+      const existingElements = document.querySelectorAll('.potree_container, #potree_render_area, #potree_sidebar_container, .potree_compass, .potree_navigation_cube');
+      existingElements.forEach(el => el.remove());
 
-      const existingRenderArea = document.getElementById('potree_render_area');
-      if (existingRenderArea) {
-        existingRenderArea.remove();
-      }
-
-      const existingSidebar = document.getElementById('potree_sidebar_container');
-      if (existingSidebar) {
-        existingSidebar.remove();
-      }
+      // Remove any scripts that might cause conflicts
+      const potreeScripts = document.querySelectorAll('script[src*="potree"]');
+      potreeScripts.forEach(script => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      });
 
       console.log("Cleaned up existing Potree elements");
     } catch (error) {
@@ -714,11 +707,16 @@ export default function PotreeViewer() {
         }
         
         /* Ensure sidebar content is scrollable */
-        #potree_sidebar_container .potree_menu_content,
-        #potree_sidebar_container .ui-accordion-content,
-        #potree_sidebar_container .pv-menu-list {
+        #potree_sidebar_container .potree_menu_content {
           overflow-y: auto !important;
-          max-height: none !important;
+          max-height: calc(100vh - 60px) !important;
+        }
+        
+        /* Fix accordion content scrolling */
+        #potree_sidebar_container .ui-accordion .ui-accordion-content {
+          overflow-y: auto !important;
+          max-height: 350px !important;
+          padding: 10px !important;
         }
         
         /* Custom scrollbar for sidebar */
@@ -740,31 +738,35 @@ export default function PotreeViewer() {
           background: rgba(238, 47, 39, 0.8) !important;
         }
         
-        /* Fix accordion content scrolling */
-        .ui-accordion-content {
-          overflow-y: auto !important;
-          max-height: 400px !important;
-          background: rgba(41, 44, 48, 0.8) !important;
-          color: white !important;
-          border: none !important;
-        }
-        
-        .potree_menu_content {
-          background: rgba(41, 44, 48, 0.95) !important;
-          color: white !important;
-          overflow-y: auto !important;
-        }
-        
+        /* Fix accordion styling */
         .ui-accordion-header {
           background: rgba(238, 47, 39, 0.9) !important;
           color: white !important;
           border: none !important;
+          z-index: 31 !important;
         }
         
         .ui-accordion-header:hover {
           background: rgba(238, 47, 39, 1) !important;
         }
         
+        .ui-accordion-content {
+          background: rgba(41, 44, 48, 0.8) !important;
+          color: white !important;
+          border: none !important;
+          z-index: 31 !important;
+          overflow-y: auto !important;
+          max-height: 400px !important;
+        }
+        
+        /* Fix menu content styling */
+        .potree_menu_content {
+          background: rgba(41, 44, 48, 0.95) !important;
+          color: white !important;
+          overflow-y: auto !important;
+        }
+        
+        /* Fix menu list styling */
         .pv-menu-list {
           overflow-y: auto !important;
           max-height: 300px !important;
@@ -802,39 +804,59 @@ export default function PotreeViewer() {
           background-color: rgba(238, 47, 39, 0.8) !important;
         }
         
-        /* Ensure menu items are clickable and scrollable */
-        #potree_sidebar_container .ui-accordion .ui-accordion-content {
-          padding: 10px !important;
-          overflow-y: auto !important;
-          max-height: 350px !important;
-        }
-        
         /* Fix any dropdown or select issues */
         #potree_sidebar_container select,
         #potree_sidebar_container .ui-selectmenu-button {
           z-index: 33 !important;
         }
         
-        /* Ensure Potree compass and navigation controls are visible */
-        .potree_navigation_cube,
+        /* Ensure Potree compass and navigation controls are visible and positioned correctly */
         .potree_compass {
           z-index: 35 !important;
           position: fixed !important;
           bottom: 20px !important;
           right: 20px !important;
+          background: rgba(0, 0, 0, 0.7) !important;
+          border: 2px solid rgba(238, 47, 39, 0.5) !important;
+          border-radius: 50% !important;
+          padding: 5px !important;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+          pointer-events: auto !important;
         }
         
-        /* Style Potree navigation controls */
         .potree_navigation_cube {
+          z-index: 35 !important;
+          position: fixed !important;
+          bottom: 20px !important;
+          right: 100px !important;
           background: rgba(0, 0, 0, 0.7) !important;
           border: 2px solid rgba(238, 47, 39, 0.5) !important;
           border-radius: 8px !important;
+          padding: 5px !important;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+          pointer-events: auto !important;
         }
         
         /* Ensure all Potree UI elements have proper z-index */
         .potree_menu,
         .potree_toolbar {
           z-index: 31 !important;
+        }
+        
+        /* Fix any potential overlay issues */
+        .potree_container .ui-widget-overlay {
+          z-index: 29 !important;
+        }
+        
+        /* Fix any potential scrolling issues in the sidebar */
+        #potree_sidebar_container * {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(238, 47, 39, 0.6) rgba(108, 104, 100, 0.3);
+        }
+        
+        /* Fix any potential z-index issues with the sidebar */
+        #potree_sidebar_container .pv-menu-list {
+          z-index: 32 !important;
         }
       `}</style>
     </>
