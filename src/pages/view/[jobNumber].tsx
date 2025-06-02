@@ -19,7 +19,6 @@ export default function PotreeViewer() {
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showProjectInfo, setShowProjectInfo] = useState(false);
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -73,38 +72,40 @@ export default function PotreeViewer() {
           console.log("No project info found, using extracted data");
         }
 
-        // Check for thumbnail image (TIF/TIFF)
-        try {
-          // Try to fetch the TIF/TIFF thumbnail
-          const tifResponse = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}.tif`, { method: 'HEAD' });
-          if (tifResponse.ok) {
-            setThumbnailUrl(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}.tif`);
-          } else {
-            // Try TIFF extension if TIF doesn't exist
-            const tiffResponse = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}.tiff`, { method: 'HEAD' });
-            if (tiffResponse.ok) {
-              setThumbnailUrl(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}.tiff`);
-            }
-          }
-        } catch (error) {
-          console.log("No thumbnail image found:", error);
-        }
+        setLoadingProgress(50);
 
-        // Manually set loading to false after a timeout
-        // This is a workaround for the iframe communication issues
-        setTimeout(() => {
-          setLoadingProgress(100);
-          setLoading(false);
-        }, 5000);
+        // Set up message listener for iframe communication
+        const handleMessage = (event: MessageEvent) => {
+          if (event.data.type === "loadingComplete") {
+            setLoadingProgress(100);
+            setTimeout(() => {
+              setLoading(false);
+            }, 500);
+          } else if (event.data.type === "loadingError") {
+            setLoadingError(event.data.error || "Failed to load point cloud");
+            setLoading(false);
+          } else if (event.data.type === "stylingComplete") {
+            console.log("Potree styling complete");
+          }
+        };
+
+        window.addEventListener("message", handleMessage);
 
         // Load the iframe with the Potree viewer
         if (iframeRef.current) {
           const latitude = projectData.location?.latitude || 39.7684;
           const longitude = projectData.location?.longitude || -86.1581;
           
-          // Load the Potree viewer directly
           iframeRef.current.src = `/potree-viewer.html?jobNumber=${jobNumber}&mapType=${mapType}&latitude=${latitude}&longitude=${longitude}&projectName=${encodeURIComponent(projectData.projectName || "")}`;
+          
+          iframeRef.current.onload = () => {
+            setLoadingProgress(70);
+          };
         }
+
+        return () => {
+          window.removeEventListener("message", handleMessage);
+        };
       } catch (err) {
         console.error("Error loading project data:", err);
         setLoadingError(`Failed to load project data: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -118,23 +119,15 @@ export default function PotreeViewer() {
   // Update map type when it changes
   useEffect(() => {
     if (!loading && iframeRef.current && iframeRef.current.contentWindow) {
-      try {
-        iframeRef.current.contentWindow.postMessage({ type: "setMapType", mapType }, "*");
-      } catch (error) {
-        console.error("Error sending message to iframe:", error);
-      }
+      iframeRef.current.contentWindow.postMessage({ type: "setMapType", mapType }, "*");
     }
   }, [mapType, loading]);
 
   // Handle sidebar toggle
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
-    if (!loading && iframeRef.current && iframeRef.current.contentWindow) {
-      try {
-        iframeRef.current.contentWindow.postMessage({ type: "toggleSidebar" }, "*");
-      } catch (error) {
-        console.error("Error sending message to iframe:", error);
-      }
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({ type: "toggleSidebar" }, "*");
     }
   };
 
@@ -156,16 +149,6 @@ export default function PotreeViewer() {
               {projectName || project?.projectName || `Project ${jobNumber}`}
             </h1>
           </div>
-          
-          {thumbnailUrl && (
-            <div className="mb-8 max-w-md mx-auto">
-              <img 
-                src={thumbnailUrl} 
-                alt="Project Thumbnail" 
-                className="w-full h-auto rounded-lg shadow-lg border border-hwc-red/20"
-              />
-            </div>
-          )}
           
           <div className="w-80 mx-auto">
             <div className="bg-hwc-gray rounded-full h-2 mb-4">
@@ -295,17 +278,6 @@ export default function PotreeViewer() {
           <Card className="bg-hwc-dark/95 backdrop-blur-md border border-hwc-red/20 text-white">
             <CardContent className="p-6">
               <h3 className="font-semibold mb-4 text-lg">Project Information</h3>
-              
-              {thumbnailUrl && (
-                <div className="mb-4">
-                  <img 
-                    src={thumbnailUrl} 
-                    alt="Project Thumbnail" 
-                    className="w-full h-auto rounded-lg shadow-lg border border-hwc-red/20 mb-4"
-                  />
-                </div>
-              )}
-              
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-hwc-light">Job Number:</span>
@@ -406,7 +378,6 @@ export default function PotreeViewer() {
         className="absolute inset-0 w-full h-full border-0 z-10"
         title="Potree Viewer"
         style={{ background: "#292C30" }}
-        allow="fullscreen"
       />
     </>
   );
