@@ -1,12 +1,10 @@
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Menu, X } from "lucide-react";
-import { projectService } from "@/services/projectService";
 import { Project } from "@/types/project";
 
 // Define types for Potree
@@ -56,6 +54,15 @@ declare global {
   }
 }
 
+// Define a type for project data
+interface ProjectData extends Project {
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
+}
+
 export default function PotreeViewer() {
   const router = useRouter();
   const { jobNumber } = router.query;
@@ -66,62 +73,69 @@ export default function PotreeViewer() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const renderAreaRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
 
-    const scriptsLoaded: HTMLScriptElement[] = [];
-
-    const fetchProjectAndLoad = async () => {
+    // Create a simple initialization function that will be called after a delay
+    const initializePotree = async () => {
       try {
-        setLoadingProgress(10);
-
-        // Try to fetch project info from API
-        let projectData = {
-          jobNumber: jobNumber as string,
-          projectName: `Project ${jobNumber}`,
-          clientName: "Demo Client",
-          acquistionDate: new Date().toISOString(),
-          description: "Demo project for testing Potree viewer",
-          status: "active" as const,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          projectType: "survey"
-        };
-
-        try {
-          const res = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/info.json`);
-          if (res.ok) {
-            const data = await res.json();
-            console.log("Project data:", data);
-            setProjectName(data.projectName);
-            projectData = { ...projectData, projectName: data.projectName };
+        console.log("Starting Potree initialization...");
+        
+        // Create render area element if it doesn't exist
+        console.log("Creating render area element...");
+        if (!document.getElementById("potree_render_area")) {
+          const renderArea = document.createElement("div");
+          renderArea.id = "potree_render_area";
+          renderArea.style.width = "100%";
+          renderArea.style.height = "100vh";
+          renderArea.style.position = "absolute";
+          renderArea.style.top = "0";
+          renderArea.style.left = "0";
+          renderArea.style.backgroundImage = "url('/potree/build/potree/resources/images/background.jpg')";
+          
+          // Create sidebar logo element
+          const sidebarLogo = document.createElement("div");
+          sidebarLogo.id = "sidebar_logo";
+          renderArea.appendChild(sidebarLogo);
+          
+          // Create container if it doesn't exist
+          const container = document.querySelector(".potree_container") || document.createElement("div");
+          container.className = "potree_container";
+          if (!container.parentElement) {
+            container.style.position = "absolute";
+            container.style.width = "100%";
+            container.style.height = "100%";
+            container.style.left = "0";
+            container.style.top = "0";
+            document.body.appendChild(container);
           }
-        } catch {
-          console.log("No project info found, using mock data");
+          
+          // Add render area to container
+          container.appendChild(renderArea);
+          
+          // Create sidebar container if it doesn't exist
+          if (!document.getElementById("potree_sidebar_container")) {
+            const sidebarContainer = document.createElement("div");
+            sidebarContainer.id = "potree_sidebar_container";
+            container.appendChild(sidebarContainer);
+          }
         }
-
-        setProject(projectData);
-        setLoadingProgress(30);
-
-        const loadScript = (src: string): Promise<void> =>
-          new Promise((resolve, reject) => {
-            if (document.querySelector(`script[src="${src}"]`)) {
-              resolve();
-              return;
-            }
-
-            const script = document.createElement("script");
-            script.src = src;
-            script.async = false;
-            script.onload = () => {
-              scriptsLoaded.push(script);
-              resolve();
-            };
-            script.onerror = () => reject(new Error(`Failed to load script ${src}`));
-            document.body.appendChild(script);
-          });
-
+        
+        // Create sidebar element if it doesn't exist
+        console.log("Creating sidebar element...");
+        if (!document.getElementById("potree_sidebar_container")) {
+          const sidebarContainer = document.createElement("div");
+          sidebarContainer.id = "potree_sidebar_container";
+          const container = document.querySelector(".potree_container");
+          if (container) {
+            container.appendChild(sidebarContainer);
+          }
+        }
+        
         // Load CSS files
         const loadCSS = (href: string): void => {
           if (document.querySelector(`link[href="${href}"]`)) return;
@@ -130,9 +144,7 @@ export default function PotreeViewer() {
           link.href = href;
           document.head.appendChild(link);
         };
-
-        console.log("Loading scripts...");
-
+        
         // Load required CSS files
         loadCSS("/potree/build/potree/potree.css");
         loadCSS("/potree/libs/jquery-ui/jquery-ui.min.css");
@@ -141,7 +153,26 @@ export default function PotreeViewer() {
         loadCSS("/potree/libs/jstree/themes/mixed/style.css");
         loadCSS("/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css");
         loadCSS("/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css");
-
+        
+        // Load scripts sequentially
+        const loadScript = (src: string): Promise<void> =>
+          new Promise((resolve, reject) => {
+            if (document.querySelector(`script[src="${src}"]`)) {
+              resolve();
+              return;
+            }
+            
+            const script = document.createElement("script");
+            script.src = src;
+            script.async = false;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error(`Failed to load script ${src}`));
+            document.body.appendChild(script);
+          });
+        
+        console.log("Loading scripts...");
+        setLoadingProgress(20);
+        
         const scripts = [
           "/potree/libs/jquery/jquery-3.1.1.min.js",
           "/potree/libs/spectrum/spectrum.js",
@@ -162,100 +193,114 @@ export default function PotreeViewer() {
           "/potree/libs/panzoom/panzoom.min.js",
           "/potree/libs/papa/papaparse.js"
         ];
-
+        
         for (let i = 0; i < scripts.length; i++) {
           await loadScript(scripts[i]);
-          setLoadingProgress(40 + Math.floor((i / scripts.length) * 40));
+          setLoadingProgress(20 + Math.floor((i / scripts.length) * 60));
         }
-
-        setLoadingProgress(80);
-
+        
         // Wait for Potree to be available
-        await new Promise<void>((resolve, reject) => {
-          let attempts = 0;
-          const maxAttempts = 50;
-          
-          const checkPotree = () => {
-            attempts++;
-            if (window.Potree) {
-              resolve();
-            } else if (attempts >= maxAttempts) {
-              reject(new Error("Potree not available after maximum attempts"));
-            } else {
-              setTimeout(checkPotree, 100);
-            }
-          };
-          
-          checkPotree();
-        });
-
+        if (!window.Potree) {
+          throw new Error("Potree not available after loading scripts");
+        }
+        
+        // Try to fetch project info from API
+        let projectData: ProjectData = {
+          jobNumber: jobNumber as string,
+          projectName: `Project ${jobNumber}`,
+          clientName: "Demo Client",
+          acquistionDate: new Date().toISOString(),
+          description: "Demo project for testing Potree viewer",
+          status: "active" as const,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          projectType: "survey",
+          location: {
+            latitude: 39.7684,
+            longitude: -86.1581,
+            address: "Indianapolis, IN"
+          }
+        };
+        
+        try {
+          const res = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/info.json`);
+          if (res.ok) {
+            const data = await res.json();
+            console.log("Project data:", data);
+            setProjectName(data.projectName);
+            projectData = { ...projectData, ...data };
+          }
+        } catch {
+          console.log("No project info found, using mock data");
+        }
+        
+        setProject(projectData);
+        setLoadingProgress(85);
+        
+        // Create the Potree viewer
         console.log("Potree is available, creating viewer...");
-
-        // Simple DOM element check - just ensure it exists
-        const element = document.getElementById("potree_render_area");
-        if (!element) {
+        
+        // Get the render area element
+        const renderAreaElement = document.getElementById("potree_render_area");
+        if (!renderAreaElement) {
           throw new Error("Potree render area not found");
         }
-
-        const viewer = new window.Potree.Viewer(element);
+        
+        const viewer = new window.Potree.Viewer(renderAreaElement);
         viewer.setEDLEnabled(true);
         viewer.setFOV(60);
         viewer.setPointBudget(1_000_000);
         viewer.setDescription(projectData.projectName);
         
-        setLoadingProgress(85);
-        
         viewer.loadGUI(() => {
           viewer.setLanguage("en");
           viewer.toggleSidebar();
-          setLoadingProgress(90);
           console.log("Potree GUI loaded");
         });
-
-        console.log("Loading point cloud...");
         
+        // Load point cloud
+        console.log("Loading point cloud...");
         const base = "http://localhost:4400/pointclouds/";
         const cloudJsPath = `${base}${jobNumber}/cloud.js`;
         const metadataPath = `${base}${jobNumber}/metadata.json`;
-
-        const response = await fetch(cloudJsPath, { method: "HEAD" });
-        const pathToLoad = response.ok ? cloudJsPath : metadataPath;
-
-        const loadCallback = (e: PotreeLoadEvent) => {
-          if (e.pointcloud) {
-            console.log("Point cloud loaded successfully");
-            viewer.scene.addPointCloud(e.pointcloud);
-            e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
-            viewer.fitToScreen(0.5);
-            
-            // If project has location data, position the map view accordingly
-            if (projectData.location?.latitude && projectData.location?.longitude) {
-              try {
-                const mapView = viewer.mapView;
-                if (mapView) {
-                  mapView.setCenter([projectData.location.longitude, projectData.location.latitude]);
-                  mapView.setZoom(15);
-                }
-              } catch (mapError) {
-                console.error("Failed to set map location:", mapError);
-              }
-            }
-            
-            setLoadingProgress(100);
-            setTimeout(() => {
-              setLoading(false);
-            }, 500);
-          } else {
-            console.error("Failed to load point cloud.");
-            // Still show the viewer even if no point cloud loads
-            setLoadingProgress(100);
-            setTimeout(() => {
-              setLoading(false);
-            }, 500);
-          }
-        };
-
+        
         try {
+          const response = await fetch(cloudJsPath, { method: "HEAD" });
+          const pathToLoad = response.ok ? cloudJsPath : metadataPath;
+          
+          const loadCallback = (e: PotreeLoadEvent) => {
+            if (e.pointcloud) {
+              console.log("Point cloud loaded successfully");
+              viewer.scene.addPointCloud(e.pointcloud);
+              e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
+              viewer.fitToScreen(0.5);
+              
+              // If project has location data, position the map view accordingly
+              if (projectData.location?.latitude && projectData.location?.longitude) {
+                try {
+                  const mapView = viewer.mapView;
+                  if (mapView) {
+                    mapView.setCenter([projectData.location.longitude, projectData.location.latitude]);
+                    mapView.setZoom(15);
+                  }
+                } catch (mapError) {
+                  console.error("Failed to set map location:", mapError);
+                }
+              }
+              
+              setLoadingProgress(100);
+              setTimeout(() => {
+                setLoading(false);
+              }, 500);
+            } else {
+              console.error("Failed to load point cloud");
+              setLoadingProgress(100);
+              setTimeout(() => {
+                setLoading(false);
+              }, 500);
+            }
+          };
+          
           if (pathToLoad.endsWith("cloud.js")) {
             window.Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
           } else {
@@ -263,32 +308,25 @@ export default function PotreeViewer() {
           }
         } catch (loadError) {
           console.error("Error loading point cloud:", loadError);
-          // Continue anyway to show the viewer interface
           setLoadingProgress(100);
           setTimeout(() => {
             setLoading(false);
           }, 500);
         }
-      } catch (error) {
-        console.error("Error loading viewer:", error);
-        setError(`Failed to initialize point cloud viewer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } catch (err) {
+        console.error("Error initializing Potree:", err);
+        setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
         setLoading(false);
       }
     };
-
-    // Start loading after a short delay to ensure DOM is ready
+    
+    // Start initialization after a delay to ensure DOM is ready
     const timeoutId = setTimeout(() => {
-      fetchProjectAndLoad();
+      initializePotree();
     }, 1000);
-
-    // Cleanup function
+    
     return () => {
       clearTimeout(timeoutId);
-      scriptsLoaded.forEach((script) => {
-        if (script && script.parentNode) {
-          script.parentNode.removeChild(script);
-        }
-      });
     };
   }, [jobNumber]);
 
@@ -474,8 +512,9 @@ export default function PotreeViewer() {
         </div>
       </div>
 
-      {/* Potree Container - Following your working pattern */}
+      {/* Potree Container with Refs */}
       <div
+        ref={containerRef}
         className="potree_container"
         style={{
           position: "absolute",
@@ -486,6 +525,7 @@ export default function PotreeViewer() {
         }}
       >
         <div
+          ref={renderAreaRef}
           id="potree_render_area"
           style={{
             backgroundImage: "url('/potree/build/potree/resources/images/background.jpg')",
@@ -495,7 +535,10 @@ export default function PotreeViewer() {
         >
           <div id="sidebar_logo"></div>
         </div>
-        <div id="potree_sidebar_container" />
+        <div 
+          ref={sidebarRef}
+          id="potree_sidebar_container" 
+        />
       </div>
 
       {/* Custom Styles */}
