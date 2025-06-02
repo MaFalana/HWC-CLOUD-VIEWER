@@ -424,18 +424,39 @@ export const potreeLocationService = {
    */
   convertProjectedToGeographic(x: number, y: number): { lat: number; lon: number } | null {
     try {
-      // This is a very rough approximation for Indiana State Plane coordinates
+      // This is a more accurate approximation for Indiana State Plane coordinates
       // In a real implementation, you'd use proj4js with proper projection definitions
       
       // Check if coordinates are in the range for Indiana State Plane
       if (x >= 3000000 && x <= 4000000 && y >= 1000000 && y <= 2000000) {
-        // Very rough conversion for Indiana coordinates
-        // These are approximate values for demonstration
-        const lat = 39.76 + ((y - 1725000) / 100000) * 0.9;
-        const lon = -86.15 + ((x - 3155000) / 100000) * 1.1;
+        // More accurate conversion for Indiana coordinates
+        // Based on the example data: center point [3154601.912, 1727378.764] should be around Indianapolis area
+        
+        // Reference point: Indianapolis downtown is approximately at 39.7684°N, 86.1581°W
+        // The example data center is at [3154601.912, 1727378.764]
+        // This gives us a reference for conversion
+        
+        const refEasting = 3154601.912;  // Reference easting from example data
+        const refNorthing = 1727378.764; // Reference northing from example data
+        const refLat = 39.7684;          // Reference latitude (Indianapolis)
+        const refLon = -86.1581;         // Reference longitude (Indianapolis)
+        
+        // Calculate offset from reference point
+        const deltaEasting = x - refEasting;
+        const deltaNorthing = y - refNorthing;
+        
+        // Convert feet to degrees (very rough approximation for Indiana)
+        // 1 degree latitude ≈ 364,000 feet at Indiana's latitude
+        // 1 degree longitude ≈ 288,000 feet at Indiana's latitude
+        const latOffset = deltaNorthing / 364000;
+        const lonOffset = deltaEasting / 288000;
+        
+        const lat = refLat + latOffset;
+        const lon = refLon + lonOffset;
         
         // Check if result is reasonable for Indiana
         if (lat >= 37.5 && lat <= 41.8 && lon >= -88.1 && lon <= -84.8) {
+          console.log(`Converted coordinates: [${x}, ${y}] -> [${lat}, ${lon}]`);
           return { lat, lon };
         }
       }
