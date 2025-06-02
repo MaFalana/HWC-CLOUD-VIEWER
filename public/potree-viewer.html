@@ -501,16 +501,47 @@
             updateLoadingProgress(60);
           }, 500);
           
+          // Function to check if a file exists
+          const checkFileExists = async (url) => {
+            try {
+              const response = await fetch(url, { method: 'HEAD' });
+              return response.ok;
+            } catch (error) {
+              return false;
+            }
+          };
+          
           // Load point cloud
-          const loadPointCloud = () => {
+          const loadPointCloud = async () => {
             updateLoadingProgress(70);
             
-            // Always use the example point cloud for now
-            // This ensures we have something to display while debugging
-            const pathToLoad = "/pointclouds/example/metadata.json";
-            console.log("Loading example point cloud from:", pathToLoad);
+            const baseUrl = "http://localhost:4400/pointclouds/";
+            let pathToLoad = null;
             
-            Potree.loadPointCloud(pathToLoad, "example", (e) => {
+            // First try to load cloud.js directly
+            const cloudJsPath = `${baseUrl}${jobNumber}/cloud.js`;
+            const cloudJsExists = await checkFileExists(cloudJsPath);
+            
+            if (cloudJsExists) {
+              pathToLoad = cloudJsPath;
+              console.log("Using cloud.js for point cloud loading:", pathToLoad);
+            } else {
+              // If cloud.js doesn't exist, try metadata.json
+              const metadataPath = `${baseUrl}${jobNumber}/metadata.json`;
+              const metadataExists = await checkFileExists(metadataPath);
+              
+              if (metadataExists) {
+                pathToLoad = metadataPath;
+                console.log("Using metadata.json for point cloud loading:", pathToLoad);
+              } else {
+                // If neither exists, use the example point cloud
+                pathToLoad = "/pointclouds/example/metadata.json";
+                console.log("Using example point cloud as fallback:", pathToLoad);
+              }
+            }
+            
+            // Load the point cloud
+            Potree.loadPointCloud(pathToLoad, jobNumber, (e) => {
               if (e.pointcloud) {
                 console.log("Point cloud loaded successfully");
                 viewer.scene.addPointCloud(e.pointcloud);
