@@ -1,4 +1,3 @@
-
 // Service for parsing .proj files and extracting CRS information
 export interface ProjFileData {
   projcs: string;
@@ -79,20 +78,20 @@ export const projFileService = {
   },
 
   /**
-   * Fetch and parse a .proj file for a given job number
+   * Fetch and parse a .prj file for a given job number
    */
   async fetchProjFile(jobNumber: string): Promise<ProjFileData | null> {
     try {
-      const response = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}.proj`);
+      const response = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}.prj`);
       if (!response.ok) {
-        console.log(`No .proj file found for job ${jobNumber}`);
+        console.log(`No .prj file found for job ${jobNumber}`);
         return null;
       }
       
       const content = await response.text();
       return this.parseProjFile(content);
     } catch (error) {
-      console.error(`Error fetching .proj file for job ${jobNumber}:`, error);
+      console.error(`Error fetching .prj file for job ${jobNumber}:`, error);
       return null;
     }
   },

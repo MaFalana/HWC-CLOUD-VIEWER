@@ -1,5 +1,5 @@
 import { Project, CreateProjectData } from "@/types/project";
-import { projFileService } from "./projFileService";
+import { projFileService, ProjFileData } from "./projFileService";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4400";
 
@@ -23,7 +23,7 @@ interface RawProjectData {
   };
   projFile?: {
     content: string;
-    parsed?: any;
+    parsed?: ProjFileData;
   };
   status: "active" | "completed" | "archived" | "processing";
   thumbnailUrl?: string;
@@ -49,7 +49,7 @@ export const projectService = {
         updatedAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
       };
 
-      // Try to fetch and parse .proj file
+      // Try to fetch and parse .prj file
       try {
         const projData = await projFileService.fetchProjFile(project.jobNumber);
         if (projData) {
@@ -58,12 +58,12 @@ export const projectService = {
             parsed: projData
           };
 
-          // If no CRS is set, try to derive it from .proj file
+          // If no CRS is set, try to derive it from .prj file
           if (!transformedProject.crs || !transformedProject.crs.horizontal) {
             transformedProject.crs = projFileService.projDataToCRS(projData);
           }
 
-          // If no location is set, try to derive it from .proj file
+          // If no location is set, try to derive it from .prj file
           if (!transformedProject.location || (!transformedProject.location.latitude && !transformedProject.location.longitude)) {
             const projLocation = projFileService.getLocationFromProj(projData);
             if (projLocation && projLocation.latitude && projLocation.longitude) {
@@ -76,7 +76,7 @@ export const projectService = {
           }
         }
       } catch (error) {
-        console.log(`No .proj file found for project ${project.jobNumber}:`, error);
+        console.log(`No .prj file found for project ${project.jobNumber}:`, error);
       }
 
       return transformedProject;
@@ -99,7 +99,7 @@ export const projectService = {
       updatedAt: data.acquistionDate ? new Date(data.acquistionDate.split('TypeError')[0]) : new Date(),
     };
 
-    // Try to fetch and parse .proj file
+    // Try to fetch and parse .prj file
     try {
       const projData = await projFileService.fetchProjFile(jobNumber);
       if (projData) {
@@ -108,12 +108,12 @@ export const projectService = {
           parsed: projData
         };
 
-        // If no CRS is set, try to derive it from .proj file
+        // If no CRS is set, try to derive it from .prj file
         if (!project.crs || !project.crs.horizontal) {
           project.crs = projFileService.projDataToCRS(projData);
         }
 
-        // If no location is set, try to derive it from .proj file
+        // If no location is set, try to derive it from .prj file
         if (!project.location || (!project.location.latitude && !project.location.longitude)) {
           const projLocation = projFileService.getLocationFromProj(projData);
           if (projLocation && projLocation.latitude && projLocation.longitude) {
@@ -126,7 +126,7 @@ export const projectService = {
         }
       }
     } catch (error) {
-      console.log(`No .proj file found for project ${jobNumber}:`, error);
+      console.log(`No .prj file found for project ${jobNumber}:`, error);
     }
 
     return project;

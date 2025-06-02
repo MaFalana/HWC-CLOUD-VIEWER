@@ -62,13 +62,21 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
           {projects.map((project) => (
             <TableRow key={project.jobNumber} className="hover:bg-gray-50">
               <TableCell>
-                <div>
-                  <div className="font-medium">{project.projectName}</div>
-                  {project.description && (
-                    <div className="text-sm text-gray-500 truncate max-w-xs">
-                      {project.description}
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm truncate">{project.projectName}</h4>
+                    <p className="text-xs text-gray-500">{project.jobNumber}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className={`${getStatusColor(project.status)} text-white text-xs`}>
+                        {project.status}
+                      </Badge>
+                      {project.projectType && (
+                        <Badge variant="outline" className="text-xs">
+                          {project.projectType}
+                        </Badge>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </TableCell>
               <TableCell className="font-mono text-sm">{project.jobNumber}</TableCell>

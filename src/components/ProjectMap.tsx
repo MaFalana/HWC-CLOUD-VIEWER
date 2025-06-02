@@ -278,7 +278,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="font-semibold">{selectedProject.projectName}</h3>
-                  <p className="text-sm text-gray-500">Job #{selectedProject.jobNumber}</p>
+                  <p className="text-sm text-gray-500">{selectedProject.jobNumber}</p>
                 </div>
                 <Button
                   variant="ghost"

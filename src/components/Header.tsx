@@ -43,7 +43,6 @@ export default function Header({
               className="h-10 hover:opacity-80 transition-opacity"
             />
           </a>
-          <h1 className="text-xl font-semibold font-heading">Cloud Viewer</h1>
         </div>
 
         <div className="flex items-center gap-4">

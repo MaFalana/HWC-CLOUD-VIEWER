@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,7 +93,7 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
       <CardContent className="p-4">
         <div className="mb-2">
           <h3 className="font-semibold text-lg line-clamp-1">{project.projectName}</h3>
-          <p className="text-sm text-gray-500 font-mono">#{project.jobNumber}</p>
+          <p className="text-sm text-gray-500 font-mono">{project.jobNumber}</p>
         </div>
 
         <div className="space-y-1 text-sm text-gray-600">
@@ -108,7 +107,7 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
           </div>
           {project.clientName && (
             <div className="flex items-center gap-1">
-              <span>Client: {project.clientName}</span>
+              <span>{project.clientName}</span>
             </div>
           )}
           {project.location && (
