@@ -1,5 +1,5 @@
+import { arcgisService } from "./arcgisService";
 
-// Service for parsing .tfw (world) files and extracting location information
 export interface WorldFileData {
   pixelSizeX: number;
   rotationY: number;
@@ -15,7 +15,8 @@ export const worldFileService = {
    */
   parseWorldFile(content: string): WorldFileData | null {
     try {
-      const lines = content.trim().split('\n').map(line => line.trim());
+      const lines = content.trim().split('
+').map(line => line.trim());
       
       if (lines.length < 6) {
         console.error('World file must contain 6 lines');
@@ -64,14 +65,32 @@ export const worldFileService = {
   },
 
   /**
-   * Convert world file coordinates to geographic coordinates (rough approximation)
-   * This assumes the world file coordinates are in a projected coordinate system
+   * Convert world file coordinates to geographic coordinates using ArcGIS REST API
    */
-  worldFileToGeographic(worldData: WorldFileData): { latitude?: number; longitude?: number } | null {
+  async worldFileToGeographic(
+    worldData: WorldFileData,
+    spatialReference?: string | number,
+    imageWidth: number = 1000,
+    imageHeight: number = 1000
+  ): Promise<{ latitude?: number; longitude?: number } | null> {
     try {
-      // For most US state plane coordinate systems, we can make rough approximations
-      // This is a simplified conversion - in reality, you'd need proper coordinate transformation
-      
+      // If we have a spatial reference, use ArcGIS REST API for accurate projection
+      if (spatialReference) {
+        const epsgCode = arcgisService.normalizeEpsgCode(spatialReference);
+        if (epsgCode) {
+          const result = await arcgisService.worldFileToGeographic(
+            worldData,
+            epsgCode,
+            imageWidth,
+            imageHeight
+          );
+          if (result) {
+            return result;
+          }
+        }
+      }
+
+      // Fallback to simple approximation
       const x = worldData.upperLeftX;
       const y = worldData.upperLeftY;
       
@@ -113,7 +132,12 @@ export const worldFileService = {
    * Get the center point of the area covered by the world file
    * Useful for determining the project's central location
    */
-  getCenterPoint(worldData: WorldFileData, imageWidth: number = 1000, imageHeight: number = 1000): { latitude?: number; longitude?: number } | null {
+  async getCenterPoint(
+    worldData: WorldFileData,
+    spatialReference?: string | number,
+    imageWidth: number = 1000,
+    imageHeight: number = 1000
+  ): Promise<{ latitude?: number; longitude?: number } | null> {
     try {
       // Calculate the center of the image in world coordinates
       const centerX = worldData.upperLeftX + (imageWidth / 2) * worldData.pixelSizeX;
@@ -126,7 +150,7 @@ export const worldFileService = {
         upperLeftY: centerY
       };
       
-      return this.worldFileToGeographic(centerWorldData);
+      return this.worldFileToGeographic(centerWorldData, spatialReference, 1, 1);
     } catch (error) {
       console.error('Error calculating center point:', error);
       return null;

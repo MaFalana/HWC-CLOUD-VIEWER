@@ -1,4 +1,6 @@
 // Service for parsing .proj files and extracting CRS information
+import { arcgisService } from "./arcgisService";
+
 export interface ProjFileData {
   projcs: string;
   geogcs: string;
@@ -124,11 +126,17 @@ export const projFileService = {
   },
 
   /**
-   * Get location information from .proj file parameters
+   * Get location information from .proj file parameters using ArcGIS REST API
    */
-  getLocationFromProj(projData: ProjFileData): { latitude?: number; longitude?: number } | null {
+  async getLocationFromProj(projData: ProjFileData): Promise<{ latitude?: number; longitude?: number } | null> {
     try {
-      // Extract central meridian and latitude of origin from parameters
+      // First try using ArcGIS REST API for accurate projection
+      const arcgisResult = await arcgisService.getLocationFromProjFile(projData);
+      if (arcgisResult) {
+        return arcgisResult;
+      }
+
+      // Fallback to simple approximation if ArcGIS fails
       const centralMeridian = projData.parameters['central_meridian'];
       const latitudeOfOrigin = projData.parameters['latitude_of_origin'];
       const falseEasting = projData.parameters['false_easting'];

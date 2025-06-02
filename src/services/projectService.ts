@@ -86,16 +86,18 @@ export const projectService = {
 
           // Try world file first (usually more accurate for location)
           if (worldData) {
-            derivedLocation = worldFileService.worldFileToGeographic(worldData);
+            // Use EPSG code from .prj file if available for accurate projection
+            const spatialRef = projData?.epsgCode ? projData.epsgCode.replace('EPSG:', '') : undefined;
+            derivedLocation = await worldFileService.worldFileToGeographic(worldData, spatialRef);
             if (!derivedLocation) {
               // Try center point calculation
-              derivedLocation = worldFileService.getCenterPoint(worldData);
+              derivedLocation = await worldFileService.getCenterPoint(worldData, spatialRef);
             }
           }
 
           // Fall back to .prj file if world file didn't work
           if (!derivedLocation && projData) {
-            derivedLocation = projFileService.getLocationFromProj(projData);
+            derivedLocation = await projFileService.getLocationFromProj(projData);
           }
 
           if (derivedLocation && derivedLocation.latitude && derivedLocation.longitude) {
@@ -180,16 +182,18 @@ export const projectService = {
 
         // Try world file first (usually more accurate for location)
         if (worldData) {
-          derivedLocation = worldFileService.worldFileToGeographic(worldData);
+          // Use EPSG code from .prj file if available for accurate projection
+          const spatialRef = projData?.epsgCode ? projData.epsgCode.replace('EPSG:', '') : undefined;
+          derivedLocation = await worldFileService.worldFileToGeographic(worldData, spatialRef);
           if (!derivedLocation) {
             // Try center point calculation
-            derivedLocation = worldFileService.getCenterPoint(worldData);
+            derivedLocation = await worldFileService.getCenterPoint(worldData, spatialRef);
           }
         }
 
         // Fall back to .prj file if world file didn't work
         if (!derivedLocation && projData) {
-          derivedLocation = projFileService.getLocationFromProj(projData);
+          derivedLocation = await projFileService.getLocationFromProj(projData);
         }
 
         if (derivedLocation && derivedLocation.latitude && derivedLocation.longitude) {
