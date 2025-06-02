@@ -76,7 +76,9 @@ export default function PotreeViewer() {
 
         // Set up message listener for iframe communication
         const handleMessage = (event: MessageEvent) => {
-          if (event.data.type === "loadingComplete") {
+          if (event.data.type === "loadingProgress") {
+            setLoadingProgress(50 + Math.floor(event.data.progress / 2)); // Scale to 50-100%
+          } else if (event.data.type === "loadingComplete") {
             setLoadingProgress(100);
             setTimeout(() => {
               setLoading(false);
@@ -96,10 +98,11 @@ export default function PotreeViewer() {
           const latitude = projectData.location?.latitude || 39.7684;
           const longitude = projectData.location?.longitude || -86.1581;
           
-          iframeRef.current.src = `/potree-viewer.html?jobNumber=${jobNumber}&mapType=${mapType}&latitude=${latitude}&longitude=${longitude}&projectName=${encodeURIComponent(projectData.projectName || "")}`;
+          // Use the intermediate iframe to avoid DOM issues
+          iframeRef.current.src = `/potree-iframe.html?jobNumber=${jobNumber}&mapType=${mapType}&latitude=${latitude}&longitude=${longitude}&projectName=${encodeURIComponent(projectData.projectName || "")}`;
           
           iframeRef.current.onload = () => {
-            setLoadingProgress(70);
+            console.log("Iframe loaded");
           };
         }
 
@@ -378,6 +381,7 @@ export default function PotreeViewer() {
         className="absolute inset-0 w-full h-full border-0 z-10"
         title="Potree Viewer"
         style={{ background: "#292C30" }}
+        allow="fullscreen"
       />
     </>
   );
