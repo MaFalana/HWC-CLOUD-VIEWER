@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, Loader2, Check, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Project, CreateProjectData, CRSOption } from "@/types/project";
-import { arcgisService } from "@/services/arcgisService";
+import { crsService } from "@/services/crsService";
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -51,7 +51,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   const [verticalSearch, setVerticalSearch] = useState("");
   const [geoidSearch, setGeoidSearch] = useState("");
 
-  // CRS options from ArcGIS API
+  // CRS options from API
   const [crsOptions, setCrsOptions] = useState<{
     horizontal: CRSOption[];
     vertical: CRSOption[];
@@ -62,10 +62,57 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     geoid: []
   });
 
+  // Search results for horizontal CRS
+  const [horizontalSearchResults, setHorizontalSearchResults] = useState<CRSOption[]>([]);
+  const [horizontalSearchLoading, setHorizontalSearchLoading] = useState(false);
+
   const [crsLoading, setCrsLoading] = useState(false);
   const [crsError, setCrsError] = useState<string | null>(null);
 
-  // Load CRS options when modal opens
+  // Debounce function for API calls
+  const debounce = useCallback((func: Function, delay: number) => {
+    let timeoutId: NodeJS.Timeout;
+    return (...args: any[]) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func.apply(null, args), delay);
+    };
+  }, []);
+
+  // Debounced search function for horizontal CRS
+  const debouncedHorizontalSearch = useCallback(
+    debounce(async (query: string) => {
+      if (query.trim().length < 2) {
+        setHorizontalSearchResults([]);
+        setHorizontalSearchLoading(false);
+        return;
+      }
+
+      setHorizontalSearchLoading(true);
+      try {
+        const results = await crsService.searchCRS(query);
+        setHorizontalSearchResults(results);
+      } catch (error) {
+        console.error('Error searching horizontal CRS:', error);
+        setHorizontalSearchResults([]);
+      } finally {
+        setHorizontalSearchLoading(false);
+      }
+    }, 300),
+    []
+  );
+
+  // Handle horizontal search input changes
+  useEffect(() => {
+    if (horizontalSearch.trim()) {
+      setHorizontalSearchLoading(true);
+      debouncedHorizontalSearch(horizontalSearch);
+    } else {
+      setHorizontalSearchResults([]);
+      setHorizontalSearchLoading(false);
+    }
+  }, [horizontalSearch, debouncedHorizontalSearch]);
+
+  // Load initial CRS options when modal opens
   useEffect(() => {
     if (isOpen) {
       loadCRSOptions();
@@ -96,14 +143,14 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     setCrsError(null);
     
     try {
-      const options = await arcgisService.getCRSOptions();
+      const options = await crsService.getAllCRSOptions();
       setCrsOptions(options);
     } catch (error) {
       console.error("Failed to load CRS options:", error);
       setCrsError("Failed to load coordinate reference systems. Using fallback options.");
       
       // Use fallback options
-      const fallback = arcgisService.getFallbackCRSOptions();
+      const fallback = crsService.getFallbackCRS();
       setCrsOptions(fallback);
     } finally {
       setCrsLoading(false);
@@ -167,6 +214,122 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
       ...prev,
       tags: prev.tags?.filter(tag => tag !== tagToRemove) || []
     }));
+  };
+
+  const renderHorizontalCRSSelect = () => {
+    // Use search results if searching, otherwise use default options
+    const optionsToShow = horizontalSearch.trim() 
+      ? horizontalSearchResults 
+      : crsOptions.horizontal;
+    
+    const selectedOption = [...crsOptions.horizontal, ...horizontalSearchResults]
+      .find(opt => opt.code === formData.crs?.horizontal);
+
+    return (
+      <div className="space-y-2">
+        <Label>Horizontal CRS</Label>
+        
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search horizontal CRS..."
+            value={horizontalSearch}
+            onChange={(e) => {
+              setHorizontalSearch(e.target.value);
+              if (!horizontalOpen) setHorizontalOpen(true);
+            }}
+            onFocus={() => setHorizontalOpen(true)}
+            className="pl-10"
+            autoComplete="off"
+          />
+        </div>
+
+        {/* Selected Value Display */}
+        {selectedOption && (
+          <div className="p-3 bg-gray-50 rounded-md border">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-mono text-sm font-medium text-blue-600">
+                {selectedOption.code}
+              </span>
+              {selectedOption.recommended && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                  Recommended
+                </span>
+              )}
+            </div>
+            <div className="text-sm font-medium text-gray-900 mb-1">
+              {selectedOption.name}
+            </div>
+            {selectedOption.description && (
+              <div className="text-xs text-gray-600">
+                {selectedOption.description}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Options List */}
+        {horizontalOpen && (
+          <div className="border rounded-md max-h-[300px] overflow-y-auto bg-white shadow-lg">
+            {horizontalSearchLoading ? (
+              <div className="flex items-center justify-center p-4">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span>Searching...</span>
+              </div>
+            ) : optionsToShow.length === 0 ? (
+              <div className="p-4 text-center text-sm text-gray-500">
+                {horizontalSearch.trim() ? "No results found" : "No options available"}
+              </div>
+            ) : (
+              optionsToShow.map((option) => (
+                <div
+                  key={option.code}
+                  className={`flex items-start gap-3 p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                    formData.crs?.horizontal === option.code ? "bg-blue-50" : ""
+                  }`}
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      crs: { ...prev.crs!, horizontal: option.code }
+                    }));
+                    setHorizontalOpen(false);
+                    setHorizontalSearch("");
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mt-1 h-4 w-4 text-green-600",
+                      formData.crs?.horizontal === option.code ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        {option.code}
+                      </span>
+                      {option.recommended && (
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                          Recommended
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm font-medium text-gray-900 mb-1">
+                      {option.name}
+                    </div>
+                    {option.description && (
+                      <div className="text-xs text-gray-500 leading-relaxed">
+                        {option.description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderCRSSelect = (
@@ -437,19 +600,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
               </div>
             )}
             
-            {renderCRSSelect(
-              "Horizontal CRS",
-              crsOptions.horizontal,
-              formData.crs?.horizontal,
-              (value) => setFormData(prev => ({
-                ...prev,
-                crs: { ...prev.crs!, horizontal: value }
-              })),
-              horizontalSearch,
-              setHorizontalSearch,
-              horizontalOpen,
-              setHorizontalOpen
-            )}
+            {renderHorizontalCRSSelect()}
 
             {renderCRSSelect(
               "Vertical CRS",
