@@ -764,7 +764,7 @@
       "code": "EPSG:7328",
       "name": "NAD83(2011) / InGCS Johnson-Marion (ftUS)",
       "type": "horizontal",
-      "recommended": false,
+      "recommended": true,
       "description": "Indiana Geographic Coordinate System - Johnson-Marion County NAD83(2011) (US Survey Feet)"
     }
   ]

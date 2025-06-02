@@ -1,4 +1,3 @@
-
 import { CRSOption } from "@/types/project";
 
 interface MapTilerResult {
@@ -20,95 +19,91 @@ interface MapTilerResponse {
 
 export const crsService = {
   /**
-   * Search for CRS using MapTiler API and cache results
+   * Search for CRS using static data first, then MapTiler API if needed
    */
   async searchCRS(query: string): Promise<CRSOption[]> {
     try {
-      // First check cache
-      const cached = await this.getCachedCRS();
-      const existingResults = cached.horizontal.filter(crs => 
+      // First get all static Indiana CRS data
+      const staticData = await this.getStaticIndianaCRS();
+      
+      // Filter static data based on search query
+      const filteredStatic = staticData.filter(crs => 
         crs.name.toLowerCase().includes(query.toLowerCase()) ||
-        crs.code.toLowerCase().includes(query.toLowerCase())
+        crs.code.toLowerCase().includes(query.toLowerCase()) ||
+        (crs.description && crs.description.toLowerCase().includes(query.toLowerCase()))
       );
 
-      // If we have cached results for this query, return them
-      if (existingResults.length > 0) {
-        return existingResults;
+      // If we have good results from static data, return them
+      if (filteredStatic.length > 0) {
+        return filteredStatic.sort((a, b) => {
+          if (a.recommended && !b.recommended) return -1;
+          if (!a.recommended && b.recommended) return 1;
+          return a.name.localeCompare(b.name);
+        });
       }
 
-      // Query MapTiler API
-      const response = await fetch(`/api/maptiler/search?query=${encodeURIComponent(query)}`, {
-        headers: {
-          'Accept': 'application/json'
+      // If no static results, try MapTiler API
+      try {
+        const response = await fetch(`/api/maptiler/search?query=${encodeURIComponent(query)}`, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data: MapTilerResponse = await response.json();
+          
+          // Process MapTiler results and convert to CRSOption format
+          const newResults: CRSOption[] = data.results
+            .filter(result => 
+              result.id && 
+              result.name && 
+              !result.deprecated &&
+              (result.area?.toLowerCase().includes('indiana') || 
+               result.name.toLowerCase().includes('indiana') ||
+               result.name.toLowerCase().includes('ingcs'))
+            )
+            .map(result => ({
+              code: `${result.id.authority}:${result.id.code}`,
+              name: result.name,
+              type: "horizontal" as const,
+              recommended: this.isRecommendedCRS(result.id.authority, result.id.code),
+              description: result.area || result.name
+            }));
+
+          return newResults.sort((a, b) => {
+            if (a.recommended && !b.recommended) return -1;
+            if (!a.recommended && b.recommended) return 1;
+            return a.name.localeCompare(b.name);
+          });
         }
-      });
-
-      if (!response.ok) {
-        console.warn('MapTiler API request failed, using cached data');
-        return existingResults;
+      } catch (apiError) {
+        console.warn('MapTiler API request failed:', apiError);
       }
 
-      const data: MapTilerResponse = await response.json();
-      
-      // Process results and convert to CRSOption format
-      const newResults: CRSOption[] = data.results
-        .filter(result => 
-          result.id && 
-          result.name && 
-          !result.deprecated &&
-          (result.area?.toLowerCase().includes('indiana') || 
-           result.name.toLowerCase().includes('indiana') ||
-           result.name.toLowerCase().includes('ingcs'))
-        )
-        .map(result => ({
-          code: `${result.id.authority}:${result.id.code}`,
-          name: result.name,
-          type: "horizontal" as const,
-          recommended: this.isRecommendedCRS(result.id.authority, result.id.code),
-          description: result.area || result.name
-        }));
-
-      // Cache new results
-      if (newResults.length > 0) {
-        await this.cacheCRS(newResults);
-      }
-
-      // Return combined results (existing + new)
-      const allResults = [...existingResults, ...newResults];
-      
-      // Remove duplicates based on code
-      const uniqueResults = allResults.filter((item, index, self) => 
-        index === self.findIndex(t => t.code === item.code)
-      );
-
-      return uniqueResults.sort((a, b) => {
-        if (a.recommended && !b.recommended) return -1;
-        if (!a.recommended && b.recommended) return 1;
-        return a.name.localeCompare(b.name);
-      });
+      // Return empty array if no results found
+      return [];
 
     } catch (error) {
       console.error('Error searching CRS:', error);
-      // Return cached data as fallback
-      const cached = await this.getCachedCRS();
-      return cached.horizontal;
+      return [];
     }
   },
 
   /**
-   * Get all CRS options (cached + static)
+   * Get all CRS options (static data + cached)
    */
   async getAllCRSOptions(): Promise<{ horizontal: CRSOption[]; vertical: CRSOption[]; geoid: CRSOption[] }> {
     try {
-      const cached = await this.getCachedCRS();
-      
-      // If cache is empty, populate with Indiana-specific searches
-      if (cached.horizontal.length === 0) {
-        await this.populateIndianaCache();
-        return await this.getCachedCRS();
-      }
+      const horizontal = await this.getStaticIndianaCRS();
+      const vertical = await this.getVerticalCRS();
+      const geoid = await this.getGeoidModels();
 
-      return cached;
+      return {
+        horizontal,
+        vertical,
+        geoid
+      };
     } catch (error) {
       console.error('Error getting CRS options:', error);
       return this.getFallbackCRS();
@@ -116,25 +111,41 @@ export const crsService = {
   },
 
   /**
-   * Populate cache with Indiana-specific CRS
+   * Get static Indiana CRS data from JSON file
    */
-  async populateIndianaCache(): Promise<void> {
-    const searchTerms = [
-      'Indiana State Plane',
-      'InGCS',
-      'Indiana Geographic Coordinate System',
-      'NAD83 Indiana',
-      'NAD83(2011) Indiana'
-    ];
+  async getStaticIndianaCRS(): Promise<CRSOption[]> {
+    try {
+      const indianaEpsgData = await import("@/data/indianaEpsgCodes.json");
+      return indianaEpsgData.horizontal as CRSOption[];
+    } catch (error) {
+      console.error('Error loading static Indiana CRS data:', error);
+      return this.getFallbackCRS().horizontal;
+    }
+  },
 
-    for (const term of searchTerms) {
-      try {
-        await this.searchCRS(term);
-        // Small delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (error) {
-        console.warn(`Failed to search for "${term}":`, error);
-      }
+  /**
+   * Get vertical CRS options
+   */
+  async getVerticalCRS(): Promise<CRSOption[]> {
+    try {
+      const indianaEpsgData = await import("@/data/indianaEpsgCodes.json");
+      return indianaEpsgData.vertical as CRSOption[];
+    } catch (error) {
+      console.error('Error loading vertical CRS data:', error);
+      return this.getFallbackCRS().vertical;
+    }
+  },
+
+  /**
+   * Get geoid model options
+   */
+  async getGeoidModels(): Promise<CRSOption[]> {
+    try {
+      const indianaEpsgData = await import("@/data/indianaEpsgCodes.json");
+      return indianaEpsgData.geoid as CRSOption[];
+    } catch (error) {
+      console.error('Error loading geoid model data:', error);
+      return this.getFallbackCRS().geoid;
     }
   },
 

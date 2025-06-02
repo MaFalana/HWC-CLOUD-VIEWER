@@ -1,4 +1,3 @@
-
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -9,13 +8,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Get MapTiler API key from environment variables
-    const apiKey = process.env.MAPTILER_API_KEY;
+    // Use the provided API key directly for now
+    const apiKey = process.env.MAPTILER_API_KEY || "3zy0Sl3tcfZaOQFhQD8J";
     
-    if (!apiKey) {
-      return res.status(500).json({ error: "MapTiler API key not configured" });
-    }
-
     // Construct MapTiler API URL
     const maptilerUrl = `https://api.maptiler.com/coordinates/search/${encodeURIComponent(query)}.json?key=${apiKey}`;
     
