@@ -1,5 +1,5 @@
-
 import { Project } from "@/types/project";
+import { sourcesJsonService } from "@/services/sourcesJsonService";
 
 interface PotreeMetadata {
   version: string;
@@ -60,7 +60,18 @@ export const potreeLocationService = {
     try {
       const baseUrl = "http://localhost:4400/pointclouds/";
       
-      // Try to fetch metadata.json first
+      // Try to fetch sources.json first (highest priority)
+      try {
+        const sourcesResponse = await fetch(`${baseUrl}${jobNumber}/sources.json`);
+        if (sourcesResponse.ok) {
+          console.log("Found sources.json, extracting data...");
+          return await sourcesJsonService.extractLocationFromSourcesJson(jobNumber);
+        }
+      } catch (error) {
+        console.log("No sources.json found, trying metadata.json", error instanceof Error ? error.message : "Unknown error");
+      }
+      
+      // Try to fetch metadata.json next
       let metadata: PotreeMetadata | null = null;
       try {
         const metadataResponse = await fetch(`${baseUrl}${jobNumber}/metadata.json`);

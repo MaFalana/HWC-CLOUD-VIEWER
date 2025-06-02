@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Menu, X, MapPin, Info } from "lucide-react";
 import { Project } from "@/types/project";
 import { potreeLocationService } from "@/services/potreeLocationService";
+import { sourcesJsonService } from "@/services/sourcesJsonService";
 
 // Define types for Potree
 interface PointCloudMaterial {
@@ -283,10 +284,58 @@ export default function PotreeViewer() {
         const base = "http://localhost:4400/pointclouds/";
         const cloudJsPath = `${base}${jobNumber}/cloud.js`;
         const metadataPath = `${base}${jobNumber}/metadata.json`;
+        const sourcesJsonPath = `${base}${jobNumber}/sources.json`;
         
         try {
-          const response = await fetch(cloudJsPath, { method: "HEAD" });
-          const pathToLoad = response.ok ? cloudJsPath : metadataPath;
+          // Check which files exist
+          let cloudJsExists = false;
+          let metadataExists = false;
+          let sourcesJsonExists = false;
+          
+          try {
+            const response = await fetch(cloudJsPath, { method: "HEAD" });
+            cloudJsExists = response.ok;
+          } catch (error) {
+            console.log("Error checking cloud.js:", error);
+          }
+          
+          try {
+            const response = await fetch(metadataPath, { method: "HEAD" });
+            metadataExists = response.ok;
+          } catch (error) {
+            console.log("Error checking metadata.json:", error);
+          }
+          
+          try {
+            const response = await fetch(sourcesJsonPath, { method: "HEAD" });
+            sourcesJsonExists = response.ok;
+          } catch (error) {
+            console.log("Error checking sources.json:", error);
+          }
+          
+          // Determine which file to load
+          let pathToLoad = null;
+          
+          if (cloudJsExists) {
+            pathToLoad = cloudJsPath;
+            console.log("Using cloud.js for point cloud loading");
+          } else if (metadataExists) {
+            pathToLoad = metadataPath;
+            console.log("Using metadata.json for point cloud loading");
+          } else if (sourcesJsonExists) {
+            // For sources.json, we'll use the example metadata.json as a fallback
+            // since sources.json doesn't contain all the data needed for Potree
+            pathToLoad = "/pointclouds/example/metadata.json";
+            console.log("Using example metadata.json for point cloud loading (sources.json found)");
+          } else {
+            // If none exists, use example metadata.json
+            pathToLoad = "/pointclouds/example/metadata.json";
+            console.log("Using example metadata.json for point cloud loading (no files found)");
+          }
+          
+          if (!pathToLoad) {
+            throw new Error("No point cloud data found");
+          }
           
           const loadCallback = (e: PotreeLoadEvent) => {
             if (e.pointcloud) {
@@ -299,10 +348,13 @@ export default function PotreeViewer() {
               if (projectData.location?.latitude && projectData.location?.longitude) {
                 try {
                   const mapView = viewer.mapView;
-                  if (mapView && typeof mapView.setCenter === 'function') {
+                  if (mapView && typeof mapView.setCenter === "function") {
                     mapView.setCenter([projectData.location.longitude, projectData.location.latitude]);
-                    if (typeof mapView.setZoom === 'function') {
+                    if (typeof mapView.setZoom === "function") {
                       mapView.setZoom(15);
+                    }
+                    if (typeof mapView.setMapType === "function" && mapType !== "default") {
+                      mapView.setMapType(mapType);
                     }
                     console.log(`Map positioned at: ${projectData.location.latitude}, ${projectData.location.longitude} (source: ${projectData.location.source})`);
                   }
@@ -327,7 +379,7 @@ export default function PotreeViewer() {
           if (pathToLoad.endsWith("cloud.js")) {
             window.Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
           } else {
-            window.Potree.loadPointCloud(metadataPath, jobNumber, loadCallback);
+            window.Potree.loadPointCloud(pathToLoad, jobNumber as string, loadCallback);
           }
         } catch (loadError) {
           console.error("Error loading point cloud:", loadError);
@@ -338,7 +390,7 @@ export default function PotreeViewer() {
         }
       } catch (err) {
         console.error("Error initializing Potree:", err);
-        setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : "Unknown error"}`);
         setLoading(false);
       }
     };
@@ -351,7 +403,7 @@ export default function PotreeViewer() {
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [jobNumber]);
+  }, [jobNumber, mapType]);
 
   if (loading) {
     return (
