@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -738,7 +737,7 @@ export default function PotreeViewer() {
           background: rgba(238, 47, 39, 0.8) !important;
         }
         
-        /* Fix accordion styling */
+        /* Fix accordion styling with HWC colors */
         .ui-accordion-header {
           background: rgba(238, 47, 39, 0.9) !important;
           color: white !important;
@@ -759,7 +758,7 @@ export default function PotreeViewer() {
           max-height: 400px !important;
         }
         
-        /* Fix menu content styling */
+        /* Fix menu content styling with HWC colors */
         .potree_menu_content {
           background: rgba(41, 44, 48, 0.95) !important;
           color: white !important;
@@ -782,6 +781,81 @@ export default function PotreeViewer() {
         
         .pv-menu-list button:hover {
           background: rgba(238, 47, 39, 0.8) !important;
+        }
+        
+        /* Fix Potree tools layout - display as grid instead of line */
+        .potree_toolbar,
+        .potree_menu_tools,
+        .pv-menu-tools {
+          display: grid !important;
+          grid-template-columns: repeat(3, 1fr) !important;
+          gap: 4px !important;
+          padding: 8px !important;
+        }
+        
+        /* Style individual tool buttons */
+        .potree_toolbar button,
+        .potree_menu_tools button,
+        .pv-menu-tools button,
+        .potree_toolbar .potree_button,
+        .potree_menu_tools .potree_button,
+        .pv-menu-tools .potree_button {
+          width: 100% !important;
+          height: 40px !important;
+          margin: 0 !important;
+          padding: 4px !important;
+          background: rgba(108, 104, 100, 0.8) !important;
+          border: 1px solid rgba(238, 47, 39, 0.3) !important;
+          border-radius: 4px !important;
+          color: white !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          transition: all 0.2s ease !important;
+        }
+        
+        /* Hover state for tool buttons */
+        .potree_toolbar button:hover,
+        .potree_menu_tools button:hover,
+        .pv-menu-tools button:hover,
+        .potree_toolbar .potree_button:hover,
+        .potree_menu_tools .potree_button:hover,
+        .pv-menu-tools .potree_button:hover {
+          background: rgba(238, 47, 39, 0.8) !important;
+          border-color: rgba(238, 47, 39, 1) !important;
+          transform: translateY(-1px) !important;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        /* Active/selected tool button styling */
+        .potree_toolbar button.active,
+        .potree_menu_tools button.active,
+        .pv-menu-tools button.active,
+        .potree_toolbar .potree_button.active,
+        .potree_menu_tools .potree_button.active,
+        .pv-menu-tools .potree_button.active,
+        .potree_toolbar button.selected,
+        .potree_menu_tools button.selected,
+        .pv-menu-tools button.selected,
+        .potree_toolbar .potree_button.selected,
+        .potree_menu_tools .potree_button.selected,
+        .pv-menu-tools .potree_button.selected {
+          background: rgba(238, 47, 39, 1) !important;
+          border: 2px solid rgba(238, 47, 39, 1) !important;
+          box-shadow: 0 0 8px rgba(238, 47, 39, 0.5) !important;
+          color: white !important;
+        }
+        
+        /* Tool icons styling */
+        .potree_toolbar img,
+        .potree_menu_tools img,
+        .pv-menu-tools img,
+        .potree_toolbar .potree_button img,
+        .potree_menu_tools .potree_button img,
+        .pv-menu-tools .potree_button img {
+          width: 20px !important;
+          height: 20px !important;
+          filter: brightness(0) invert(1) !important;
         }
         
         /* Ensure render area is properly positioned */
@@ -808,6 +882,9 @@ export default function PotreeViewer() {
         #potree_sidebar_container select,
         #potree_sidebar_container .ui-selectmenu-button {
           z-index: 33 !important;
+          background: rgba(108, 104, 100, 0.8) !important;
+          color: white !important;
+          border: 1px solid rgba(238, 47, 39, 0.3) !important;
         }
         
         /* Ensure Potree compass and navigation controls are visible and positioned correctly */
@@ -816,12 +893,14 @@ export default function PotreeViewer() {
           position: fixed !important;
           bottom: 20px !important;
           right: 20px !important;
-          background: rgba(0, 0, 0, 0.7) !important;
-          border: 2px solid rgba(238, 47, 39, 0.5) !important;
+          background: rgba(41, 44, 48, 0.9) !important;
+          border: 2px solid rgba(238, 47, 39, 0.8) !important;
           border-radius: 50% !important;
-          padding: 5px !important;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+          padding: 8px !important;
+          box-shadow: 0 0 15px rgba(238, 47, 39, 0.3) !important;
           pointer-events: auto !important;
+          width: 60px !important;
+          height: 60px !important;
         }
         
         .potree_navigation_cube {
@@ -829,18 +908,26 @@ export default function PotreeViewer() {
           position: fixed !important;
           bottom: 20px !important;
           right: 100px !important;
-          background: rgba(0, 0, 0, 0.7) !important;
-          border: 2px solid rgba(238, 47, 39, 0.5) !important;
+          background: rgba(41, 44, 48, 0.9) !important;
+          border: 2px solid rgba(238, 47, 39, 0.8) !important;
           border-radius: 8px !important;
-          padding: 5px !important;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+          padding: 8px !important;
+          box-shadow: 0 0 15px rgba(238, 47, 39, 0.3) !important;
           pointer-events: auto !important;
         }
         
-        /* Ensure all Potree UI elements have proper z-index */
+        /* Style the compass needle and navigation cube elements */
+        .potree_compass canvas,
+        .potree_navigation_cube canvas {
+          border-radius: 4px !important;
+        }
+        
+        /* Ensure all Potree UI elements have proper z-index and HWC styling */
         .potree_menu,
         .potree_toolbar {
           z-index: 31 !important;
+          background: rgba(41, 44, 48, 0.95) !important;
+          border: 1px solid rgba(238, 47, 39, 0.3) !important;
         }
         
         /* Fix any potential overlay issues */
@@ -857,6 +944,85 @@ export default function PotreeViewer() {
         /* Fix any potential z-index issues with the sidebar */
         #potree_sidebar_container .pv-menu-list {
           z-index: 32 !important;
+        }
+        
+        /* Style measurement tools and annotations with HWC colors */
+        .potree_annotation,
+        .potree_measurement {
+          color: rgba(238, 47, 39, 1) !important;
+          background: rgba(41, 44, 48, 0.8) !important;
+          border: 1px solid rgba(238, 47, 39, 0.5) !important;
+          border-radius: 4px !important;
+          padding: 4px 8px !important;
+        }
+        
+        /* Style sliders and range inputs */
+        input[type="range"] {
+          -webkit-appearance: none !important;
+          background: rgba(108, 104, 100, 0.5) !important;
+          height: 4px !important;
+          border-radius: 2px !important;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none !important;
+          width: 16px !important;
+          height: 16px !important;
+          background: rgba(238, 47, 39, 1) !important;
+          border-radius: 50% !important;
+          cursor: pointer !important;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+          width: 16px !important;
+          height: 16px !important;
+          background: rgba(238, 47, 39, 1) !important;
+          border-radius: 50% !important;
+          cursor: pointer !important;
+          border: none !important;
+        }
+        
+        /* Style checkboxes and radio buttons */
+        input[type="checkbox"],
+        input[type="radio"] {
+          accent-color: rgba(238, 47, 39, 1) !important;
+        }
+        
+        /* Style text inputs in the sidebar */
+        #potree_sidebar_container input[type="text"],
+        #potree_sidebar_container input[type="number"] {
+          background: rgba(108, 104, 100, 0.8) !important;
+          color: white !important;
+          border: 1px solid rgba(238, 47, 39, 0.3) !important;
+          border-radius: 4px !important;
+          padding: 4px 8px !important;
+        }
+        
+        #potree_sidebar_container input[type="text"]:focus,
+        #potree_sidebar_container input[type="number"]:focus {
+          border-color: rgba(238, 47, 39, 1) !important;
+          outline: none !important;
+          box-shadow: 0 0 4px rgba(238, 47, 39, 0.3) !important;
+        }
+        
+        /* Style labels and text in sidebar */
+        #potree_sidebar_container label,
+        #potree_sidebar_container .potree_label {
+          color: white !important;
+          font-weight: 500 !important;
+        }
+        
+        /* Style progress bars */
+        .potree_progress,
+        .progress {
+          background: rgba(108, 104, 100, 0.5) !important;
+          border-radius: 4px !important;
+          overflow: hidden !important;
+        }
+        
+        .potree_progress .progress-bar,
+        .progress .progress-bar {
+          background: rgba(238, 47, 39, 1) !important;
         }
       `}</style>
     </>
