@@ -27,8 +27,8 @@ export const crsService = {
    */
   async searchCRS(query: string): Promise<CRSOption[]> {
     try {
-      // Search for NAD83(2011) Indiana-specific coordinate systems
-      const searchQuery = `NAD83(2011) ${query} Indiana ftUS`;
+      // Simplify search query for better MapTiler compatibility
+      const searchQuery = query.trim();
       
       const response = await fetch(`/api/maptiler/search?query=${encodeURIComponent(searchQuery)}`, {
         headers: {
@@ -38,10 +38,16 @@ export const crsService = {
 
       if (!response.ok) {
         console.warn('MapTiler API request failed:', response.status);
-        return [];
+        return this.getFallbackCRS().horizontal;
       }
 
       const data: MapTilerResponse = await response.json();
+      
+      // If MapTiler returned an error, use fallback
+      if (data.error || data.fallback) {
+        console.warn('MapTiler API returned error, using fallback CRS');
+        return this.getFallbackCRS().horizontal;
+      }
       
       // Process MapTiler results and convert to CRSOption format
       const results: CRSOption[] = data.results
@@ -50,18 +56,17 @@ export const crsService = {
           result.name && 
           !result.deprecated &&
           result.id.authority === 'EPSG' &&
-          // Focus on NAD83(2011) systems
-          result.name.toLowerCase().includes('nad83(2011)') &&
-          // Only ftUS systems
+          // Focus on NAD83(2011) systems or Indiana systems
+          (result.name.toLowerCase().includes('nad83(2011)') ||
+           result.name.toLowerCase().includes('indiana') ||
+           result.name.toLowerCase().includes('ingcs')) &&
+          // Prefer ftUS systems but allow others
           (result.unit === 'US survey foot' || 
            result.name.toLowerCase().includes('ftus') ||
            result.name.toLowerCase().includes('(ftus)') ||
            result.name.toLowerCase().includes('us feet') ||
-           result.name.toLowerCase().includes('survey feet')) &&
-          // Indiana systems only
-          (result.area?.toLowerCase().includes('indiana') || 
-           result.name.toLowerCase().includes('indiana') ||
-           result.name.toLowerCase().includes('ingcs'))
+           result.name.toLowerCase().includes('survey feet') ||
+           result.name.toLowerCase().includes('indiana'))
         )
         .map(result => ({
           code: `EPSG:${result.id.code}`,
@@ -77,6 +82,11 @@ export const crsService = {
         await this.cacheCRS(results);
       }
 
+      // If no results from MapTiler, return fallback
+      if (results.length === 0) {
+        return this.getFallbackCRS().horizontal;
+      }
+
       return results.sort((a, b) => {
         if (a.recommended && !b.recommended) return -1;
         if (!a.recommended && b.recommended) return 1;
@@ -85,12 +95,12 @@ export const crsService = {
 
     } catch (error) {
       console.error('Error searching CRS:', error);
-      return [];
+      return this.getFallbackCRS().horizontal;
     }
   },
 
   /**
-   * Get all CRS options using MapTiler API
+   * Get all CRS options using MapTiler API with fallback
    */
   async getAllCRSOptions(): Promise<{ horizontal: CRSOption[]; vertical: CRSOption[]; geoid: CRSOption[] }> {
     try {
@@ -99,13 +109,13 @@ export const crsService = {
         return crsCache;
       }
 
-      // Fetch horizontal CRS from MapTiler API
+      // Try to fetch horizontal CRS from MapTiler API
       const horizontal = await this.fetchIndianaHorizontalCRS();
       const vertical = await this.getVerticalCRS();
       const geoid = await this.getGeoidModels();
 
       const result = {
-        horizontal,
+        horizontal: horizontal.length > 0 ? horizontal : this.getFallbackCRS().horizontal,
         vertical,
         geoid
       };
@@ -125,53 +135,36 @@ export const crsService = {
    */
   async fetchIndianaHorizontalCRS(): Promise<CRSOption[]> {
     try {
+      // Simplified queries that are more likely to work with MapTiler
       const queries = [
-        'NAD83(2011) Indiana East ftUS',
-        'NAD83(2011) Indiana West ftUS', 
-        'NAD83(2011) InGCS ftUS',
-        'NAD83(2011) Indiana State Plane ftUS',
-        'NAD83(2011) Indiana County ftUS'
+        'Indiana East',
+        'Indiana West', 
+        'InGCS',
+        'Indiana State Plane',
+        'NAD83 Indiana'
       ];
 
       const allResults: CRSOption[] = [];
       
       for (const query of queries) {
-        const results = await this.searchCRS(query);
-        
-        // Add unique results
-        results.forEach(result => {
-          if (!allResults.find(existing => existing.code === result.code)) {
-            allResults.push(result);
-          }
-        });
+        try {
+          const results = await this.searchCRS(query);
+          
+          // Add unique results
+          results.forEach(result => {
+            if (!allResults.find(existing => existing.code === result.code)) {
+              allResults.push(result);
+            }
+          });
+        } catch (error) {
+          console.warn(`Failed to search for "${query}":`, error);
+          continue;
+        }
       }
 
-      // Add known important NAD83(2011) Indiana systems if not found
-      const knownSystems = [
-        {
-          code: "EPSG:6459",
-          name: "NAD83(2011) / Indiana East (ftUS)",
-          type: "horizontal" as const,
-          recommended: true,
-          description: "Indiana State Plane East Zone NAD83(2011) in US Survey Feet"
-        },
-        {
-          code: "EPSG:6461",
-          name: "NAD83(2011) / Indiana West (ftUS)",
-          type: "horizontal" as const,
-          recommended: true,
-          description: "Indiana State Plane West Zone NAD83(2011) in US Survey Feet"
-        },
-        {
-          code: "EPSG:7328",
-          name: "NAD83(2011) / InGCS Johnson-Marion (ftUS)",
-          type: "horizontal" as const,
-          recommended: true,
-          description: "Indiana Geographic Coordinate System - Johnson-Marion County NAD83(2011) (US Survey Feet)"
-        }
-      ];
-
-      // Add known systems if not already present
+      // Always ensure we have the essential NAD83(2011) Indiana systems
+      const knownSystems = this.getFallbackCRS().horizontal;
+      
       knownSystems.forEach(known => {
         if (!allResults.find(existing => existing.code === known.code)) {
           allResults.push(known);
