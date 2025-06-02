@@ -196,7 +196,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         <SelectTrigger>
           <SelectValue placeholder={loading ? "Loading..." : placeholder} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-w-md">
           {loading ? (
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -208,24 +208,55 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             </div>
           ) : (
             options.map((option) => (
-              <SelectItem key={option.code} value={option.code}>
-                <div className="flex items-center gap-2">
-                  {option.recommended && (
-                    <span className="text-xs bg-green-100 text-green-800 px-1 rounded">
-                      Recommended
-                    </span>
-                  )}
-                  <span>{option.code} - {option.name}</span>
+              <SelectItem key={option.code} value={option.code} className="py-3">
+                <div className="flex items-start gap-3 w-full">
+                  <div className="flex flex-col items-start min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        {option.code}
+                      </span>
+                      {option.recommended && (
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                          Recommended
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm font-medium text-gray-900 mb-1">
+                      {option.name}
+                    </div>
+                    {option.description && (
+                      <div className="text-xs text-gray-500 leading-relaxed">
+                        {option.description}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </SelectItem>
             ))
           )}
         </SelectContent>
       </Select>
-      {options.find(opt => opt.code === selectValue)?.description && (
-        <p className="text-xs text-gray-500 mt-1">
-          {options.find(opt => opt.code === selectValue)?.description}
-        </p>
+      {selectValue && (
+        <div className="mt-2 p-3 bg-gray-50 rounded-md border">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-mono text-sm font-medium text-blue-600">
+              {selectValue}
+            </span>
+            {options.find(opt => opt.code === selectValue)?.recommended && (
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                Recommended
+              </span>
+            )}
+          </div>
+          <div className="text-sm font-medium text-gray-900 mb-1">
+            {options.find(opt => opt.code === selectValue)?.name}
+          </div>
+          {options.find(opt => opt.code === selectValue)?.description && (
+            <div className="text-xs text-gray-600">
+              {options.find(opt => opt.code === selectValue)?.description}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
