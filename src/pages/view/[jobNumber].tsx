@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -69,18 +70,14 @@ export default function PotreeViewer() {
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
 
-    const loadProject = async () => {
+    const scriptsLoaded: HTMLScriptElement[] = [];
+
+    const fetchProjectAndLoad = async () => {
       try {
-        setLoading(true);
         setLoadingProgress(10);
-        const projectData = await projectService.getProject(jobNumber);
-        setProject(projectData);
-        setProjectName(projectData.projectName);
-        setLoadingProgress(30);
-      } catch (error) {
-        console.error("Failed to load project:", error);
-        // Set mock project data for development when API fails
-        const mockProject = {
+
+        // Try to fetch project info from API
+        let projectData = {
           jobNumber: jobNumber as string,
           projectName: `Project ${jobNumber}`,
           clientName: "Demo Client",
@@ -91,39 +88,21 @@ export default function PotreeViewer() {
           updatedAt: new Date(),
           projectType: "survey"
         };
-        setProject(mockProject);
-        setProjectName(mockProject.projectName);
-        setLoadingProgress(30);
-      }
-    };
 
-    loadProject();
-  }, [jobNumber]);
-
-  useEffect(() => {
-    if (!jobNumber || typeof jobNumber !== "string" || !project) return;
-
-    const scriptsLoaded: HTMLScriptElement[] = [];
-
-    const fetchProjectAndLoad = async () => {
-      try {
-        setLoadingProgress(40);
-
-        // Try to fetch project info from API
-        let projectData = project;
         try {
           const res = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/info.json`);
           if (res.ok) {
             const data = await res.json();
             console.log("Project data:", data);
             setProjectName(data.projectName);
-            projectData = { ...project, projectName: data.projectName };
+            projectData = { ...projectData, projectName: data.projectName };
           }
         } catch {
-          console.log("No project info found, using existing data");
+          console.log("No project info found, using mock data");
         }
 
-        setLoadingProgress(50);
+        setProject(projectData);
+        setLoadingProgress(30);
 
         const loadScript = (src: string): Promise<void> =>
           new Promise((resolve, reject) => {
@@ -151,6 +130,8 @@ export default function PotreeViewer() {
           link.href = href;
           document.head.appendChild(link);
         };
+
+        console.log("Loading scripts...");
 
         // Load required CSS files
         loadCSS("/potree/build/potree/potree.css");
@@ -184,7 +165,7 @@ export default function PotreeViewer() {
 
         for (let i = 0; i < scripts.length; i++) {
           await loadScript(scripts[i]);
-          setLoadingProgress(55 + Math.floor((i / scripts.length) * 25));
+          setLoadingProgress(40 + Math.floor((i / scripts.length) * 40));
         }
 
         setLoadingProgress(80);
@@ -210,63 +191,13 @@ export default function PotreeViewer() {
 
         console.log("Potree is available, creating viewer...");
 
-        // Wait for DOM element to be ready with better error handling
-        await new Promise<void>((resolve, reject) => {
-          let attempts = 0;
-          const maxAttempts = 30;
-          
-          const checkElement = () => {
-            attempts++;
-            const element = document.getElementById("potree_render_area");
-            
-            if (element) {
-              // Force dimensions if they're not set
-              if (element.offsetWidth === 0 || element.offsetHeight === 0) {
-                element.style.width = "100%";
-                element.style.height = "100vh";
-                element.style.position = "absolute";
-                element.style.top = "0";
-                element.style.left = "0";
-                
-                // Wait a bit for the styles to apply
-                setTimeout(() => {
-                  if (element.offsetWidth > 0 && element.offsetHeight > 0) {
-                    console.log("DOM element ready with forced dimensions:", {
-                      width: element.offsetWidth,
-                      height: element.offsetHeight
-                    });
-                    resolve();
-                  } else if (attempts >= maxAttempts) {
-                    reject(new Error("DOM element could not be sized properly"));
-                  } else {
-                    setTimeout(checkElement, 100);
-                  }
-                }, 100);
-              } else {
-                console.log("DOM element ready with dimensions:", {
-                  width: element.offsetWidth,
-                  height: element.offsetHeight
-                });
-                resolve();
-              }
-            } else if (attempts >= maxAttempts) {
-              reject(new Error("DOM element not found after maximum attempts"));
-            } else {
-              setTimeout(checkElement, 100);
-            }
-          };
-          
-          checkElement();
-        });
+        // Simple DOM element check - just ensure it exists
+        const element = document.getElementById("potree_render_area");
+        if (!element) {
+          throw new Error("Potree render area not found");
+        }
 
-        const base = "http://localhost:4400/pointclouds/";
-        const cloudJsPath = `${base}${jobNumber}/cloud.js`;
-        const metadataPath = `${base}${jobNumber}/metadata.json`;
-
-        const response = await fetch(cloudJsPath, { method: "HEAD" });
-        const pathToLoad = response.ok ? cloudJsPath : metadataPath;
-
-        const viewer = new window.Potree.Viewer(document.getElementById("potree_render_area")!);
+        const viewer = new window.Potree.Viewer(element);
         viewer.setEDLEnabled(true);
         viewer.setFOV(60);
         viewer.setPointBudget(1_000_000);
@@ -283,6 +214,13 @@ export default function PotreeViewer() {
 
         console.log("Loading point cloud...");
         
+        const base = "http://localhost:4400/pointclouds/";
+        const cloudJsPath = `${base}${jobNumber}/cloud.js`;
+        const metadataPath = `${base}${jobNumber}/metadata.json`;
+
+        const response = await fetch(cloudJsPath, { method: "HEAD" });
+        const pathToLoad = response.ok ? cloudJsPath : metadataPath;
+
         const loadCallback = (e: PotreeLoadEvent) => {
           if (e.pointcloud) {
             console.log("Point cloud loaded successfully");
@@ -352,7 +290,7 @@ export default function PotreeViewer() {
         }
       });
     };
-  }, [jobNumber, project]);
+  }, [jobNumber]);
 
   if (loading) {
     return (
