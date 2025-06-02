@@ -29,6 +29,17 @@ export interface Project {
       epsgCode?: string;
     };
   };
+  worldFile?: {
+    content: string;
+    parsed?: {
+      pixelSizeX: number;
+      rotationY: number;
+      rotationX: number;
+      pixelSizeY: number;
+      upperLeftX: number;
+      upperLeftY: number;
+    };
+  };
   status: "active" | "completed" | "archived" | "processing";
   createdAt: Date;
   updatedAt: Date;
