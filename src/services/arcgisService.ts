@@ -366,30 +366,18 @@ export const arcgisService = {
   /**
    * Get coordinate reference systems from ArcGIS API
    */
-  async getCRSOptions(): Promise<{
-    horizontal: CRSOption[];
-    vertical: CRSOption[];
-    geoid: CRSOption[];
-  }> {
+  async getCRSOptions(): Promise<{ horizontal: CRSOption[]; vertical: CRSOption[]; geoid: CRSOption[] }> {
     try {
-      // Get common horizontal coordinate systems (projected and geographic)
-      const horizontalSystems = await this.getHorizontalCRS();
+      // For now, return the fallback options which include all Indiana systems
+      // In the future, this could be enhanced to fetch from ArcGIS REST API
+      const fallbackOptions = this.getFallbackCRSOptions();
       
-      // Get vertical datums
-      const verticalSystems = await this.getVerticalCRS();
+      // Add any additional systems that might be fetched from ArcGIS API
+      // This is where you could add API calls to ArcGIS REST services
       
-      // Get geoid models
-      const geoidModels = await this.getGeoidModels();
-
-      return {
-        horizontal: horizontalSystems,
-        vertical: verticalSystems,
-        geoid: geoidModels
-      };
+      return fallbackOptions;
     } catch (error) {
-      console.error('Error fetching CRS options from ArcGIS:', error);
-      
-      // Return fallback options if API fails
+      console.error("Error fetching CRS options:", error);
       return this.getFallbackCRSOptions();
     }
   },
@@ -674,13 +662,10 @@ export const arcgisService = {
   /**
    * Get fallback CRS options if API calls fail
    */
-  getFallbackCRSOptions(): {
-    horizontal: CRSOption[];
-    vertical: CRSOption[];
-    geoid: CRSOption[];
-  } {
+  getFallbackCRSOptions(): { horizontal: CRSOption[]; vertical: CRSOption[]; geoid: CRSOption[] } {
     return {
       horizontal: [
+        // Indiana State Plane Systems
         {
           code: "EPSG:2965",
           name: "NAD83 / Indiana East (ftUS)",
@@ -696,18 +681,63 @@ export const arcgisService = {
           description: "Indiana State Plane West Zone in US Survey Feet"
         },
         {
-          code: "EPSG:4326",
-          name: "WGS84",
+          code: "EPSG:6459",
+          name: "NAD83(2011) / Indiana East (ftUS)",
+          type: "horizontal",
+          recommended: true,
+          description: "Indiana State Plane East Zone NAD83(2011) in US Survey Feet"
+        },
+        {
+          code: "EPSG:6461",
+          name: "NAD83(2011) / Indiana West (ftUS)",
+          type: "horizontal",
+          recommended: true,
+          description: "Indiana State Plane West Zone NAD83(2011) in US Survey Feet"
+        },
+        // Vanderburgh County Systems
+        {
+          code: "EPSG:3532",
+          name: "NAD83 / InGCS Vanderburgh (ftUS)",
+          type: "horizontal",
+          recommended: true,
+          description: "Indiana Geographic Coordinate System - Vanderburgh County in US Survey Feet"
+        },
+        {
+          code: "EPSG:3533",
+          name: "NAD83(2011) / InGCS Vanderburgh (ftUS)",
+          type: "horizontal",
+          recommended: true,
+          description: "Indiana Geographic Coordinate System - Vanderburgh County NAD83(2011) in US Survey Feet"
+        },
+        // UTM Systems for Indiana
+        {
+          code: "EPSG:26916",
+          name: "NAD83 / UTM zone 16N",
           type: "horizontal",
           recommended: false,
-          description: "World Geodetic System 1984"
+          description: "Universal Transverse Mercator Zone 16 North (NAD83)"
         },
+        {
+          code: "EPSG:32616",
+          name: "WGS 84 / UTM zone 16N",
+          type: "horizontal",
+          recommended: false,
+          description: "Universal Transverse Mercator Zone 16 North (WGS84)"
+        },
+        // Geographic Systems
         {
           code: "EPSG:4269",
           name: "NAD83",
           type: "horizontal",
           recommended: false,
-          description: "North American Datum 1983"
+          description: "North American Datum 1983 (Geographic)"
+        },
+        {
+          code: "EPSG:4326",
+          name: "WGS 84",
+          type: "horizontal",
+          recommended: false,
+          description: "World Geodetic System 1984 (Geographic)"
         }
       ],
       vertical: [
@@ -724,6 +754,13 @@ export const arcgisService = {
           type: "vertical",
           recommended: false,
           description: "North American Vertical Datum of 1988 (meters)"
+        },
+        {
+          code: "EPSG:5714",
+          name: "MSL height",
+          type: "vertical",
+          recommended: false,
+          description: "Mean Sea Level height"
         }
       ],
       geoid: [
@@ -740,6 +777,13 @@ export const arcgisService = {
           type: "geoid",
           recommended: false,
           description: "Previous NOAA geoid model for CONUS (2012)"
+        },
+        {
+          code: "GEOID09",
+          name: "GEOID09",
+          type: "geoid",
+          recommended: false,
+          description: "Legacy NOAA geoid model for CONUS (2009)"
         }
       ]
     };
