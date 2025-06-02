@@ -1,5 +1,5 @@
-
 import { Project, CreateProjectData } from "@/types/project";
+import { locationService } from "@/services/locationService";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4400";
 
@@ -47,23 +47,39 @@ export const projectService = {
     
     // Transform the data and ensure CRS is properly handled
     const projects = data.map((project: RawProjectData) => {
+      // Ensure CRS is properly mapped
+      const crs = project.crs ? {
+        horizontal: project.crs.horizontal || "",
+        vertical: project.crs.vertical || "",
+        geoidModel: project.crs.geoidModel || ""
+      } : {
+        horizontal: "",
+        vertical: "",
+        geoidModel: ""
+      };
+
+      // Handle location - use existing location or derive from CRS
+      let location = project.location;
+      
+      // If no location or invalid location, try to derive from CRS
+      if (!location || 
+          !locationService.validateCoordinates(location.latitude, location.longitude)) {
+        const derivedLocation = locationService.deriveLocationFromProject({ crs });
+        if (derivedLocation) {
+          location = derivedLocation;
+        }
+      }
+
       const transformedProject: Project = {
         ...project,
         createdAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
         updatedAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
-        // Ensure CRS is properly mapped - check if it exists and has values
-        crs: project.crs ? {
-          horizontal: project.crs.horizontal || "",
-          vertical: project.crs.vertical || "",
-          geoidModel: project.crs.geoidModel || ""
-        } : {
-          horizontal: "",
-          vertical: "",
-          geoidModel: ""
-        }
+        crs,
+        location
       };
 
       console.log(`Project ${project.jobNumber} loaded with CRS:`, transformedProject.crs);
+      console.log(`Project ${project.jobNumber} location:`, transformedProject.location);
       
       return transformedProject;
     });
