@@ -694,20 +694,650 @@ export const arcgisService = {
           recommended: true,
           description: "Indiana State Plane West Zone NAD83(2011) in US Survey Feet"
         },
-        // Vanderburgh County Systems
+        // Indiana County Coordinate Systems
         {
           code: "EPSG:3532",
-          name: "NAD83 / InGCS Vanderburgh (ftUS)",
+          name: "NAD83 / InGCS Adams (ftUS)",
           type: "horizontal",
-          recommended: true,
-          description: "Indiana Geographic Coordinate System - Vanderburgh County in US Survey Feet"
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Adams County (US Survey Feet)"
         },
         {
           code: "EPSG:3533",
-          name: "NAD83(2011) / InGCS Vanderburgh (ftUS)",
+          name: "NAD83 / InGCS Allen (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Allen County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3534",
+          name: "NAD83 / InGCS Bartholomew (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Bartholomew County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3535",
+          name: "NAD83 / InGCS Benton (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Benton County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3536",
+          name: "NAD83 / InGCS Blackford (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Blackford County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3537",
+          name: "NAD83 / InGCS Boone (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Boone County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3538",
+          name: "NAD83 / InGCS Brown (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Brown County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3539",
+          name: "NAD83 / InGCS Carroll (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Carroll County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3540",
+          name: "NAD83 / InGCS Cass (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Cass County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3541",
+          name: "NAD83 / InGCS Clark (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Clark County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3542",
+          name: "NAD83 / InGCS Clay (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Clay County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3543",
+          name: "NAD83 / InGCS Clinton (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Clinton County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3544",
+          name: "NAD83 / InGCS Crawford (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Crawford County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3545",
+          name: "NAD83 / InGCS Daviess (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Daviess County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3546",
+          name: "NAD83 / InGCS Dearborn (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Dearborn County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3547",
+          name: "NAD83 / InGCS Decatur (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Decatur County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3548",
+          name: "NAD83 / InGCS DeKalb (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - DeKalb County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3549",
+          name: "NAD83 / InGCS Delaware (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Delaware County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3550",
+          name: "NAD83 / InGCS Dubois (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Dubois County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3551",
+          name: "NAD83 / InGCS Elkhart (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Elkhart County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3552",
+          name: "NAD83 / InGCS Fayette (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Fayette County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3553",
+          name: "NAD83 / InGCS Floyd (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Floyd County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3554",
+          name: "NAD83 / InGCS Fountain (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Fountain County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3555",
+          name: "NAD83 / InGCS Franklin (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Franklin County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3556",
+          name: "NAD83 / InGCS Fulton (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Fulton County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3557",
+          name: "NAD83 / InGCS Gibson (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Gibson County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3558",
+          name: "NAD83 / InGCS Grant (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Grant County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3559",
+          name: "NAD83 / InGCS Greene (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Greene County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3560",
+          name: "NAD83 / InGCS Hamilton (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Hamilton County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3561",
+          name: "NAD83 / InGCS Hancock (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Hancock County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3562",
+          name: "NAD83 / InGCS Harrison (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Harrison County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3563",
+          name: "NAD83 / InGCS Hendricks (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Hendricks County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3564",
+          name: "NAD83 / InGCS Henry (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Henry County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3565",
+          name: "NAD83 / InGCS Howard (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Howard County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3566",
+          name: "NAD83 / InGCS Huntington (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Huntington County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3567",
+          name: "NAD83 / InGCS Jackson (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Jackson County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3568",
+          name: "NAD83 / InGCS Jasper (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Jasper County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3569",
+          name: "NAD83 / InGCS Jay (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Jay County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3570",
+          name: "NAD83 / InGCS Jefferson (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Jefferson County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3571",
+          name: "NAD83 / InGCS Jennings (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Jennings County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3572",
+          name: "NAD83 / InGCS Johnson (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Johnson County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3573",
+          name: "NAD83 / InGCS Knox (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Knox County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3574",
+          name: "NAD83 / InGCS Kosciusko (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Kosciusko County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3575",
+          name: "NAD83 / InGCS LaGrange (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - LaGrange County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3576",
+          name: "NAD83 / InGCS Lake (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Lake County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3577",
+          name: "NAD83 / InGCS LaPorte (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - LaPorte County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3578",
+          name: "NAD83 / InGCS Lawrence (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Lawrence County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3579",
+          name: "NAD83 / InGCS Madison (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Madison County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3580",
+          name: "NAD83 / InGCS Marion (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Marion County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3581",
+          name: "NAD83 / InGCS Marshall (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Marshall County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3582",
+          name: "NAD83 / InGCS Martin (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Martin County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3583",
+          name: "NAD83 / InGCS Miami (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Miami County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3584",
+          name: "NAD83 / InGCS Monroe (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Monroe County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3585",
+          name: "NAD83 / InGCS Montgomery (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Montgomery County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3586",
+          name: "NAD83 / InGCS Morgan (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Morgan County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3587",
+          name: "NAD83 / InGCS Newton (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Newton County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3588",
+          name: "NAD83 / InGCS Noble (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Noble County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3589",
+          name: "NAD83 / InGCS Ohio (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Ohio County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3590",
+          name: "NAD83 / InGCS Orange (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Orange County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3591",
+          name: "NAD83 / InGCS Owen (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Owen County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3592",
+          name: "NAD83 / InGCS Parke (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Parke County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3593",
+          name: "NAD83 / InGCS Perry (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Perry County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3594",
+          name: "NAD83 / InGCS Pike (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Pike County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3595",
+          name: "NAD83 / InGCS Porter (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Porter County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3596",
+          name: "NAD83 / InGCS Posey (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Posey County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3597",
+          name: "NAD83 / InGCS Pulaski (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Pulaski County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3598",
+          name: "NAD83 / InGCS Putnam (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Putnam County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3599",
+          name: "NAD83 / InGCS Randolph (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Randolph County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3600",
+          name: "NAD83 / InGCS Ripley (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Ripley County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3601",
+          name: "NAD83 / InGCS Rush (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Rush County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3602",
+          name: "NAD83 / InGCS Scott (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Scott County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3603",
+          name: "NAD83 / InGCS Shelby (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Shelby County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3604",
+          name: "NAD83 / InGCS Spencer (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Spencer County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3605",
+          name: "NAD83 / InGCS Starke (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Starke County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3606",
+          name: "NAD83 / InGCS Steuben (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Steuben County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3607",
+          name: "NAD83 / InGCS St Joseph (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - St Joseph County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3608",
+          name: "NAD83 / InGCS Sullivan (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Sullivan County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3609",
+          name: "NAD83 / InGCS Switzerland (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Switzerland County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3610",
+          name: "NAD83 / InGCS Tippecanoe (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Tippecanoe County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3611",
+          name: "NAD83 / InGCS Tipton (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Tipton County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3612",
+          name: "NAD83 / InGCS Union (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Union County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3613",
+          name: "NAD83 / InGCS Vanderburgh (ftUS)",
           type: "horizontal",
           recommended: true,
-          description: "Indiana Geographic Coordinate System - Vanderburgh County NAD83(2011) in US Survey Feet"
+          description: "Indiana Geographic Coordinate System - Vanderburgh County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3614",
+          name: "NAD83 / InGCS Vermillion (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Vermillion County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3615",
+          name: "NAD83 / InGCS Vigo (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Vigo County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3616",
+          name: "NAD83 / InGCS Wabash (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Wabash County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3617",
+          name: "NAD83 / InGCS Warren (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Warren County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3618",
+          name: "NAD83 / InGCS Warrick (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Warrick County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3619",
+          name: "NAD83 / InGCS Washington (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Washington County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3620",
+          name: "NAD83 / InGCS Wayne (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Wayne County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3621",
+          name: "NAD83 / InGCS Wells (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Wells County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3622",
+          name: "NAD83 / InGCS White (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - White County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3623",
+          name: "NAD83 / InGCS Whitley (ftUS)",
+          type: "horizontal",
+          recommended: false,
+          description: "Indiana Geographic Coordinate System - Whitley County (US Survey Feet)"
         },
         // UTM Systems for Indiana
         {
