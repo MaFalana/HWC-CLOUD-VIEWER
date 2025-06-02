@@ -53,9 +53,9 @@ export interface Project {
 export interface CreateProjectData {
   jobNumber: string;
   projectName: string;
+  description?: string;
   clientName?: string;
   acquistionDate?: string;
-  description?: string;
   location?: {
     latitude: number;
     longitude: number;
@@ -68,6 +68,7 @@ export interface CreateProjectData {
   };
   projectType?: string;
   tags?: string[];
+  thumbnailUrl?: string;
 }
 
 export interface CRSOption {

@@ -67,7 +67,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     if (isOpen && crsOptions.horizontal.length === 0) {
       loadCRSOptions();
     }
-  }, [isOpen]);
+  }, [isOpen, crsOptions.horizontal.length]);
 
   // Set default CRS values for new projects
   useEffect(() => {
@@ -192,16 +192,14 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     <div>
       <Label>{label}</Label>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
         <Input
           placeholder={`Search ${label.toLowerCase()}...`}
           value={searchValue}
           onChange={(e) => {
             onSearchChange(e.target.value);
-            // Open dropdown when user starts typing
-            if (e.target.value.length > 0 && !isOpen) {
-              setIsOpen(true);
-            }
+            // Always open dropdown when user types
+            setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
           className="pl-10 mb-2"
@@ -210,7 +208,10 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
       </div>
       <Select
         value={selectValue}
-        onValueChange={onSelectChange}
+        onValueChange={(value) => {
+          onSelectChange(value);
+          setIsOpen(false);
+        }}
         disabled={loading}
         open={isOpen}
         onOpenChange={setIsOpen}
