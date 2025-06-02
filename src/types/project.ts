@@ -15,6 +15,20 @@ export interface Project {
     vertical?: string;
     geoidModel?: string;
   };
+  projFile?: {
+    content: string;
+    parsed?: {
+      projcs: string;
+      geogcs: string;
+      datum: string;
+      spheroid: string;
+      projection: string;
+      parameters: Record<string, number>;
+      unit: string;
+      authority: string;
+      epsgCode?: string;
+    };
+  };
   status: "active" | "completed" | "archived" | "processing";
   createdAt: Date;
   updatedAt: Date;
