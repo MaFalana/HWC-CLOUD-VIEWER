@@ -1,0 +1,64 @@
+
+{
+  "horizontal": [],
+  "vertical": [
+    {
+      "code": "EPSG:6360",
+      "name": "NAVD88 height (ftUS)",
+      "type": "vertical",
+      "recommended": true,
+      "description": "North American Vertical Datum of 1988 (US Survey Feet)"
+    },
+    {
+      "code": "EPSG:5703",
+      "name": "NAVD88 height",
+      "type": "vertical",
+      "recommended": false,
+      "description": "North American Vertical Datum of 1988 (meters)"
+    },
+    {
+      "code": "EPSG:5701",
+      "name": "MSL height",
+      "type": "vertical",
+      "recommended": false,
+      "description": "Mean Sea Level height"
+    },
+    {
+      "code": "EPSG:5702",
+      "name": "NGVD29 height",
+      "type": "vertical",
+      "recommended": false,
+      "description": "National Geodetic Vertical Datum of 1929"
+    }
+  ],
+  "geoid": [
+    {
+      "code": "GEOID18",
+      "name": "GEOID18",
+      "type": "geoid",
+      "recommended": true,
+      "description": "Current NOAA geoid model for CONUS (2019)"
+    },
+    {
+      "code": "GEOID12B",
+      "name": "GEOID12B",
+      "type": "geoid",
+      "recommended": false,
+      "description": "Previous NOAA geoid model for CONUS (2012)"
+    },
+    {
+      "code": "GEOID09",
+      "name": "GEOID09",
+      "type": "geoid",
+      "recommended": false,
+      "description": "Legacy NOAA geoid model for CONUS (2009)"
+    },
+    {
+      "code": "GEOID03",
+      "name": "GEOID03",
+      "type": "geoid",
+      "recommended": false,
+      "description": "Legacy NOAA geoid model for CONUS (2003)"
+    }
+  ]
+}

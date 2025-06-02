@@ -364,22 +364,29 @@ export const arcgisService = {
   },
 
   /**
-   * Get coordinate reference systems with enhanced epsg.io integration
+   * Get coordinate reference systems using MapTiler API and local cache
    */
   async getCRSOptions(): Promise<{ horizontal: CRSOption[]; vertical: CRSOption[]; geoid: CRSOption[] }> {
     try {
-      // Load from static JSON file instead of API calls
-      const indianaEpsgData = await import("@/data/indianaEpsgCodes.json");
-      
-      // Cast the imported data to the correct types
-      return {
-        horizontal: indianaEpsgData.horizontal as CRSOption[],
-        vertical: indianaEpsgData.vertical as CRSOption[],
-        geoid: indianaEpsgData.geoid as CRSOption[]
-      };
+      // Use the new CRS service
+      const { crsService } = await import("@/services/crsService");
+      return await crsService.getAllCRSOptions();
     } catch (error) {
-      console.error("Error loading Indiana EPSG codes:", error);
+      console.error("Error loading CRS options:", error);
       return this.getFallbackCRSOptions();
+    }
+  },
+
+  /**
+   * Search for CRS options using MapTiler API
+   */
+  async searchCRSOptions(query: string): Promise<CRSOption[]> {
+    try {
+      const { crsService } = await import("@/services/crsService");
+      return await crsService.searchCRS(query);
+    } catch (error) {
+      console.error("Error searching CRS options:", error);
+      return [];
     }
   },
 
