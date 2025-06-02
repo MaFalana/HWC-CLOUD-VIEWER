@@ -190,8 +190,11 @@ export const sourcesJsonService = {
       if (x >= 2500000 && x <= 4500000 && y >= 1000000 && y <= 2500000) {
         // Enhanced reference points covering more Indiana counties
         const refPoints = [
-          // Central Indiana (Marion County area)
+          // Central Indiana (Marion County area) - Peabody West 1 reference point
           { easting: 3154601.912, northing: 1727378.764, lat: 39.7684, lon: -86.1581 },
+          
+          // Additional reference point for Peabody West 1 area
+          { easting: 3153483.692, northing: 1725305.985, lat: 39.7650, lon: -86.1610 },
           
           // Vanderburgh County (Evansville area) - Southwest Indiana
           { easting: 2800000, northing: 1200000, lat: 37.9747, lon: -87.5558 },
@@ -256,7 +259,7 @@ export const sourcesJsonService = {
       if (x >= 250000 && x <= 750000 && y >= 4200000 && y <= 4700000) {
         // UTM Zone 16N coordinates (meters)
         // Rough conversion for Indiana UTM coordinates
-        const utmToLatLon = this.convertUTMToLatLon(x, y, 16);
+        const utmToLatLon = this.convertUTMToLatLon(x, y);
         if (utmToLatLon) {
           console.log(`UTM coordinates converted: [${x}, ${y}] -> [${utmToLatLon.lat}, ${utmToLatLon.lon}]`);
           return utmToLatLon;
@@ -273,7 +276,7 @@ export const sourcesJsonService = {
   /**
    * Convert UTM coordinates to lat/lon (simplified)
    */
-  convertUTMToLatLon(easting: number, northing: number, zone: number): { lat: number; lon: number } | null {
+  convertUTMToLatLon(easting: number, northing: number): { lat: number; lon: number } | null {
     try {
       // Simplified UTM to lat/lon conversion for Indiana (Zone 16N)
       // This is a rough approximation - in production use proj4js

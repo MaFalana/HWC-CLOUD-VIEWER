@@ -194,15 +194,32 @@ export const potreeLocationService = {
         console.log("No .prj file found or error processing it:", error instanceof Error ? error.message : "Unknown error");
       }
       
-      // Try to fetch sources.json next
+      // Try to fetch sources.json next (prioritize this for county coordinates)
       try {
         const sourcesResponse = await fetch(`${baseUrl}${jobNumber}/sources.json`);
         if (sourcesResponse.ok) {
           console.log("Found sources.json, extracting data...");
-          return await sourcesJsonService.extractLocationFromSourcesJson(jobNumber);
+          const sourcesData = await sourcesResponse.json();
+          
+          // Check if the bounds look like Indiana county coordinates
+          if (sourcesData.bounds && 
+              sourcesData.bounds.min && 
+              sourcesData.bounds.min[0] >= 2500000 && 
+              sourcesData.bounds.min[0] <= 4500000 && 
+              sourcesData.bounds.min[1] >= 1000000 && 
+              sourcesData.bounds.min[1] <= 2500000) {
+            console.log("Sources.json contains county coordinates, prioritizing this data");
+            return await sourcesJsonService.extractLocationFromSourcesJson(jobNumber);
+          } else {
+            // Still try to extract location but with lower priority
+            const sourcesProjectData = await sourcesJsonService.extractLocationFromSourcesJson(jobNumber);
+            if (sourcesProjectData && sourcesProjectData.location && sourcesProjectData.location.confidence === "medium") {
+              return sourcesProjectData;
+            }
+          }
         }
       } catch (error) {
-        console.log("No sources.json found, trying metadata.json", error instanceof Error ? error.message : "Unknown error");
+        console.log("No sources.json found or error processing it:", error instanceof Error ? error.message : "Unknown error");
       }
       
       // Try to fetch metadata.json next
@@ -431,8 +448,11 @@ export const potreeLocationService = {
       if (x >= 2500000 && x <= 4500000 && y >= 1000000 && y <= 2500000) {
         // Enhanced reference points covering more Indiana counties
         const refPoints = [
-          // Central Indiana (Marion County area)
+          // Central Indiana (Marion County area) - Peabody West 1 reference point
           { easting: 3154601.912, northing: 1727378.764, lat: 39.7684, lon: -86.1581 },
+          
+          // Additional reference point for Peabody West 1 area
+          { easting: 3153483.692, northing: 1725305.985, lat: 39.7650, lon: -86.1610 },
           
           // Vanderburgh County (Evansville area) - Southwest Indiana
           { easting: 2800000, northing: 1200000, lat: 37.9747, lon: -87.5558 },

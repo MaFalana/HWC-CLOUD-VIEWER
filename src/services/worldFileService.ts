@@ -107,8 +107,11 @@ export const worldFileService = {
       if (x >= 2500000 && x <= 4500000 && y >= 1000000 && y <= 2500000) {
         // Enhanced reference points for Indiana counties
         const refPoints = [
-          // Central Indiana (Marion County area)
+          // Central Indiana (Marion County area) - Peabody West 1 reference point
           { easting: 3154601.912, northing: 1727378.764, lat: 39.7684, lon: -86.1581 },
+          
+          // Additional reference point for Peabody West 1 area
+          { easting: 3153483.692, northing: 1725305.985, lat: 39.7650, lon: -86.1610 },
           
           // Vanderburgh County (Evansville area) - Southwest Indiana
           { easting: 2800000, northing: 1200000, lat: 37.9747, lon: -87.5558 },
