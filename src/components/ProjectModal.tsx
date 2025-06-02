@@ -135,6 +135,14 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Log the CRS data being submitted
+    console.log('Submitting project with CRS data:', {
+      horizontal: formData.crs?.horizontal,
+      vertical: formData.crs?.vertical,
+      geoidModel: formData.crs?.geoidModel
+    });
+    
     onSubmit(formData);
     onClose();
   };

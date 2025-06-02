@@ -1,3 +1,4 @@
+
 export interface Project {
   _id?: string;
   jobNumber: string;
@@ -17,28 +18,11 @@ export interface Project {
   };
   projFile?: {
     content: string;
-    parsed?: {
-      projcs: string;
-      geogcs: string;
-      datum: string;
-      spheroid: string;
-      projection: string;
-      parameters: Record<string, number>;
-      unit: string;
-      authority: string;
-      epsgCode?: string;
-    };
+    parsed?: Record<string, unknown>;
   };
   worldFile?: {
     content: string;
-    parsed?: {
-      pixelSizeX: number;
-      rotationY: number;
-      rotationX: number;
-      pixelSizeY: number;
-      upperLeftX: number;
-      upperLeftY: number;
-    };
+    parsed?: Record<string, unknown>;
   };
   status: "active" | "completed" | "archived" | "processing";
   createdAt: Date;
