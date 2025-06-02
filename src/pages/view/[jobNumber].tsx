@@ -112,7 +112,7 @@ export default function PotreeViewer() {
         // Try to fetch project info from API
         let projectData = project;
         try {
-          const res = await fetch(`/api/pointclouds/${jobNumber}/info.json`);
+          const res = await fetch(`http://localhost:4400/api/pointclouds/${jobNumber}/info.json`);
           if (res.ok) {
             const data = await res.json();
             console.log("Project data:", data);
@@ -227,7 +227,7 @@ export default function PotreeViewer() {
           checkElement();
         });
 
-        const base = "/api/pointclouds/";
+        const base = "http://localhost:4400/api/pointclouds/";
         const cloudJsPath = `${base}${jobNumber}/cloud.js`;
         const metadataPath = `${base}${jobNumber}/metadata.json`;
 
