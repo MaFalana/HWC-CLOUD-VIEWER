@@ -64,10 +64,10 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   // Load CRS options when modal opens
   useEffect(() => {
-    if (isOpen && crsOptions.horizontal.length === 0) {
+    if (isOpen) {
       loadCRSOptions();
     }
-  }, [isOpen, crsOptions.horizontal.length]);
+  }, [isOpen]);
 
   // Set default CRS values for new projects
   useEffect(() => {
@@ -216,7 +216,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         open={isOpen}
         onOpenChange={setIsOpen}
       >
-        <SelectTrigger>
+        <SelectTrigger onClick={() => setIsOpen(true)}>
           <SelectValue placeholder={loading ? "Loading..." : placeholder} />
         </SelectTrigger>
         <SelectContent className="max-w-md max-h-60 overflow-y-auto">

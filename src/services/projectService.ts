@@ -1,6 +1,5 @@
+
 import { Project, CreateProjectData } from "@/types/project";
-import { projFileService, ProjFileData } from "./projFileService";
-import { worldFileService, WorldFileData } from "./worldFileService";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4400";
 
@@ -24,11 +23,11 @@ interface RawProjectData {
   };
   projFile?: {
     content: string;
-    parsed?: ProjFileData;
+    parsed?: Record<string, unknown>;
   };
   worldFile?: {
     content: string;
-    parsed?: WorldFileData;
+    parsed?: Record<string, unknown>;
   };
   status: "active" | "completed" | "archived" | "processing";
   thumbnailUrl?: string;
@@ -239,8 +238,8 @@ export const projectService = {
    * Update project files (prj/tfw) in the database
    */
   async updateProjectFiles(jobNumber: string, fileData: {
-    projFile?: { content: string; parsed?: ProjFileData };
-    worldFile?: { content: string; parsed?: WorldFileData };
+    projFile?: { content: string; parsed?: Record<string, unknown> };
+    worldFile?: { content: string; parsed?: Record<string, unknown> };
   }): Promise<void> {
     try {
       const response = await fetch(`${API_BASE_URL}/view/${jobNumber}/files`, {
