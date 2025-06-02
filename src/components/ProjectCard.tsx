@@ -1,11 +1,11 @@
 import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Eye, Edit, Trash2, MapPin, Calendar } from "lucide-react";
+import { Edit, Trash2, MapPin, Calendar, ExternalLink } from "lucide-react";
 import { Project } from "@/types/project";
-import { useRouter } from "next/router";
-import Image from "next/image";
+import { formatDate } from "@/lib/utils";
 
 interface ProjectCardProps {
   project: Project;
@@ -13,133 +13,160 @@ interface ProjectCardProps {
   onDelete: (jobNumber: string) => void;
 }
 
-export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
-  const router = useRouter();
-  const [isHovered, setIsHovered] = useState(false);
+export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [thumbnailError, setThumbnailError] = useState(false);
 
-  const handleOpen = () => {
-    router.push(`/view/${project.jobNumber}`);
-  };
+  // Try to load the thumbnail image
+  useState(() => {
+    const checkThumbnail = async () => {
+      try {
+        // Try to fetch the TIF/TIFF thumbnail
+        const tifResponse = await fetch(`http://localhost:4400/pointclouds/${project.jobNumber}/${project.jobNumber}.tif`, { method: 'HEAD' });
+        if (tifResponse.ok) {
+          setThumbnailUrl(`http://localhost:4400/pointclouds/${project.jobNumber}/${project.jobNumber}.tif`);
+          return;
+        }
+        
+        // Try TIFF extension if TIF doesn't exist
+        const tiffResponse = await fetch(`http://localhost:4400/pointclouds/${project.jobNumber}/${project.jobNumber}.tiff`, { method: 'HEAD' });
+        if (tiffResponse.ok) {
+          setThumbnailUrl(`http://localhost:4400/pointclouds/${project.jobNumber}/${project.jobNumber}.tiff`);
+          return;
+        }
+        
+        setThumbnailError(true);
+      } catch (error) {
+        console.log("Error checking thumbnail:", error);
+        setThumbnailError(true);
+      }
+    };
+    
+    checkThumbnail();
+  }, [project.jobNumber]);
 
-  const getStatusColor = (status: string) => {
+  // Status badge color
+  const getStatusColor = (status: Project["status"]) => {
     switch (status) {
       case "active":
-        return "bg-green-500";
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
       case "completed":
-        return "bg-blue-500";
-      case "processing":
-        return "bg-yellow-500";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
       case "archived":
-        return "bg-gray-500";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-400";
+      case "processing":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
       default:
-        return "bg-gray-500";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-400";
     }
   };
 
   return (
-    <Card className="group hover:shadow-lg transition-shadow duration-200 card-hover">
-      <div 
-        className="relative h-40 bg-gray-200 overflow-hidden"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        {project.thumbnailUrl ? (
-          <Image
-            src={project.thumbnailUrl}
-            alt={project.projectName}
-            fill
-            className={`object-cover transition-transform duration-300 ${isHovered ? 'scale-110' : 'scale-100'}`}
+    <Card className="overflow-hidden transition-all duration-300 hover:shadow-md dark:hover:shadow-hwc-red/5 group">
+      <div className="relative h-48 overflow-hidden bg-gray-100 dark:bg-gray-800">
+        {thumbnailUrl && !thumbnailError ? (
+          <img 
+            src={thumbnailUrl} 
+            alt={project.projectName} 
+            className="object-cover w-full h-full"
           />
         ) : (
-          <div className="flex items-center justify-center h-full bg-hwc-light/30">
-            <div className="text-hwc-dark/50 text-lg font-semibold">No Image</div>
+          <div className="flex items-center justify-center h-full bg-gradient-to-br from-hwc-dark to-hwc-dark/80">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-2 opacity-20">
+                <Image
+                  src="/HWC-angle-logo-16px.png"
+                  alt="HWC Logo"
+                  width={64}
+                  height={64}
+                  className="w-full h-full"
+                />
+              </div>
+              <p className="text-sm text-hwc-light/50">{project.projectType || "Project"}</p>
+            </div>
           </div>
         )}
-        <div className="absolute top-2 right-2 flex gap-1">
-          <Badge className={`${getStatusColor(project.status)} text-white`}>
-            {project.status}
-          </Badge>
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
-          <div className="p-3 w-full flex justify-between items-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(project);
-              }}
-              className="bg-white/80 hover:bg-white text-black"
-            >
-              <Edit className="h-3 w-3 mr-1" />
-              Edit
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(project.jobNumber);
-              }}
-              className="bg-white/80 hover:bg-white text-red-600"
-            >
-              <Trash2 className="h-3 w-3 mr-1" />
-              Delete
-            </Button>
-          </div>
+        
+        <div className="absolute top-3 left-3">
+          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(project.status)}`}>
+            {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+          </span>
         </div>
       </div>
-
+      
       <CardContent className="p-4">
-        <div className="mb-2">
-          <h3 className="font-semibold text-lg line-clamp-1">{project.projectName}</h3>
-          <p className="text-sm text-gray-500 font-mono">{project.jobNumber}</p>
+        <h3 className="mb-1 text-lg font-semibold tracking-tight truncate">
+          {project.projectName}
+        </h3>
+        
+        <div className="flex items-center mb-2 text-sm text-gray-500 dark:text-gray-400">
+          <span className="font-mono">{project.jobNumber}</span>
         </div>
-
-        <div className="space-y-1 text-sm text-gray-600">
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {new Date(project.acquistionDate).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </div>
-          {project.clientName && (
-            <div className="flex items-center gap-1">
-              <span>{project.clientName}</span>
-            </div>
-          )}
-          {project.location && (
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              {project.location.address || `${project.location.latitude}, ${project.location.longitude}`}
-            </div>
-          )}
-        </div>
-
-        {project.tags && project.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-3">
-            {project.tags.slice(0, 3).map((tag, index) => (
-              <Badge key={index} variant="secondary" className="text-xs bg-hwc-light text-hwc-dark">
-                {tag}
-              </Badge>
-            ))}
-            {project.tags.length > 3 && (
-              <Badge variant="secondary" className="text-xs bg-hwc-light text-hwc-dark">
-                +{project.tags.length - 3}
-              </Badge>
-            )}
-          </div>
+        
+        {project.clientName && (
+          <p className="mb-2 text-sm text-gray-600 dark:text-gray-300">
+            {project.clientName}
+          </p>
         )}
+        
+        {project.description && (
+          <p className="mb-3 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+            {project.description}
+          </p>
+        )}
+        
+        <div className="flex flex-col gap-2 mt-3">
+          {project.location && (
+            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+              <MapPin className="w-3 h-3 mr-1" />
+              <span className="truncate">
+                {project.location.address || 
+                  `${project.location.latitude.toFixed(4)}, ${project.location.longitude.toFixed(4)}`}
+              </span>
+            </div>
+          )}
+          
+          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <Calendar className="w-3 h-3 mr-1" />
+            <span>{formatDate(project.createdAt)}</span>
+          </div>
+        </div>
       </CardContent>
-
-      <CardFooter className="p-4 pt-0">
-        <Button onClick={handleOpen} className="w-full bg-hwc-red hover:bg-hwc-red/90 text-white font-medium">
-          <Eye className="h-4 w-4 mr-2" />
-          Open
+      
+      <CardFooter className="flex justify-between p-4 pt-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onEdit(project)}
+          className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+        >
+          <Edit className="w-4 h-4 mr-1" />
+          Edit
+        </Button>
+        
+        <Link href={`/view/${project.jobNumber}`} passHref>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-hwc-red/30 text-hwc-red hover:bg-hwc-red/10 hover:text-hwc-red hover:border-hwc-red"
+          >
+            <ExternalLink className="w-4 h-4 mr-1" />
+            View
+          </Button>
+        </Link>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onDelete(project.jobNumber)}
+          className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+        >
+          <Trash2 className="w-4 h-4 mr-1" />
+          Delete
         </Button>
       </CardFooter>
     </Card>
   );
 }
+
+export default ProjectCard;
