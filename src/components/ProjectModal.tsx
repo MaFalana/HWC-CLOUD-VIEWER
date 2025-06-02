@@ -168,21 +168,24 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     ? crsOptions.horizontal 
     : crsOptions.horizontal.filter(option =>
         option.name.toLowerCase().includes(horizontalSearch.toLowerCase()) ||
-        option.code.toLowerCase().includes(horizontalSearch.toLowerCase())
+        option.code.toLowerCase().includes(horizontalSearch.toLowerCase()) ||
+        option.description?.toLowerCase().includes(horizontalSearch.toLowerCase())
       );
 
   const filteredVerticalOptions = verticalSearch.trim() === ""
     ? crsOptions.vertical
     : crsOptions.vertical.filter(option =>
         option.name.toLowerCase().includes(verticalSearch.toLowerCase()) ||
-        option.code.toLowerCase().includes(verticalSearch.toLowerCase())
+        option.code.toLowerCase().includes(verticalSearch.toLowerCase()) ||
+        option.description?.toLowerCase().includes(verticalSearch.toLowerCase())
       );
 
   const filteredGeoidOptions = geoidSearch.trim() === ""
     ? crsOptions.geoid
     : crsOptions.geoid.filter(option =>
         option.name.toLowerCase().includes(geoidSearch.toLowerCase()) ||
-        option.code.toLowerCase().includes(geoidSearch.toLowerCase())
+        option.code.toLowerCase().includes(geoidSearch.toLowerCase()) ||
+        option.description?.toLowerCase().includes(geoidSearch.toLowerCase())
       );
 
   const renderCRSSelect = (
@@ -206,12 +209,17 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
           value={searchValue}
           onChange={(e) => {
             onSearchChange(e.target.value);
-            // Always open dropdown when user types
             setIsOpen(true);
           }}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => {
+            setIsOpen(true);
+          }}
+          onClick={() => {
+            setIsOpen(true);
+          }}
           className="pl-10 mb-2"
           disabled={loading}
+          autoComplete="off"
         />
       </div>
       <Select
