@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
@@ -59,13 +59,12 @@ export default function PotreeViewer() {
   const router = useRouter();
   const { jobNumber } = router.query;
   const [project, setProject] = useState<Project | null>(null);
+  const [projectName, setProjectName] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const viewerRef = useRef<PotreeViewer | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
@@ -76,21 +75,24 @@ export default function PotreeViewer() {
         setLoadingProgress(10);
         const projectData = await projectService.getProject(jobNumber);
         setProject(projectData);
+        setProjectName(projectData.projectName);
         setLoadingProgress(30);
       } catch (err) {
         console.error("Failed to load project:", err);
         // Set mock project data for development when API fails
-        setProject({
+        const mockProject = {
           jobNumber: jobNumber as string,
           projectName: `Project ${jobNumber}`,
           clientName: "Demo Client",
           acquistionDate: new Date().toISOString(),
           description: "Demo project for testing Potree viewer",
-          status: "active",
+          status: "active" as const,
           createdAt: new Date(),
           updatedAt: new Date(),
           projectType: "survey"
-        });
+        };
+        setProject(mockProject);
+        setProjectName(mockProject.projectName);
         setLoadingProgress(30);
       }
     };
@@ -98,227 +100,149 @@ export default function PotreeViewer() {
     loadProject();
   }, [jobNumber]);
 
-  const initializePotree = useCallback(async () => {
-    try {
-      console.log("Starting Potree initialization...");
-      setLoadingProgress(40);
+  useEffect(() => {
+    if (!jobNumber || typeof jobNumber !== "string" || !project) return;
 
-      // Ensure container exists
-      if (!containerRef.current) {
-        console.error("Container ref not available");
-        return;
-      }
+    const scriptsLoaded: HTMLScriptElement[] = [];
 
-      // Create render area and sidebar elements if they don't exist
-      let renderArea = document.getElementById("potree_render_area");
-      let sidebarContainer = document.getElementById("potree_sidebar_container");
+    const fetchProjectAndLoad = async () => {
+      try {
+        setLoadingProgress(40);
 
-      if (!renderArea) {
-        console.log("Creating render area element...");
-        renderArea = document.createElement("div");
-        renderArea.id = "potree_render_area";
-        renderArea.style.position = "absolute";
-        renderArea.style.width = "100%";
-        renderArea.style.height = "100%";
-        renderArea.style.left = "0";
-        renderArea.style.top = "0";
-        containerRef.current.appendChild(renderArea);
-      }
-
-      if (!sidebarContainer) {
-        console.log("Creating sidebar element...");
-        sidebarContainer = document.createElement("div");
-        sidebarContainer.id = "potree_sidebar_container";
-        sidebarContainer.style.position = "absolute";
-        sidebarContainer.style.width = "300px";
-        sidebarContainer.style.height = "100%";
-        sidebarContainer.style.top = "0";
-        sidebarContainer.style.right = "0";
-        sidebarContainer.style.zIndex = "1000";
-        containerRef.current.appendChild(sidebarContainer);
-      }
-
-      // Wait for DOM elements to be properly sized
-      await new Promise<void>((resolve) => {
-        const checkElement = () => {
-          const element = document.getElementById("potree_render_area");
-          if (element && element.offsetWidth > 0 && element.offsetHeight > 0) {
-            console.log("DOM element ready with dimensions:", {
-              width: element.offsetWidth,
-              height: element.offsetHeight,
-              clientWidth: element.clientWidth,
-              clientHeight: element.clientHeight
-            });
-            resolve();
-          } else {
-            console.log("DOM element check - waiting for dimensions...");
-            setTimeout(checkElement, 100);
-          }
-        };
-        checkElement();
-      });
-
-      // Load CSS files first
-      const loadCSS = (url: string) => {
-        if (document.querySelector(`link[href="${url}"]`)) return;
-        const link = document.createElement("link");
-        link.rel = "stylesheet";
-        link.href = url;
-        document.head.appendChild(link);
-      };
-
-      const cssFiles = [
-        "/potree/build/potree/potree.css",
-        "/potree/libs/jquery-ui/jquery-ui.min.css",
-        "/potree/libs/openlayers3/ol.css",
-        "/potree/libs/spectrum/spectrum.css",
-        "/potree/libs/jstree/themes/mixed/style.css",
-        "/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css",
-        "/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css"
-      ];
-
-      cssFiles.forEach(loadCSS);
-      
-      // Load scripts sequentially
-      setLoadingProgress(50);
-      console.log("Loading scripts...");
-      
-      const loadScript = (src: string): Promise<void> =>
-        new Promise((resolve, reject) => {
-          if (document.querySelector(`script[src="${src}"]`)) {
-            resolve();
-            return;
-          }
-          
-          const script = document.createElement("script");
-          script.src = src;
-          script.async = false;
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error(`Failed to load script ${src}`));
-          document.body.appendChild(script);
-        });
-      
-      const scripts = [
-        "/potree/libs/jquery/jquery-3.1.1.min.js",
-        "/potree/libs/spectrum/spectrum.js",
-        "/potree/libs/jquery-ui/jquery-ui.min.js",
-        "/potree/libs/other/BinaryHeap.js",
-        "/potree/libs/tween/tween.min.js",
-        "/potree/libs/d3/d3.js",
-        "/potree/libs/proj4/proj4.js",
-        "/potree/libs/openlayers3/ol.js",
-        "/potree/libs/i18next/i18next.js",
-        "/potree/libs/jstree/jstree.js",
-        "/potree/build/potree/potree.js",
-        "/potree/libs/plasio/js/laslaz.js",
-        "/potree/libs/Cesium/Cesium.js",
-        "/potree/libs/perfect-scrollbar/js/perfect-scrollbar.jquery.js",
-        "/potree/libs/amcharts/amcharts.js",
-        "/potree/libs/amcharts/serial.js",
-        "/potree/libs/panzoom/panzoom.min.js",
-        "/potree/libs/papa/papaparse.js"
-      ];
-      
-      for (let i = 0; i < scripts.length; i++) {
+        // Try to fetch project info from API
+        let projectData = project;
         try {
+          const res = await fetch(`/api/pointclouds/${jobNumber}/info.json`);
+          if (res.ok) {
+            const data = await res.json();
+            console.log("Project data:", data);
+            setProjectName(data.projectName);
+            projectData = { ...project, projectName: data.projectName };
+          }
+        } catch (infoErr) {
+          console.log("No project info found, using existing data");
+        }
+
+        setLoadingProgress(50);
+
+        const loadScript = (src: string): Promise<void> =>
+          new Promise((resolve, reject) => {
+            if (document.querySelector(`script[src="${src}"]`)) {
+              resolve();
+              return;
+            }
+
+            const script = document.createElement("script");
+            script.src = src;
+            script.async = false;
+            script.onload = () => {
+              scriptsLoaded.push(script);
+              resolve();
+            };
+            script.onerror = () => reject(new Error(`Failed to load script ${src}`));
+            document.body.appendChild(script);
+          });
+
+        const scripts = [
+          "/potree/libs/jquery/jquery-3.1.1.min.js",
+          "/potree/libs/spectrum/spectrum.js",
+          "/potree/libs/jquery-ui/jquery-ui.min.js",
+          "/potree/libs/other/BinaryHeap.js",
+          "/potree/libs/tween/tween.min.js",
+          "/potree/libs/d3/d3.js",
+          "/potree/libs/proj4/proj4.js",
+          "/potree/libs/openlayers3/ol.js",
+          "/potree/libs/i18next/i18next.js",
+          "/potree/libs/jstree/jstree.js",
+          "/potree/build/potree/potree.js",
+          "/potree/libs/plasio/js/laslaz.js",
+          "/potree/libs/Cesium/Cesium.js",
+          "/potree/libs/perfect-scrollbar/js/perfect-scrollbar.jquery.js",
+          "/potree/libs/amcharts/amcharts.js",
+          "/potree/libs/amcharts/serial.js",
+          "/potree/libs/panzoom/panzoom.min.js",
+          "/potree/libs/papa/papaparse.js"
+        ];
+
+        for (let i = 0; i < scripts.length; i++) {
           await loadScript(scripts[i]);
           setLoadingProgress(55 + Math.floor((i / scripts.length) * 25));
-        } catch (err) {
-          console.error(`Failed to load script ${scripts[i]}:`, err);
         }
-      }
-      
-      setLoadingProgress(80);
-      
-      // Wait for Potree to be available
-      await new Promise<void>((resolve, reject) => {
-        let attempts = 0;
-        const maxAttempts = 20;
-        
-        const checkPotree = () => {
-          attempts++;
-          if (window.Potree) {
-            resolve();
-          } else if (attempts >= maxAttempts) {
-            reject(new Error("Potree not available after maximum attempts"));
-          } else {
-            setTimeout(checkPotree, 200);
-          }
-        };
-        
-        checkPotree();
-      });
-      
-      console.log("Potree is available, creating viewer...");
-      
-      // Get the render area element again
-      const finalRenderArea = document.getElementById("potree_render_area");
-      if (!finalRenderArea) {
-        throw new Error("Potree render area not found after creation");
-      }
 
-      // Verify render area dimensions before creating viewer
-      console.log("Render area dimensions before viewer creation:", {
-        width: finalRenderArea.clientWidth,
-        height: finalRenderArea.clientHeight,
-        offsetWidth: finalRenderArea.offsetWidth,
-        offsetHeight: finalRenderArea.offsetHeight
-      });
-      
-      // Create viewer
-      const viewer = new window.Potree.Viewer(finalRenderArea);
-      viewerRef.current = viewer;
-      
-      // Configure viewer
-      viewer.setEDLEnabled(true);
-      viewer.setFOV(60);
-      viewer.setPointBudget(1_000_000);
-      viewer.setDescription(project?.projectName || `Project ${jobNumber}`);
-      
-      setLoadingProgress(85);
-      
-      // Load GUI
-      viewer.loadGUI(() => {
-        console.log("Potree GUI loaded");
-        viewer.setLanguage("en");
-        setLoadingProgress(90);
-      });
-      
-      // Try to load point cloud
-      console.log("Loading point cloud...");
-      
-      // Try to load project-specific point cloud first
-      const projectCloudPath = `/potree/pointclouds/${jobNumber}/cloud.js`;
-      
-      const checkPointCloudExists = async (url: string): Promise<boolean> => {
-        try {
-          const response = await fetch(url, { method: 'HEAD' });
-          return response.ok;
-        } catch {
-          return false;
-        }
-      };
-      
-      const projectExists = await checkPointCloudExists(projectCloudPath);
-      
-      if (projectExists) {
-        window.Potree.loadPointCloud(projectCloudPath, project?.projectName || `Project ${jobNumber}`, (e) => {
+        setLoadingProgress(80);
+
+        // Wait for Potree to be available
+        await new Promise<void>((resolve, reject) => {
+          let attempts = 0;
+          const maxAttempts = 50;
+          
+          const checkPotree = () => {
+            attempts++;
+            if (window.Potree) {
+              resolve();
+            } else if (attempts >= maxAttempts) {
+              reject(new Error("Potree not available after maximum attempts"));
+            } else {
+              setTimeout(checkPotree, 100);
+            }
+          };
+          
+          checkPotree();
+        });
+
+        console.log("Potree is available, creating viewer...");
+
+        // Wait for DOM element to be ready
+        await new Promise<void>((resolve) => {
+          const checkElement = () => {
+            const element = document.getElementById("potree_render_area");
+            if (element && element.offsetWidth > 0 && element.offsetHeight > 0) {
+              console.log("DOM element ready with dimensions:", {
+                width: element.offsetWidth,
+                height: element.offsetHeight
+              });
+              resolve();
+            } else {
+              setTimeout(checkElement, 100);
+            }
+          };
+          checkElement();
+        });
+
+        const base = "/api/pointclouds/";
+        const cloudJsPath = `${base}${jobNumber}/cloud.js`;
+        const metadataPath = `${base}${jobNumber}/metadata.json`;
+
+        const response = await fetch(cloudJsPath, { method: "HEAD" });
+        const pathToLoad = response.ok ? cloudJsPath : metadataPath;
+
+        const viewer = new window.Potree.Viewer(document.getElementById("potree_render_area")!);
+        viewer.setEDLEnabled(true);
+        viewer.setFOV(60);
+        viewer.setPointBudget(1_000_000);
+        viewer.setDescription(projectData.projectName);
+        
+        setLoadingProgress(85);
+        
+        viewer.loadGUI(() => {
+          viewer.setLanguage("en");
+          viewer.toggleSidebar();
+          setLoadingProgress(90);
+        });
+
+        const loadCallback = (e: PotreeLoadEvent) => {
           if (e.pointcloud) {
-            console.log("Project point cloud loaded successfully");
             viewer.scene.addPointCloud(e.pointcloud);
             e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
-            viewer.fitToScreen();
+            viewer.fitToScreen(0.5);
             
             // If project has location data, position the map view accordingly
-            if (project?.location?.latitude && project?.location?.longitude) {
-              // Set the map view to the project location
+            if (projectData.location?.latitude && projectData.location?.longitude) {
               try {
-                // Access the map view if available in the Potree viewer
                 const mapView = viewer.mapView;
                 if (mapView) {
-                  // Set the map center to the project location
-                  mapView.setCenter([project.location.longitude, project.location.latitude]);
-                  mapView.setZoom(15); // Adjust zoom level as needed
+                  mapView.setCenter([projectData.location.longitude, projectData.location.latitude]);
+                  mapView.setZoom(15);
                 }
               } catch (mapErr) {
                 console.error("Failed to set map location:", mapErr);
@@ -330,85 +254,43 @@ export default function PotreeViewer() {
               setLoading(false);
             }, 500);
           } else {
-            console.log("Point cloud object not found in response");
+            console.error("Failed to load point cloud.");
+            // Still show the viewer even if no point cloud loads
             setLoadingProgress(100);
             setTimeout(() => {
               setLoading(false);
             }, 500);
           }
-        });
-      } else {
-        // Try fallback demo point cloud
-        const lionCloudPath = "/potree/pointclouds/lion/cloud.js";
-        const lionExists = await checkPointCloudExists(lionCloudPath);
-        
-        if (lionExists) {
-          window.Potree.loadPointCloud(lionCloudPath, "Demo PointCloud", (e) => {
-            if (e.pointcloud) {
-              console.log("Demo point cloud loaded successfully");
-              viewer.scene.addPointCloud(e.pointcloud);
-              e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
-              viewer.fitToScreen();
-              
-              setLoadingProgress(100);
-              setTimeout(() => {
-                setLoading(false);
-              }, 500);
-            } else {
-              console.log("Point cloud object not found in response");
-              setLoadingProgress(100);
-              setTimeout(() => {
-                setLoading(false);
-              }, 500);
-            }
-          });
+        };
+
+        if (pathToLoad.endsWith("cloud.js")) {
+          window.Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
         } else {
-          console.log("No point cloud files found, showing empty viewer");
-          setLoadingProgress(100);
-          setTimeout(() => {
-            setLoading(false);
-          }, 500);
+          window.Potree.loadPointCloud(metadataPath, jobNumber, loadCallback);
         }
+
+      } catch (err) {
+        console.error("Error loading viewer:", err);
+        setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        setLoading(false);
       }
-      
-    } catch (err) {
-      console.error("Error initializing Potree:", err);
-      setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      setLoading(false);
-    }
-  }, [jobNumber, project]);
+    };
 
-  useEffect(() => {
-    if (!jobNumber || typeof jobNumber !== "string" || !project) return;
-
-    // Initialize Potree with a delay to ensure DOM is ready
+    // Start loading after a short delay to ensure DOM is ready
     const timeoutId = setTimeout(() => {
-      initializePotree();
+      fetchProjectAndLoad();
     }, 1000);
 
+    // Cleanup function
     return () => {
       clearTimeout(timeoutId);
-      
-      // Clean up
-      if (viewerRef.current) {
-        viewerRef.current = null;
-      }
-      
-      // Remove scripts
-      document.querySelectorAll('script[src*="/potree/"]').forEach(script => {
-        if (script.parentNode) {
+      scriptsLoaded.forEach((script) => {
+        if (script && script.parentNode) {
           script.parentNode.removeChild(script);
         }
       });
-      
-      // Remove CSS
-      document.querySelectorAll('link[href*="/potree/"]').forEach(link => {
-        if (link.parentNode) {
-          link.parentNode.removeChild(link);
-        }
-      });
     };
-  }, [jobNumber, project, initializePotree]);
+  }, [jobNumber, project]);
 
   if (loading) {
     return (
@@ -425,7 +307,7 @@ export default function PotreeViewer() {
               style={{ height: "auto" }}
             />
             <h1 className="text-2xl font-semibold mb-2">
-              {project?.projectName || `Project ${jobNumber}`}
+              {projectName || project?.projectName || `Project ${jobNumber}`}
             </h1>
           </div>
           
@@ -477,9 +359,18 @@ export default function PotreeViewer() {
   return (
     <>
       <Head>
-        <title>{project?.projectName || `Project ${jobNumber}`} - HWC Engineering Cloud Viewer</title>
+        <title>{projectName || project?.projectName || `Project ${jobNumber}`} - HWC Engineering Cloud Viewer</title>
         <meta name="description" content="Point cloud viewer" />
         <link rel="icon" href="/HWC-angle-logo-16px.png" />
+        
+        {/* Potree CSS */}
+        <link rel="stylesheet" href="/potree/build/potree/potree.css" />
+        <link rel="stylesheet" href="/potree/libs/jquery-ui/jquery-ui.min.css" />
+        <link rel="stylesheet" type="text/css" href="/potree/libs/openlayers3/ol.css"/>
+        <link rel="stylesheet" type="text/css" href="/potree/libs/spectrum/spectrum.css"/>
+        <link rel="stylesheet" type="text/css" href="/potree/libs/jstree/themes/mixed/style.css"/>
+        <link rel="stylesheet" type="text/css" href="/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css"/>
+        <link rel="stylesheet" type="text/css" href="/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css"/>
       </Head>
 
       {/* Custom Header */}
@@ -497,7 +388,7 @@ export default function PotreeViewer() {
             </Button>
             <div className="h-6 w-px bg-hwc-gray"></div>
             <h1 className="text-lg font-semibold">
-              {project?.projectName || `Project ${jobNumber}`}
+              {projectName || project?.projectName || `Project ${jobNumber}`}
             </h1>
           </div>
           
@@ -506,10 +397,15 @@ export default function PotreeViewer() {
               variant="ghost"
               size="sm"
               onClick={() => {
-                if (viewerRef.current) {
-                  viewerRef.current.toggleSidebar();
-                }
                 setSidebarVisible(!sidebarVisible);
+                // Try to toggle Potree sidebar if available
+                try {
+                  if (window.Potree && document.querySelector('.potree_sidebar_container')) {
+                    // Potree sidebar toggle logic would go here
+                  }
+                } catch (err) {
+                  console.log("Potree sidebar toggle not available");
+                }
               }}
               className="text-white hover:bg-hwc-red/20"
             >
@@ -543,43 +439,15 @@ export default function PotreeViewer() {
               <Button
                 variant={mapType === "default" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => {
-                  setMapType("default");
-                  if (viewerRef.current) {
-                    try {
-                      // Change map type if the viewer has a map view
-                      const mapView = viewerRef.current.mapView;
-                      if (mapView) {
-                        // Reset to default map type
-                        mapView.setMapType("DEFAULT");
-                      }
-                    } catch (err) {
-                      console.error("Failed to change map type:", err);
-                    }
-                  }
-                }}
-                className="text-xs h-8 bg-hwc-dark text-white"
+                onClick={() => setMapType("default")}
+                className="text-xs h-8"
               >
                 Default
               </Button>
               <Button
                 variant={mapType === "terrain" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => {
-                  setMapType("terrain");
-                  if (viewerRef.current) {
-                    try {
-                      // Change map type if the viewer has a map view
-                      const mapView = viewerRef.current.mapView;
-                      if (mapView) {
-                        // Set to terrain map type
-                        mapView.setMapType("TERRAIN");
-                      }
-                    } catch (err) {
-                      console.error("Failed to change map type:", err);
-                    }
-                  }
-                }}
+                onClick={() => setMapType("terrain")}
                 className="text-xs h-8"
               >
                 Terrain
@@ -587,21 +455,7 @@ export default function PotreeViewer() {
               <Button
                 variant={mapType === "satellite" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => {
-                  setMapType("satellite");
-                  if (viewerRef.current) {
-                    try {
-                      // Change map type if the viewer has a map view
-                      const mapView = viewerRef.current.mapView;
-                      if (mapView) {
-                        // Set to satellite map type
-                        mapView.setMapType("SATELLITE");
-                      }
-                    } catch (err) {
-                      console.error("Failed to change map type:", err);
-                    }
-                  }
-                }}
+                onClick={() => setMapType("satellite")}
                 className="text-xs h-8"
               >
                 Satellite
@@ -609,21 +463,7 @@ export default function PotreeViewer() {
               <Button
                 variant={mapType === "openstreet" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => {
-                  setMapType("openstreet");
-                  if (viewerRef.current) {
-                    try {
-                      // Change map type if the viewer has a map view
-                      const mapView = viewerRef.current.mapView;
-                      if (mapView) {
-                        // Set to OpenStreetMap type
-                        mapView.setMapType("OPENSTREETMAP");
-                      }
-                    } catch (err) {
-                      console.error("Failed to change map type:", err);
-                    }
-                  }
-                }}
+                onClick={() => setMapType("openstreet")}
                 className="text-xs h-8"
               >
                 OpenStreet
@@ -643,13 +483,28 @@ export default function PotreeViewer() {
         </div>
       </div>
 
-      {/* Potree Container */}
-      <div 
-        ref={containerRef}
-        className="potree_container" 
-        style={{ position: "absolute", width: "100%", height: "100%", left: 0, top: 0 }}
+      {/* Potree Container - Following your working pattern */}
+      <div
+        className="potree_container"
+        style={{
+          position: "absolute",
+          width: "100%",
+          height: "100%",
+          left: 0,
+          top: 0
+        }}
       >
-        {/* DOM elements will be created dynamically by the initialization function */}
+        <div
+          id="potree_render_area"
+          style={{
+            backgroundImage: "url('/potree/build/potree/resources/images/background.jpg')",
+            width: "100%",
+            height: "100%"
+          }}
+        >
+          <div id="sidebar_logo"></div>
+        </div>
+        <div id="potree_sidebar_container" />
       </div>
 
       {/* Custom Styles */}
