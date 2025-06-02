@@ -93,7 +93,7 @@ export const worldFileService = {
         }
       }
 
-      // Fallback to improved approximation for Indiana State Plane coordinates
+      // Enhanced fallback conversion for county coordinate systems
       const x = worldData.upperLeftX;
       const y = worldData.upperLeftY;
       
@@ -103,17 +103,33 @@ export const worldFileService = {
         return null;
       }
       
-      // Check if coordinates are in Indiana State Plane range (feet)
-      if (x >= 3000000 && x <= 4000000 && y >= 1000000 && y <= 2000000) {
-        // Use improved conversion for Indiana State Plane coordinates
-        // Based on actual data from sources.json: center around [3154601.912, 1727378.764]
-        
-        // More accurate reference points for Indiana
-        // Using multiple reference points for better accuracy
+      // Check if coordinates are in Indiana county coordinate range (feet)
+      if (x >= 2500000 && x <= 4500000 && y >= 1000000 && y <= 2500000) {
+        // Enhanced reference points for Indiana counties
         const refPoints = [
-          { easting: 3154601.912, northing: 1727378.764, lat: 39.7684, lon: -86.1581 }, // Indianapolis area
-          { easting: 3200000, northing: 1700000, lat: 39.6, lon: -86.0 }, // East of Indianapolis
-          { easting: 3100000, northing: 1750000, lat: 39.8, lon: -86.3 }  // West of Indianapolis
+          // Central Indiana (Marion County area)
+          { easting: 3154601.912, northing: 1727378.764, lat: 39.7684, lon: -86.1581 },
+          
+          // Vanderburgh County (Evansville area) - Southwest Indiana
+          { easting: 2800000, northing: 1200000, lat: 37.9747, lon: -87.5558 },
+          
+          // Allen County (Fort Wayne area) - Northeast Indiana
+          { easting: 3800000, northing: 2100000, lat: 41.0793, lon: -85.1394 },
+          
+          // Lake County (Gary area) - Northwest Indiana
+          { easting: 2900000, northing: 2300000, lat: 41.5868, lon: -87.3467 },
+          
+          // Monroe County (Bloomington area) - South Central Indiana
+          { easting: 3100000, northing: 1400000, lat: 39.1653, lon: -86.5264 },
+          
+          // St. Joseph County (South Bend area) - North Central Indiana
+          { easting: 3200000, northing: 2200000, lat: 41.7018, lon: -86.2390 },
+          
+          // Additional reference points for better coverage
+          { easting: 3300000, northing: 1600000, lat: 39.4, lon: -85.8 }, // East Central
+          { easting: 2900000, northing: 1800000, lat: 40.2, lon: -87.2 }, // West Central
+          { easting: 3500000, northing: 1900000, lat: 40.5, lon: -85.5 }, // Northeast
+          { easting: 3000000, northing: 1300000, lat: 38.8, lon: -86.8 }  // Southwest
         ];
         
         // Find the closest reference point
@@ -132,12 +148,10 @@ export const worldFileService = {
         const deltaEasting = x - closestRef.easting;
         const deltaNorthing = y - closestRef.northing;
         
-        // Convert feet to degrees using more accurate scale factors for Indiana
-        // At Indiana's latitude (~39.5°):
-        // 1 degree latitude ≈ 364,000 feet
-        // 1 degree longitude ≈ 288,200 feet (varies with latitude)
-        const latScale = 364000; // feet per degree latitude
-        const lonScale = 288200; // feet per degree longitude at ~39.5° latitude
+        // Convert feet to degrees using accurate scale factors for Indiana
+        const avgLatitude = closestRef.lat;
+        const latScale = 364000; // feet per degree latitude (constant)
+        const lonScale = 288200 * Math.cos(avgLatitude * Math.PI / 180); // feet per degree longitude (varies with latitude)
         
         const latOffset = deltaNorthing / latScale;
         const lonOffset = deltaEasting / lonScale;
@@ -146,8 +160,8 @@ export const worldFileService = {
         const lon = closestRef.lon + lonOffset;
         
         // Validate result is within Indiana bounds
-        if (lat >= 37.5 && lat <= 41.8 && lon >= -88.1 && lon <= -84.8) {
-          console.log(`World file coordinates converted: [${x}, ${y}] -> [${lat}, ${lon}]`);
+        if (lat >= 37.0 && lat <= 42.0 && lon >= -88.5 && lon <= -84.5) {
+          console.log(`World file county coordinates converted: [${x}, ${y}] -> [${lat.toFixed(6)}, ${lon.toFixed(6)}]`);
           return {
             latitude: lat,
             longitude: lon

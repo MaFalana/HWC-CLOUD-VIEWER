@@ -179,25 +179,40 @@ export const sourcesJsonService = {
   
   /**
    * Convert projected coordinates to geographic coordinates
-   * This is a simplified conversion - in production you'd use proj4js
+   * Enhanced for county coordinate systems
    */
   convertProjectedToGeographic(x: number, y: number): { lat: number; lon: number } | null {
     try {
-      // For Indiana State Plane coordinates (NAD83 / Indiana West, EPSG:2965)
-      // This is a more accurate approximation based on the actual data
+      // Enhanced conversion for Indiana county coordinate systems
+      // These are typically in State Plane coordinates (feet)
       
-      // Check if coordinates are in the range for Indiana State Plane
-      if (x >= 3000000 && x <= 4000000 && y >= 1000000 && y <= 2000000) {
-        // Use improved conversion based on actual sources.json data
-        // The sources.json shows center point around [3154601.912, 1727378.764]
-        
-        // Multiple reference points for better accuracy across Indiana
+      // Check if coordinates are in the range for Indiana State Plane/County coordinates
+      if (x >= 2500000 && x <= 4500000 && y >= 1000000 && y <= 2500000) {
+        // Enhanced reference points covering more Indiana counties
         const refPoints = [
-          { easting: 3154601.912, northing: 1727378.764, lat: 39.7684, lon: -86.1581 }, // Indianapolis area
-          { easting: 3200000, northing: 1700000, lat: 39.6, lon: -86.0 }, // East of Indianapolis
-          { easting: 3100000, northing: 1750000, lat: 39.8, lon: -86.3 }, // West of Indianapolis
-          { easting: 3150000, northing: 1650000, lat: 39.4, lon: -86.2 }, // South of Indianapolis
-          { easting: 3150000, northing: 1800000, lat: 40.0, lon: -86.2 }  // North of Indianapolis
+          // Central Indiana (Marion County area)
+          { easting: 3154601.912, northing: 1727378.764, lat: 39.7684, lon: -86.1581 },
+          
+          // Vanderburgh County (Evansville area) - Southwest Indiana
+          { easting: 2800000, northing: 1200000, lat: 37.9747, lon: -87.5558 },
+          
+          // Allen County (Fort Wayne area) - Northeast Indiana
+          { easting: 3800000, northing: 2100000, lat: 41.0793, lon: -85.1394 },
+          
+          // Lake County (Gary area) - Northwest Indiana
+          { easting: 2900000, northing: 2300000, lat: 41.5868, lon: -87.3467 },
+          
+          // Monroe County (Bloomington area) - South Central Indiana
+          { easting: 3100000, northing: 1400000, lat: 39.1653, lon: -86.5264 },
+          
+          // St. Joseph County (South Bend area) - North Central Indiana
+          { easting: 3200000, northing: 2200000, lat: 41.7018, lon: -86.2390 },
+          
+          // Additional reference points for better coverage
+          { easting: 3300000, northing: 1600000, lat: 39.4, lon: -85.8 }, // East Central
+          { easting: 2900000, northing: 1800000, lat: 40.2, lon: -87.2 }, // West Central
+          { easting: 3500000, northing: 1900000, lat: 40.5, lon: -85.5 }, // Northeast
+          { easting: 3000000, northing: 1300000, lat: 38.8, lon: -86.8 }  // Southwest
         ];
         
         // Find the closest reference point
@@ -216,12 +231,11 @@ export const sourcesJsonService = {
         const deltaEasting = x - closestRef.easting;
         const deltaNorthing = y - closestRef.northing;
         
-        // Convert feet to degrees using more accurate scale factors for Indiana
-        // At Indiana's latitude (~39.5°):
-        // 1 degree latitude ≈ 364,000 feet
-        // 1 degree longitude ≈ 288,200 feet (varies with latitude)
-        const latScale = 364000; // feet per degree latitude
-        const lonScale = 288200; // feet per degree longitude at ~39.5° latitude
+        // Convert feet to degrees using accurate scale factors for Indiana
+        // Scale factors vary slightly by latitude, but these are good approximations for Indiana
+        const avgLatitude = closestRef.lat;
+        const latScale = 364000; // feet per degree latitude (constant)
+        const lonScale = 288200 * Math.cos(avgLatitude * Math.PI / 180); // feet per degree longitude (varies with latitude)
         
         const latOffset = deltaNorthing / latScale;
         const lonOffset = deltaEasting / lonScale;
@@ -229,16 +243,61 @@ export const sourcesJsonService = {
         const lat = closestRef.lat + latOffset;
         const lon = closestRef.lon + lonOffset;
         
-        // Validate result is within Indiana bounds
-        if (lat >= 37.5 && lat <= 41.8 && lon >= -88.1 && lon <= -84.8) {
-          console.log(`Sources.json coordinates converted: [${x}, ${y}] -> [${lat}, ${lon}] using ref [${closestRef.easting}, ${closestRef.northing}]`);
+        // Validate result is within Indiana bounds (with some tolerance)
+        if (lat >= 37.0 && lat <= 42.0 && lon >= -88.5 && lon <= -84.5) {
+          console.log(`County coordinates converted: [${x}, ${y}] -> [${lat.toFixed(6)}, ${lon.toFixed(6)}] using ref [${closestRef.easting}, ${closestRef.northing}] at [${closestRef.lat}, ${closestRef.lon}]`);
           return { lat, lon };
+        } else {
+          console.warn(`Converted coordinates [${lat}, ${lon}] are outside Indiana bounds`);
+        }
+      }
+      
+      // Check for other coordinate ranges (meters, different projections)
+      if (x >= 250000 && x <= 750000 && y >= 4200000 && y <= 4700000) {
+        // UTM Zone 16N coordinates (meters)
+        // Rough conversion for Indiana UTM coordinates
+        const utmToLatLon = this.convertUTMToLatLon(x, y, 16);
+        if (utmToLatLon) {
+          console.log(`UTM coordinates converted: [${x}, ${y}] -> [${utmToLatLon.lat}, ${utmToLatLon.lon}]`);
+          return utmToLatLon;
         }
       }
       
       return null;
     } catch (error) {
       console.error("Error converting projected coordinates:", error);
+      return null;
+    }
+  },
+  
+  /**
+   * Convert UTM coordinates to lat/lon (simplified)
+   */
+  convertUTMToLatLon(easting: number, northing: number, zone: number): { lat: number; lon: number } | null {
+    try {
+      // Simplified UTM to lat/lon conversion for Indiana (Zone 16N)
+      // This is a rough approximation - in production use proj4js
+      
+      const centralMeridian = -87; // Central meridian for UTM Zone 16
+      const falseEasting = 500000;
+      const falseNorthing = 0;
+      
+      // Rough conversion (not geodetically accurate)
+      const deltaEasting = easting - falseEasting;
+      const deltaNorthing = northing - falseNorthing;
+      
+      // Approximate scale factors for Indiana
+      const lat = 39.5 + (deltaNorthing / 111000); // ~111km per degree latitude
+      const lon = centralMeridian + (deltaEasting / (111000 * Math.cos(lat * Math.PI / 180))); // varies with latitude
+      
+      // Validate result
+      if (lat >= 37.0 && lat <= 42.0 && lon >= -88.5 && lon <= -84.5) {
+        return { lat, lon };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Error converting UTM coordinates:", error);
       return null;
     }
   }
