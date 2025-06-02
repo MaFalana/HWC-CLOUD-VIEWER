@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X, Search, Loader2 } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { X, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Project, CreateProjectData, CRSOption } from "@/types/project";
 import { arcgisService } from "@/services/arcgisService";
 
@@ -39,9 +43,6 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   });
 
   const [tagInput, setTagInput] = useState("");
-  const [horizontalSearch, setHorizontalSearch] = useState("");
-  const [verticalSearch, setVerticalSearch] = useState("");
-  const [geoidSearch, setGeoidSearch] = useState("");
 
   // Add state to control dropdown open state
   const [horizontalOpen, setHorizontalOpen] = useState(false);
@@ -119,22 +120,6 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         projectType: project.projectType || "",
         tags: project.tags || [],
       });
-      
-      // Set search fields to empty to ensure dropdowns show all options
-      setHorizontalSearch("");
-      setVerticalSearch("");
-      setGeoidSearch("");
-      
-      // Open dropdowns when editing to make selection more obvious
-      if (project.crs?.horizontal) {
-        setHorizontalOpen(true);
-      }
-      if (project.crs?.vertical) {
-        setVerticalOpen(true);
-      }
-      if (project.crs?.geoidModel) {
-        setGeoidOpen(true);
-      }
     } else if (mode === "create") {
       setFormData({
         jobNumber: "",
@@ -180,141 +165,135 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     }));
   };
 
-  const filteredHorizontalOptions = horizontalSearch.trim() === "" 
-    ? crsOptions.horizontal 
-    : crsOptions.horizontal.filter(option =>
-        option.name.toLowerCase().includes(horizontalSearch.toLowerCase()) ||
-        option.code.toLowerCase().includes(horizontalSearch.toLowerCase()) ||
-        option.description?.toLowerCase().includes(horizontalSearch.toLowerCase())
-      );
-
-  const filteredVerticalOptions = verticalSearch.trim() === ""
-    ? crsOptions.vertical
-    : crsOptions.vertical.filter(option =>
-        option.name.toLowerCase().includes(verticalSearch.toLowerCase()) ||
-        option.code.toLowerCase().includes(verticalSearch.toLowerCase()) ||
-        option.description?.toLowerCase().includes(verticalSearch.toLowerCase())
-      );
-
-  const filteredGeoidOptions = geoidSearch.trim() === ""
-    ? crsOptions.geoid
-    : crsOptions.geoid.filter(option =>
-        option.name.toLowerCase().includes(geoidSearch.toLowerCase()) ||
-        option.code.toLowerCase().includes(geoidSearch.toLowerCase()) ||
-        option.description?.toLowerCase().includes(geoidSearch.toLowerCase())
-      );
-
-  const renderCRSSelect = (
+  const renderSearchableCRSSelect = (
     label: string,
     placeholder: string,
-    searchValue: string,
-    onSearchChange: (value: string) => void,
     selectValue: string | undefined,
     onSelectChange: (value: string) => void,
     options: CRSOption[],
     loading: boolean,
     isOpen: boolean,
     setIsOpen: (open: boolean) => void
-  ) => (
-    <div>
-      <Label>{label}</Label>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
-        <Input
-          placeholder={`Search ${label.toLowerCase()}...`}
-          value={searchValue}
-          onChange={(e) => {
-            onSearchChange(e.target.value);
-            setIsOpen(true);
-          }}
-          onFocus={() => {
-            setIsOpen(true);
-          }}
-          onClick={() => {
-            setIsOpen(true);
-          }}
-          className="pl-10 mb-2"
-          disabled={loading}
-          autoComplete="off"
-        />
-      </div>
-      <Select
-        value={selectValue}
-        onValueChange={(value) => {
-          onSelectChange(value);
-          setIsOpen(false);
-        }}
-        disabled={loading}
-        open={isOpen}
-        onOpenChange={setIsOpen}
-      >
-        <SelectTrigger onClick={() => setIsOpen(true)}>
-          <SelectValue placeholder={loading ? "Loading..." : placeholder} />
-        </SelectTrigger>
-        <SelectContent className="max-w-md max-h-60 overflow-y-auto">
-          {loading ? (
-            <div className="flex items-center justify-center p-4">
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Loading options...
-            </div>
-          ) : options.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">
-              {searchValue ? `No results found for "${searchValue}"` : "No options available"}
-            </div>
-          ) : (
-            options.map((option) => (
-              <SelectItem key={option.code} value={option.code} className="py-3">
-                <div className="flex items-start gap-3 w-full">
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                        {option.code}
+  ) => {
+    const selectedOption = options.find(opt => opt.code === selectValue);
+    
+    return (
+      <div className="space-y-2">
+        <Label>{label}</Label>
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={isOpen}
+              className="w-full justify-between h-auto min-h-[40px] p-3"
+              disabled={loading}
+            >
+              {selectedOption ? (
+                <div className="flex flex-col items-start text-left w-full">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                      {selectedOption.code}
+                    </span>
+                    {selectedOption.recommended && (
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                        Recommended
                       </span>
-                      {option.recommended && (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
-                          Recommended
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm font-medium text-gray-900 mb-1">
-                      {option.name}
-                    </div>
-                    {option.description && (
-                      <div className="text-xs text-gray-500 leading-relaxed">
-                        {option.description}
-                      </div>
                     )}
                   </div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {selectedOption.name}
+                  </div>
                 </div>
-              </SelectItem>
-            ))
-          )}
-        </SelectContent>
-      </Select>
-      {selectValue && (
-        <div className="mt-2 p-3 bg-gray-50 rounded-md border">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-mono text-sm font-medium text-blue-600">
-              {selectValue}
-            </span>
-            {options.find(opt => opt.code === selectValue)?.recommended && (
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                Recommended
+              ) : (
+                <span className="text-gray-500">{loading ? "Loading..." : placeholder}</span>
+              )}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
+            <Command>
+              <CommandInput placeholder={`Search ${label.toLowerCase()}...`} />
+              <CommandList>
+                <CommandEmpty>No options found.</CommandEmpty>
+                <CommandGroup>
+                  {loading ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Loading options...
+                    </div>
+                  ) : (
+                    options.map((option) => (
+                      <CommandItem
+                        key={option.code}
+                        value={`${option.code} ${option.name} ${option.description || ""}`}
+                        onSelect={() => {
+                          onSelectChange(option.code);
+                          setIsOpen(false);
+                        }}
+                        className="py-3"
+                      >
+                        <div className="flex items-start gap-3 w-full">
+                          <Check
+                            className={cn(
+                              "mt-1 h-4 w-4",
+                              selectValue === option.code ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col items-start min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                {option.code}
+                              </span>
+                              {option.recommended && (
+                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                                  Recommended
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm font-medium text-gray-900 mb-1">
+                              {option.name}
+                            </div>
+                            {option.description && (
+                              <div className="text-xs text-gray-500 leading-relaxed">
+                                {option.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))
+                  )}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        {selectedOption && (
+          <div className="mt-2 p-3 bg-gray-50 rounded-md border">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-mono text-sm font-medium text-blue-600">
+                {selectedOption.code}
               </span>
+              {selectedOption.recommended && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                  Recommended
+                </span>
+              )}
+            </div>
+            <div className="text-sm font-medium text-gray-900 mb-1">
+              {selectedOption.name}
+            </div>
+            {selectedOption.description && (
+              <div className="text-xs text-gray-600">
+                {selectedOption.description}
+              </div>
             )}
           </div>
-          <div className="text-sm font-medium text-gray-900 mb-1">
-            {options.find(opt => opt.code === selectValue)?.name}
-          </div>
-          {options.find(opt => opt.code === selectValue)?.description && (
-            <div className="text-xs text-gray-600">
-              {options.find(opt => opt.code === selectValue)?.description}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    );
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -459,49 +438,43 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
               </div>
             )}
             
-            {renderCRSSelect(
+            {renderSearchableCRSSelect(
               "Horizontal CRS",
               "Select horizontal CRS",
-              horizontalSearch,
-              setHorizontalSearch,
               formData.crs?.horizontal,
               (value) => setFormData(prev => ({
                 ...prev,
                 crs: { ...prev.crs!, horizontal: value }
               })),
-              filteredHorizontalOptions,
+              crsOptions.horizontal,
               crsLoading,
               horizontalOpen,
               setHorizontalOpen
             )}
 
-            {renderCRSSelect(
+            {renderSearchableCRSSelect(
               "Vertical CRS",
               "Select vertical CRS",
-              verticalSearch,
-              setVerticalSearch,
               formData.crs?.vertical,
               (value) => setFormData(prev => ({
                 ...prev,
                 crs: { ...prev.crs!, vertical: value }
               })),
-              filteredVerticalOptions,
+              crsOptions.vertical,
               crsLoading,
               verticalOpen,
               setVerticalOpen
             )}
 
-            {renderCRSSelect(
+            {renderSearchableCRSSelect(
               "Geoid Model",
               "Select geoid model",
-              geoidSearch,
-              setGeoidSearch,
               formData.crs?.geoidModel,
               (value) => setFormData(prev => ({
                 ...prev,
                 crs: { ...prev.crs!, geoidModel: value }
               })),
-              filteredGeoidOptions,
+              crsOptions.geoid,
               crsLoading,
               geoidOpen,
               setGeoidOpen
