@@ -371,10 +371,11 @@ export const arcgisService = {
       // Load from static JSON file instead of API calls
       const indianaEpsgData = await import("@/data/indianaEpsgCodes.json");
       
+      // Cast the imported data to the correct types
       return {
-        horizontal: indianaEpsgData.horizontal,
-        vertical: indianaEpsgData.vertical,
-        geoid: indianaEpsgData.geoid
+        horizontal: indianaEpsgData.horizontal as CRSOption[],
+        vertical: indianaEpsgData.vertical as CRSOption[],
+        geoid: indianaEpsgData.geoid as CRSOption[]
       };
     } catch (error) {
       console.error("Error loading Indiana EPSG codes:", error);
@@ -388,7 +389,7 @@ export const arcgisService = {
   async getHorizontalCRSWithDetails(): Promise<CRSOption[]> {
     try {
       const indianaEpsgData = await import("@/data/indianaEpsgCodes.json");
-      return indianaEpsgData.horizontal;
+      return indianaEpsgData.horizontal as CRSOption[];
     } catch (error) {
       console.error('Error loading horizontal CRS from JSON:', error);
       return this.getFallbackCRSOptions().horizontal;

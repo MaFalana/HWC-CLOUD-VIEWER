@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -170,18 +169,6 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     }));
   };
 
-  // Filter options based on search
-  const filterOptions = (options: CRSOption[], searchTerm: string) => {
-    if (!searchTerm.trim()) return options;
-    
-    const search = searchTerm.toLowerCase();
-    return options.filter(option => 
-      option.code.toLowerCase().includes(search) ||
-      option.name.toLowerCase().includes(search) ||
-      (option.description && option.description.toLowerCase().includes(search))
-    );
-  };
-
   const renderCRSSelect = (
     label: string,
     options: CRSOption[],
@@ -192,7 +179,15 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     isOpen: boolean,
     setIsOpen: (open: boolean) => void
   ) => {
-    const filteredOptions = filterOptions(options, searchValue);
+    // Filter options based on search
+    const filteredOptions = searchValue.trim() === "" 
+      ? options 
+      : options.filter(option => 
+          option.code.toLowerCase().includes(searchValue.toLowerCase()) ||
+          option.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+          (option.description && option.description.toLowerCase().includes(searchValue.toLowerCase()))
+        );
+    
     const selectedOption = options.find(opt => opt.code === value);
 
     return (
@@ -212,6 +207,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
               }}
               onFocus={() => setIsOpen(true)}
               className="pl-10"
+              autoComplete="off"
             />
           </div>
           <Button
@@ -268,7 +264,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
                 <div
                   key={option.code}
                   className={`flex items-start gap-3 p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${
-                    value === option.code ? "bg-blue-100" : ""
+                    value === option.code ? "bg-blue-50" : ""
                   }`}
                   onClick={() => {
                     onChange(option.code);

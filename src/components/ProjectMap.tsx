@@ -145,8 +145,8 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
         mapRef.current.remove();
       }
 
-      // Create map
-      const map = window.L.map(mapContainerRef.current).setView([39.7684, -86.1581], 10);
+      // Create map centered on Indiana
+      const map = window.L.map(mapContainerRef.current).setView([39.7684, -86.1581], 7);
       mapRef.current = map;
 
       // Add tile layer based on selected map type
@@ -166,35 +166,45 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
 
       // Add markers for projects
       const bounds = window.L.latLngBounds([]);
+      let hasValidMarkers = false;
       
       projectsWithLocation.forEach(project => {
         if (project.location && project.location.latitude && project.location.longitude) {
-          const markerIcon = window.L.divIcon({
-            className: 'custom-div-icon',
-            html: `<div class="marker-pin ${getStatusColor(project.status).replace('bg-', '')}"></div>`,
-            iconSize: [30, 42],
-            iconAnchor: [15, 42]
-          });
+          // Validate coordinates are within reasonable bounds
+          if (Math.abs(project.location.latitude) <= 90 && Math.abs(project.location.longitude) <= 180) {
+            const markerIcon = window.L.divIcon({
+              className: 'custom-div-icon',
+              html: `<div class="marker-pin ${getStatusColor(project.status).replace('bg-', '')}"></div>`,
+              iconSize: [30, 42],
+              iconAnchor: [15, 42]
+            });
 
-          const marker = window.L.marker(
-            [project.location.latitude, project.location.longitude],
-            { icon: markerIcon }
-          );
+            const marker = window.L.marker(
+              [project.location.latitude, project.location.longitude],
+              { icon: markerIcon }
+            );
 
-          marker.on('click', () => {
-            setSelectedProject(project);
-          });
+            marker.on('click', () => {
+              setSelectedProject(project);
+            });
 
-          // Add marker to map
-          marker.addTo(map);
-          markersRef.current.push(marker);
-          bounds.extend([project.location.latitude, project.location.longitude]);
+            // Add marker to map
+            marker.addTo(map);
+            markersRef.current.push(marker);
+            bounds.extend([project.location.latitude, project.location.longitude]);
+            hasValidMarkers = true;
+          } else {
+            console.warn(`Project ${project.jobNumber} has invalid coordinates:`, project.location);
+          }
         }
       });
 
       // Fit map to bounds if there are markers
-      if (markersRef.current.length > 0) {
+      if (hasValidMarkers) {
         map.fitBounds(bounds, { padding: [50, 50] });
+      } else {
+        // Default view of Indiana if no valid markers
+        map.setView([39.7684, -86.1581], 7);
       }
     };
 

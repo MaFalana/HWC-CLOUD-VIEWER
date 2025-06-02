@@ -33,7 +33,193 @@ export default function Dashboard() {
     try {
       setLoading(true);
       const data = await projectService.getAllProjects();
-      setProjects(data);
+      
+      // If we have real data, use it
+      if (data && data.length > 0) {
+        setProjects(data);
+      } else {
+        // Otherwise use mock data with locations for testing
+        const mockProjects: Project[] = [
+          {
+            jobNumber: "2025-035-S",
+            projectName: "Y45 Washington & Lawndale",
+            clientName: "Centerpoint Energy",
+            acquistionDate: "2024-12-30T16:50:40.866Z",
+            description: "Comprehensive survey of the main highway bridge structure",
+            status: "active" as const,
+            createdAt: new Date("2024-12-30"),
+            updatedAt: new Date("2024-12-30"),
+            projectType: "survey",
+            location: {
+              latitude: 39.7684,
+              longitude: -86.1581,
+              address: "Washington & Lawndale, Indianapolis, IN"
+            },
+            crs: {
+              horizontal: "EPSG:3613",
+              vertical: "EPSG:6360",
+              geoidModel: "GEOID18"
+            },
+            tags: ["bridge", "highway", "infrastructure"]
+          },
+          {
+            jobNumber: "2500-033-S", 
+            projectName: "Commercial Building Inspection",
+            clientName: "ABC Development",
+            acquistionDate: "2024-02-01T10:00:00.000Z",
+            description: "Detailed inspection of commercial office complex",
+            status: "completed" as const,
+            createdAt: new Date("2024-02-01"),
+            updatedAt: new Date("2024-02-15"),
+            projectType: "inspection",
+            location: {
+              latitude: 39.7817,
+              longitude: -86.1478,
+              address: "Downtown Indianapolis, IN"
+            },
+            crs: {
+              horizontal: "EPSG:2965",
+              vertical: "EPSG:6360",
+              geoidModel: "GEOID18"
+            },
+            tags: ["commercial", "building", "inspection"]
+          },
+          {
+            jobNumber: "2023-075-A",
+            projectName: "Peabody West 1",
+            clientName: "Platinum Properties",
+            acquistionDate: "2023-03-28T16:50:40.866Z",
+            description: "Comprehensive point cloud survey of industrial facility",
+            status: "completed" as const,
+            createdAt: new Date("2023-03-28"),
+            updatedAt: new Date("2023-03-28"),
+            projectType: "survey",
+            location: {
+              latitude: 39.8283,
+              longitude: -86.1755,
+              address: "Peabody West, Indianapolis, IN"
+            },
+            crs: {
+              horizontal: "EPSG:3580",
+              vertical: "EPSG:6360",
+              geoidModel: "GEOID18"
+            },
+            tags: ["industrial", "facility", "survey"]
+          },
+          {
+            jobNumber: "2024-410-S",
+            projectName: "Highway Infrastructure Survey",
+            clientName: "INDOT",
+            acquistionDate: "2024-10-15T14:30:00.000Z",
+            description: "LiDAR survey of highway infrastructure for maintenance planning",
+            status: "active" as const,
+            createdAt: new Date("2024-10-15"),
+            updatedAt: new Date("2024-10-15"),
+            projectType: "survey",
+            location: {
+              latitude: 39.7392,
+              longitude: -86.1652,
+              address: "I-465 & US-31, Indianapolis, IN"
+            },
+            crs: {
+              horizontal: "EPSG:2966",
+              vertical: "EPSG:6360",
+              geoidModel: "GEOID18"
+            },
+            tags: ["highway", "infrastructure", "lidar"]
+          },
+          {
+            jobNumber: "2024-377-S",
+            projectName: "Evansville Bridge Survey",
+            clientName: "City of Evansville",
+            acquistionDate: "2024-08-20T09:15:00.000Z",
+            description: "Structural survey of downtown bridge using LiDAR technology",
+            status: "processing" as const,
+            createdAt: new Date("2024-08-20"),
+            updatedAt: new Date("2024-08-20"),
+            projectType: "survey",
+            location: {
+              latitude: 37.9747,
+              longitude: -87.5558,
+              address: "Downtown Evansville, IN"
+            },
+            crs: {
+              horizontal: "EPSG:3613",
+              vertical: "EPSG:6360",
+              geoidModel: "GEOID18"
+            },
+            tags: ["bridge", "structural", "evansville"]
+          },
+          {
+            jobNumber: "2024-411-S",
+            projectName: "Fort Wayne Industrial Complex",
+            clientName: "Industrial Partners LLC",
+            acquistionDate: "2024-11-05T13:45:00.000Z",
+            description: "Complete facility mapping for expansion planning",
+            status: "active" as const,
+            createdAt: new Date("2024-11-05"),
+            updatedAt: new Date("2024-11-05"),
+            projectType: "mapping",
+            location: {
+              latitude: 41.0793,
+              longitude: -85.1394,
+              address: "Fort Wayne, IN"
+            },
+            crs: {
+              horizontal: "EPSG:3533",
+              vertical: "EPSG:6360",
+              geoidModel: "GEOID18"
+            },
+            tags: ["industrial", "mapping", "fort-wayne"]
+          },
+          {
+            jobNumber: "2022-094-B",
+            projectName: "South Bend University Campus",
+            clientName: "Notre Dame University",
+            acquistionDate: "2022-06-15T10:30:00.000Z",
+            description: "Campus-wide LiDAR survey for facility management",
+            status: "completed" as const,
+            createdAt: new Date("2022-06-15"),
+            updatedAt: new Date("2022-06-30"),
+            projectType: "survey",
+            location: {
+              latitude: 41.7018,
+              longitude: -86.2390,
+              address: "Notre Dame, South Bend, IN"
+            },
+            crs: {
+              horizontal: "EPSG:3607",
+              vertical: "EPSG:6360",
+              geoidModel: "GEOID18"
+            },
+            tags: ["campus", "university", "south-bend"]
+          },
+          {
+            jobNumber: "2022-076-S",
+            projectName: "Bloomington Downtown Corridor",
+            clientName: "City of Bloomington",
+            acquistionDate: "2022-05-10T09:00:00.000Z",
+            description: "Urban corridor mapping for infrastructure planning",
+            status: "archived" as const,
+            createdAt: new Date("2022-05-10"),
+            updatedAt: new Date("2022-05-25"),
+            projectType: "mapping",
+            location: {
+              latitude: 39.1653,
+              longitude: -86.5264,
+              address: "Downtown Bloomington, IN"
+            },
+            crs: {
+              horizontal: "EPSG:3584",
+              vertical: "EPSG:6360",
+              geoidModel: "GEOID18"
+            },
+            tags: ["urban", "corridor", "bloomington"]
+          }
+        ];
+        
+        setProjects(mockProjects);
+      }
     } catch (error) {
       console.error("Failed to load projects:", error);
       toast({
@@ -41,142 +227,6 @@ export default function Dashboard() {
         description: "Failed to load projects. Please try again.",
         variant: "destructive",
       });
-      // Mock data for development
-      setProjects([
-        {
-          jobNumber: "2500-062-A",
-          projectName: "Y45 Washington & Lawndale",
-          clientName: "Centerpoint Energy",
-          acquistionDate: "2024-12-30T16:50:40.866Z",
-          description: "Comprehensive survey of the main highway bridge structure",
-          status: "active",
-          createdAt: new Date("2024-12-30"),
-          updatedAt: new Date("2024-12-30"),
-          projectType: "survey",
-          location: {
-            latitude: 39.7684,
-            longitude: -86.1581,
-            address: "Washington & Lawndale, Indianapolis, IN"
-          },
-          crs: {
-            horizontal: "EPSG:3613",
-            vertical: "EPSG:6360",
-            geoidModel: "GEOID18"
-          },
-          tags: ["bridge", "highway", "infrastructure"],
-          thumbnailUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400"
-        },
-        {
-          jobNumber: "2024-002", 
-          projectName: "Commercial Building Inspection",
-          clientName: "ABC Development",
-          acquistionDate: "2024-02-01T10:00:00.000Z",
-          description: "Detailed inspection of commercial office complex",
-          status: "completed",
-          createdAt: new Date("2024-02-01"),
-          updatedAt: new Date("2024-02-15"),
-          projectType: "inspection",
-          location: {
-            latitude: 39.7817,
-            longitude: -86.1478,
-            address: "Downtown Indianapolis, IN"
-          },
-          crs: {
-            horizontal: "EPSG:2965",
-            vertical: "EPSG:6360",
-            geoidModel: "GEOID18"
-          },
-          tags: ["commercial", "building", "inspection"]
-        },
-        {
-          jobNumber: "2023-075-A",
-          projectName: "Peabody West 1",
-          clientName: "Platinum Properties",
-          acquistionDate: "2023-03-28T16:50:40.866Z",
-          description: "Comprehensive point cloud survey of industrial facility",
-          status: "completed",
-          createdAt: new Date("2023-03-28"),
-          updatedAt: new Date("2023-03-28"),
-          projectType: "survey",
-          location: {
-            latitude: 39.8283,
-            longitude: -86.1755,
-            address: "Peabody West, Indianapolis, IN"
-          },
-          crs: {
-            horizontal: "EPSG:3580",
-            vertical: "EPSG:6360",
-            geoidModel: "GEOID18"
-          },
-          tags: ["industrial", "facility", "survey"]
-        },
-        {
-          jobNumber: "2024-410-S",
-          projectName: "Highway Infrastructure Survey",
-          clientName: "INDOT",
-          acquistionDate: "2024-10-15T14:30:00.000Z",
-          description: "LiDAR survey of highway infrastructure for maintenance planning",
-          status: "active",
-          createdAt: new Date("2024-10-15"),
-          updatedAt: new Date("2024-10-15"),
-          projectType: "survey",
-          location: {
-            latitude: 39.7392,
-            longitude: -86.1652,
-            address: "I-465 & US-31, Indianapolis, IN"
-          },
-          crs: {
-            horizontal: "EPSG:2966",
-            vertical: "EPSG:6360",
-            geoidModel: "GEOID18"
-          },
-          tags: ["highway", "infrastructure", "lidar"]
-        },
-        {
-          jobNumber: "2024-377-S",
-          projectName: "Evansville Bridge Survey",
-          clientName: "City of Evansville",
-          acquistionDate: "2024-08-20T09:15:00.000Z",
-          description: "Structural survey of downtown bridge using LiDAR technology",
-          status: "processing",
-          createdAt: new Date("2024-08-20"),
-          updatedAt: new Date("2024-08-20"),
-          projectType: "survey",
-          location: {
-            latitude: 37.9747,
-            longitude: -87.5558,
-            address: "Downtown Evansville, IN"
-          },
-          crs: {
-            horizontal: "EPSG:3613",
-            vertical: "EPSG:6360",
-            geoidModel: "GEOID18"
-          },
-          tags: ["bridge", "structural", "evansville"]
-        },
-        {
-          jobNumber: "2024-411-S",
-          projectName: "Fort Wayne Industrial Complex",
-          clientName: "Industrial Partners LLC",
-          acquistionDate: "2024-11-05T13:45:00.000Z",
-          description: "Complete facility mapping for expansion planning",
-          status: "active",
-          createdAt: new Date("2024-11-05"),
-          updatedAt: new Date("2024-11-05"),
-          projectType: "mapping",
-          location: {
-            latitude: 41.0793,
-            longitude: -85.1394,
-            address: "Fort Wayne, IN"
-          },
-          crs: {
-            horizontal: "EPSG:3533",
-            vertical: "EPSG:6360",
-            geoidModel: "GEOID18"
-          },
-          tags: ["industrial", "mapping", "fort-wayne"]
-        }
-      ]);
     } finally {
       setLoading(false);
     }
