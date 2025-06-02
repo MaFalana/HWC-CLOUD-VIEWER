@@ -72,43 +72,21 @@ export default function PotreeViewer() {
           console.log("No project info found, using extracted data");
         }
 
-        setLoadingProgress(50);
-
-        // Set up message listener for iframe communication
-        const handleMessage = (event: MessageEvent) => {
-          if (event.data.type === "loadingProgress") {
-            setLoadingProgress(50 + Math.floor(event.data.progress / 2)); // Scale to 50-100%
-          } else if (event.data.type === "loadingComplete") {
-            setLoadingProgress(100);
-            setTimeout(() => {
-              setLoading(false);
-            }, 500);
-          } else if (event.data.type === "loadingError") {
-            setLoadingError(event.data.error || "Failed to load point cloud");
-            setLoading(false);
-          } else if (event.data.type === "stylingComplete") {
-            console.log("Potree styling complete");
-          }
-        };
-
-        window.addEventListener("message", handleMessage);
+        // Manually set loading to false after a timeout
+        // This is a workaround for the iframe communication issues
+        setTimeout(() => {
+          setLoadingProgress(100);
+          setLoading(false);
+        }, 5000);
 
         // Load the iframe with the Potree viewer
         if (iframeRef.current) {
           const latitude = projectData.location?.latitude || 39.7684;
           const longitude = projectData.location?.longitude || -86.1581;
           
-          // Use the intermediate iframe to avoid DOM issues
-          iframeRef.current.src = `/potree-iframe.html?jobNumber=${jobNumber}&mapType=${mapType}&latitude=${latitude}&longitude=${longitude}&projectName=${encodeURIComponent(projectData.projectName || "")}`;
-          
-          iframeRef.current.onload = () => {
-            console.log("Iframe loaded");
-          };
+          // Load the Potree viewer directly
+          iframeRef.current.src = `/potree-viewer.html?jobNumber=${jobNumber}&mapType=${mapType}&latitude=${latitude}&longitude=${longitude}&projectName=${encodeURIComponent(projectData.projectName || "")}`;
         }
-
-        return () => {
-          window.removeEventListener("message", handleMessage);
-        };
       } catch (err) {
         console.error("Error loading project data:", err);
         setLoadingError(`Failed to load project data: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -122,15 +100,23 @@ export default function PotreeViewer() {
   // Update map type when it changes
   useEffect(() => {
     if (!loading && iframeRef.current && iframeRef.current.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({ type: "setMapType", mapType }, "*");
+      try {
+        iframeRef.current.contentWindow.postMessage({ type: "setMapType", mapType }, "*");
+      } catch (error) {
+        console.error("Error sending message to iframe:", error);
+      }
     }
   }, [mapType, loading]);
 
   // Handle sidebar toggle
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
-    if (iframeRef.current && iframeRef.current.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({ type: "toggleSidebar" }, "*");
+    if (!loading && iframeRef.current && iframeRef.current.contentWindow) {
+      try {
+        iframeRef.current.contentWindow.postMessage({ type: "toggleSidebar" }, "*");
+      } catch (error) {
+        console.error("Error sending message to iframe:", error);
+      }
     }
   };
 
