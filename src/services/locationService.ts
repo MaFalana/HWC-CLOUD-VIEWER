@@ -1,4 +1,3 @@
-import { arcgisService } from "@/services/arcgisService";
 
 // CRS to approximate location mapping for Indiana counties
 const CRS_TO_LOCATION_MAP: Record<string, { latitude: number; longitude: number; address: string }> = {
