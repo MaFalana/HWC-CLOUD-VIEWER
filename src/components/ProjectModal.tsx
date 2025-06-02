@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,9 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { X, Loader2, Check, ChevronsUpDown } from "lucide-react";
+import { X, Loader2, Check, ChevronsUpDown, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Project, CreateProjectData, CRSOption } from "@/types/project";
 import { arcgisService } from "@/services/arcgisService";
@@ -47,6 +47,11 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   const [horizontalOpen, setHorizontalOpen] = useState(false);
   const [verticalOpen, setVerticalOpen] = useState(false);
   const [geoidOpen, setGeoidOpen] = useState(false);
+
+  // Search states for each dropdown
+  const [horizontalSearch, setHorizontalSearch] = useState("");
+  const [verticalSearch, setVerticalSearch] = useState("");
+  const [geoidSearch, setGeoidSearch] = useState("");
 
   // CRS options from ArcGIS API
   const [crsOptions, setCrsOptions] = useState<{
@@ -164,6 +169,18 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     }));
   };
 
+  // Filter options based on search
+  const filterOptions = (options: CRSOption[], searchTerm: string) => {
+    if (!searchTerm.trim()) return options;
+    
+    const search = searchTerm.toLowerCase();
+    return options.filter(option => 
+      option.code.toLowerCase().includes(search) ||
+      option.name.toLowerCase().includes(search) ||
+      (option.description && option.description.toLowerCase().includes(search))
+    );
+  };
+
   const renderSearchableCRSSelect = (
     label: string,
     placeholder: string,
@@ -172,14 +189,22 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     options: CRSOption[],
     loading: boolean,
     isOpen: boolean,
-    setIsOpen: (open: boolean) => void
+    setIsOpen: (open: boolean) => void,
+    searchValue: string,
+    setSearchValue: (value: string) => void
   ) => {
     const selectedOption = options.find(opt => opt.code === selectValue);
+    const filteredOptions = filterOptions(options, searchValue);
     
     return (
       <div className="space-y-2">
         <Label>{label}</Label>
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <Popover open={isOpen} onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) {
+            setSearchValue("");
+          }
+        }}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -211,65 +236,72 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
-            <Command shouldFilter={true}>
-              <CommandInput 
-                placeholder={`Search ${label.toLowerCase()}...`}
-                className="h-9 border-0 focus:ring-0 focus:outline-none"
-                autoFocus
-              />
-              <CommandList className="max-h-[300px] overflow-y-auto">
-                <CommandEmpty>No options found.</CommandEmpty>
-                <CommandGroup>
-                  {loading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Loading options...
-                    </div>
-                  ) : (
-                    options.map((option) => (
-                      <CommandItem
-                        key={option.code}
-                        value={`${option.code} ${option.name} ${option.description || ""}`}
-                        onSelect={() => {
-                          onSelectChange(option.code);
-                          setIsOpen(false);
-                        }}
-                        className="py-3 hover:bg-gray-50 focus:bg-gray-50 data-[selected=true]:bg-gray-50"
-                      >
-                        <div className="flex items-start gap-3 w-full">
-                          <Check
-                            className={cn(
-                              "mt-1 h-4 w-4 text-green-600",
-                              selectValue === option.code ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          <div className="flex flex-col items-start min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                {option.code}
-                              </span>
-                              {option.recommended && (
-                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
-                                  Recommended
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-sm font-medium text-gray-900 mb-1">
-                              {option.name}
-                            </div>
-                            {option.description && (
-                              <div className="text-xs text-gray-500 leading-relaxed">
-                                {option.description}
-                              </div>
-                            )}
-                          </div>
+            <div className="flex flex-col">
+              {/* Search Input */}
+              <div className="flex items-center border-b px-3 py-2">
+                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                <Input
+                  placeholder={`Search ${label.toLowerCase()}...`}
+                  value={searchValue}
+                  onChange={(e) => setSearchValue(e.target.value)}
+                  className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto"
+                  autoFocus
+                />
+              </div>
+              
+              {/* Options List */}
+              <div className="max-h-[300px] overflow-y-auto">
+                {loading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Loading options...
+                  </div>
+                ) : filteredOptions.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-gray-500">
+                    No options found
+                  </div>
+                ) : (
+                  filteredOptions.map((option) => (
+                    <div
+                      key={option.code}
+                      className="flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                      onClick={() => {
+                        onSelectChange(option.code);
+                        setIsOpen(false);
+                        setSearchValue("");
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mt-1 h-4 w-4 text-green-600",
+                          selectValue === option.code ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <div className="flex flex-col items-start min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                            {option.code}
+                          </span>
+                          {option.recommended && (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                              Recommended
+                            </span>
+                          )}
                         </div>
-                      </CommandItem>
-                    ))
-                  )}
-                </CommandGroup>
-              </CommandList>
-            </Command>
+                        <div className="text-sm font-medium text-gray-900 mb-1">
+                          {option.name}
+                        </div>
+                        {option.description && (
+                          <div className="text-xs text-gray-500 leading-relaxed">
+                            {option.description}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </PopoverContent>
         </Popover>
         {selectedOption && (
@@ -452,7 +484,9 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
               crsOptions.horizontal,
               crsLoading,
               horizontalOpen,
-              setHorizontalOpen
+              setHorizontalOpen,
+              horizontalSearch,
+              setHorizontalSearch
             )}
 
             {renderSearchableCRSSelect(
@@ -466,7 +500,9 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
               crsOptions.vertical,
               crsLoading,
               verticalOpen,
-              setVerticalOpen
+              setVerticalOpen,
+              verticalSearch,
+              setVerticalSearch
             )}
 
             {renderSearchableCRSSelect(
@@ -480,7 +516,9 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
               crsOptions.geoid,
               crsLoading,
               geoidOpen,
-              setGeoidOpen
+              setGeoidOpen,
+              geoidSearch,
+              setGeoidSearch
             )}
           </div>
 
