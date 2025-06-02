@@ -32,7 +32,7 @@ export interface Project {
     latitude: number;
     longitude: number;
     address?: string;
-    source?: 'potree_metadata' | 'potree_bounds' | 'crs_derived' | 'manual' | 'fallback';
+    source?: 'potree_metadata' | 'potree_bounds' | 'crs_derived' | 'manual' | 'fallback' | 'world_file' | 'proj_file';
     confidence?: 'high' | 'medium' | 'low';
   };
   crs?: {
