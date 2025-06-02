@@ -629,7 +629,7 @@ body{
 
 
 #sidebar_logo {
-    background: url(../../../../src/assets/HWC\ Logo_4b.png) no-repeat;
+    background: url("/HWC Logo_4b.png") no-repeat;
     height: 70px;
     background-size: cover;
     cursor: pointer;

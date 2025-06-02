@@ -403,17 +403,32 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
           top: 0 !important;
           right: 0 !important;
           left: auto !important;
+          z-index: 1000 !important;
         }
 
         /* Ensure zoom controls are positioned correctly */
         .leaflet-top.leaflet-right {
           top: 10px !important;
           right: 10px !important;
+          z-index: 1000 !important;
         }
 
         /* Force visibility of our custom controls */
         .leaflet-container {
           z-index: 1 !important;
+        }
+        
+        /* Ensure project list sidebar is always visible */
+        .leaflet-control-container .leaflet-top.leaflet-left {
+          z-index: 998 !important;
+        }
+        
+        /* Make sure zoom controls don't interfere with sidebar */
+        .leaflet-control-zoom {
+          right: 10px !important;
+          left: auto !important;
+          top: 10px !important;
+          z-index: 1000 !important;
         }
       `}</style>
     </div>

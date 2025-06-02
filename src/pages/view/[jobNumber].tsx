@@ -279,9 +279,11 @@ export default function PotreeViewer() {
               if (projectData.location?.latitude && projectData.location?.longitude) {
                 try {
                   const mapView = viewer.mapView;
-                  if (mapView) {
+                  if (mapView && typeof mapView.setCenter === 'function') {
                     mapView.setCenter([projectData.location.longitude, projectData.location.latitude]);
-                    mapView.setZoom(15);
+                    if (typeof mapView.setZoom === 'function') {
+                      mapView.setZoom(15);
+                    }
                   }
                 } catch (mapError) {
                   console.error("Failed to set map location:", mapError);
