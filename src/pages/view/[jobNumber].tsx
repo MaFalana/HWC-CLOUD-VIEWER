@@ -90,12 +90,12 @@ export default function PotreeViewer() {
         if (!document.getElementById("potree_render_area")) {
           const renderArea = document.createElement("div");
           renderArea.id = "potree_render_area";
-          renderArea.style.width = "100%";
-          renderArea.style.height = "100vh";
-          renderArea.style.position = "absolute";
-          renderArea.style.top = "0";
-          renderArea.style.left = "0";
-          renderArea.style.backgroundImage = "url('/potree/build/potree/resources/images/background.jpg')";
+          (renderArea as HTMLElement).style.width = "100%";
+          (renderArea as HTMLElement).style.height = "100vh";
+          (renderArea as HTMLElement).style.position = "absolute";
+          (renderArea as HTMLElement).style.top = "0";
+          (renderArea as HTMLElement).style.left = "0";
+          (renderArea as HTMLElement).style.backgroundImage = "url('/potree/build/potree/resources/images/background.jpg')";
           
           // Create sidebar logo element
           const sidebarLogo = document.createElement("div");
@@ -106,11 +106,11 @@ export default function PotreeViewer() {
           const container = document.querySelector(".potree_container") || document.createElement("div");
           container.className = "potree_container";
           if (!container.parentElement) {
-            container.style.position = "absolute";
-            container.style.width = "100%";
-            container.style.height = "100%";
-            container.style.left = "0";
-            container.style.top = "0";
+            (container as HTMLElement).style.position = "absolute";
+            (container as HTMLElement).style.width = "100%";
+            (container as HTMLElement).style.height = "100%";
+            (container as HTMLElement).style.left = "0";
+            (container as HTMLElement).style.top = "0";
             document.body.appendChild(container);
           }
           
