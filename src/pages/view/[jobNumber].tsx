@@ -77,8 +77,8 @@ export default function PotreeViewer() {
         setProject(projectData);
         setProjectName(projectData.projectName);
         setLoadingProgress(30);
-      } catch (err) {
-        console.error("Failed to load project:", err);
+      } catch (error) {
+        console.error("Failed to load project:", error);
         // Set mock project data for development when API fails
         const mockProject = {
           jobNumber: jobNumber as string,
@@ -119,7 +119,7 @@ export default function PotreeViewer() {
             setProjectName(data.projectName);
             projectData = { ...project, projectName: data.projectName };
           }
-        } catch (infoErr) {
+        } catch {
           console.log("No project info found, using existing data");
         }
 
@@ -142,6 +142,24 @@ export default function PotreeViewer() {
             script.onerror = () => reject(new Error(`Failed to load script ${src}`));
             document.body.appendChild(script);
           });
+
+        // Load CSS files
+        const loadCSS = (href: string): void => {
+          if (document.querySelector(`link[href="${href}"]`)) return;
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = href;
+          document.head.appendChild(link);
+        };
+
+        // Load required CSS files
+        loadCSS("/potree/build/potree/potree.css");
+        loadCSS("/potree/libs/jquery-ui/jquery-ui.min.css");
+        loadCSS("/potree/libs/openlayers3/ol.css");
+        loadCSS("/potree/libs/spectrum/spectrum.css");
+        loadCSS("/potree/libs/jstree/themes/mixed/style.css");
+        loadCSS("/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css");
+        loadCSS("/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css");
 
         const scripts = [
           "/potree/libs/jquery/jquery-3.1.1.min.js",
@@ -244,8 +262,8 @@ export default function PotreeViewer() {
                   mapView.setCenter([projectData.location.longitude, projectData.location.latitude]);
                   mapView.setZoom(15);
                 }
-              } catch (mapErr) {
-                console.error("Failed to set map location:", mapErr);
+              } catch (mapError) {
+                console.error("Failed to set map location:", mapError);
               }
             }
             
@@ -269,9 +287,9 @@ export default function PotreeViewer() {
           window.Potree.loadPointCloud(metadataPath, jobNumber, loadCallback);
         }
 
-      } catch (err) {
-        console.error("Error loading viewer:", err);
-        setError(`Failed to initialize point cloud viewer: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      } catch (error) {
+        console.error("Error loading viewer:", error);
+        setError(`Failed to initialize point cloud viewer: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setLoading(false);
       }
     };
@@ -362,15 +380,6 @@ export default function PotreeViewer() {
         <title>{projectName || project?.projectName || `Project ${jobNumber}`} - HWC Engineering Cloud Viewer</title>
         <meta name="description" content="Point cloud viewer" />
         <link rel="icon" href="/HWC-angle-logo-16px.png" />
-        
-        {/* Potree CSS */}
-        <link rel="stylesheet" href="/potree/build/potree/potree.css" />
-        <link rel="stylesheet" href="/potree/libs/jquery-ui/jquery-ui.min.css" />
-        <link rel="stylesheet" type="text/css" href="/potree/libs/openlayers3/ol.css"/>
-        <link rel="stylesheet" type="text/css" href="/potree/libs/spectrum/spectrum.css"/>
-        <link rel="stylesheet" type="text/css" href="/potree/libs/jstree/themes/mixed/style.css"/>
-        <link rel="stylesheet" type="text/css" href="/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css"/>
-        <link rel="stylesheet" type="text/css" href="/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css"/>
       </Head>
 
       {/* Custom Header */}
@@ -403,8 +412,8 @@ export default function PotreeViewer() {
                   if (window.Potree && document.querySelector('.potree_sidebar_container')) {
                     // Potree sidebar toggle logic would go here
                   }
-                } catch (err) {
-                  console.log("Potree sidebar toggle not available");
+                } catch (sidebarError) {
+                  console.log("Potree sidebar toggle not available", sidebarError);
                 }
               }}
               className="text-white hover:bg-hwc-red/20"
