@@ -19,6 +19,7 @@ export default function PotreeViewer() {
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showProjectInfo, setShowProjectInfo] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -70,6 +71,23 @@ export default function PotreeViewer() {
           }
         } catch (error) {
           console.log("No project info found, using extracted data");
+        }
+
+        // Check for thumbnail image (TIF/TIFF)
+        try {
+          // Try to fetch the TIF/TIFF thumbnail
+          const tifResponse = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}.tif`, { method: 'HEAD' });
+          if (tifResponse.ok) {
+            setThumbnailUrl(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}.tif`);
+          } else {
+            // Try TIFF extension if TIF doesn't exist
+            const tiffResponse = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}.tiff`, { method: 'HEAD' });
+            if (tiffResponse.ok) {
+              setThumbnailUrl(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}.tiff`);
+            }
+          }
+        } catch (error) {
+          console.log("No thumbnail image found:", error);
         }
 
         // Manually set loading to false after a timeout
@@ -138,6 +156,16 @@ export default function PotreeViewer() {
               {projectName || project?.projectName || `Project ${jobNumber}`}
             </h1>
           </div>
+          
+          {thumbnailUrl && (
+            <div className="mb-8 max-w-md mx-auto">
+              <img 
+                src={thumbnailUrl} 
+                alt="Project Thumbnail" 
+                className="w-full h-auto rounded-lg shadow-lg border border-hwc-red/20"
+              />
+            </div>
+          )}
           
           <div className="w-80 mx-auto">
             <div className="bg-hwc-gray rounded-full h-2 mb-4">
@@ -267,6 +295,17 @@ export default function PotreeViewer() {
           <Card className="bg-hwc-dark/95 backdrop-blur-md border border-hwc-red/20 text-white">
             <CardContent className="p-6">
               <h3 className="font-semibold mb-4 text-lg">Project Information</h3>
+              
+              {thumbnailUrl && (
+                <div className="mb-4">
+                  <img 
+                    src={thumbnailUrl} 
+                    alt="Project Thumbnail" 
+                    className="w-full h-auto rounded-lg shadow-lg border border-hwc-red/20 mb-4"
+                  />
+                </div>
+              )}
+              
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-hwc-light">Job Number:</span>
