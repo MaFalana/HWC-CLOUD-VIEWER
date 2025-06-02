@@ -54,12 +54,36 @@ export const projectService = {
         updatedAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
       };
 
-      // Try to fetch and parse .prj and .tfw files
+      // Skip file processing if CRS and location are already set via ArcGIS/ESRI API
+      const hasCRS = transformedProject.crs && transformedProject.crs.horizontal;
+      const hasLocation = transformedProject.location && 
+                         transformedProject.location.latitude && 
+                         transformedProject.location.longitude;
+
+      if (hasCRS && hasLocation) {
+        console.log(`Project ${project.jobNumber} already has CRS and location, skipping file processing`);
+        return transformedProject;
+      }
+
+      // Try to fetch and parse .prj and .tfw files only if needed
       try {
-        const [projData, worldData] = await Promise.all([
-          projFileService.fetchProjFile(project.jobNumber),
-          worldFileService.fetchWorldFile(project.jobNumber)
-        ]);
+        const filePromises = [];
+        
+        // Only fetch proj file if CRS is missing
+        if (!hasCRS) {
+          filePromises.push(projFileService.fetchProjFile(project.jobNumber));
+        } else {
+          filePromises.push(Promise.resolve(null));
+        }
+        
+        // Only fetch world file if location is missing
+        if (!hasLocation) {
+          filePromises.push(worldFileService.fetchWorldFile(project.jobNumber));
+        } else {
+          filePromises.push(Promise.resolve(null));
+        }
+
+        const [projData, worldData] = await Promise.all(filePromises);
 
         if (projData) {
           transformedProject.projFile = {
@@ -86,18 +110,26 @@ export const projectService = {
 
           // Try world file first (usually more accurate for location)
           if (worldData) {
-            // Use EPSG code from .prj file if available for accurate projection
-            const spatialRef = projData?.epsgCode ? projData.epsgCode.replace('EPSG:', '') : undefined;
-            derivedLocation = await worldFileService.worldFileToGeographic(worldData, spatialRef);
-            if (!derivedLocation) {
-              // Try center point calculation
-              derivedLocation = await worldFileService.getCenterPoint(worldData, spatialRef);
+            try {
+              // Use EPSG code from .prj file if available for accurate projection
+              const spatialRef = projData?.epsgCode ? projData.epsgCode.replace('EPSG:', '') : undefined;
+              derivedLocation = await worldFileService.worldFileToGeographic(worldData, spatialRef);
+              if (!derivedLocation) {
+                // Try center point calculation
+                derivedLocation = await worldFileService.getCenterPoint(worldData, spatialRef);
+              }
+            } catch (worldFileError) {
+              console.warn(`World file processing failed for ${project.jobNumber}:`, worldFileError);
             }
           }
 
           // Fall back to .prj file if world file didn't work
           if (!derivedLocation && projData) {
-            derivedLocation = await projFileService.getLocationFromProj(projData);
+            try {
+              derivedLocation = await projFileService.getLocationFromProj(projData);
+            } catch (projFileError) {
+              console.warn(`Proj file processing failed for ${project.jobNumber}:`, projFileError);
+            }
           }
 
           if (derivedLocation && derivedLocation.latitude && derivedLocation.longitude) {
@@ -127,7 +159,8 @@ export const projectService = {
           }
         }
       } catch (error) {
-        console.log(`No .prj or .tfw files found for project ${project.jobNumber}:`, error);
+        console.log(`File processing failed for project ${project.jobNumber}:`, error);
+        // Continue with the project even if file processing fails
       }
 
       return transformedProject;

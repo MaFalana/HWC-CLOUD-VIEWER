@@ -1,4 +1,3 @@
-
 // Service for using ArcGIS REST API for coordinate reference system operations
 
 export interface Geometry {
@@ -51,7 +50,27 @@ export const arcgisService = {
     toSR: string | number = 4326 // Default to WGS84
   ): Promise<{ latitude: number; longitude: number }[]> {
     try {
-      const geometries = coordinates.map(coord => ({
+      // Validate input coordinates
+      if (!coordinates || coordinates.length === 0) {
+        throw new Error('No coordinates provided for projection');
+      }
+
+      // Validate that coordinates have valid numeric values
+      const validCoordinates = coordinates.filter(coord => 
+        coord && 
+        typeof coord.x === 'number' && 
+        typeof coord.y === 'number' && 
+        !isNaN(coord.x) && 
+        !isNaN(coord.y) &&
+        isFinite(coord.x) && 
+        isFinite(coord.y)
+      );
+
+      if (validCoordinates.length === 0) {
+        throw new Error('No valid coordinates found for projection');
+      }
+
+      const geometries = validCoordinates.map(coord => ({
         x: coord.x,
         y: coord.y
       }));
@@ -71,19 +90,39 @@ export const arcgisService = {
       });
 
       if (!response.ok) {
-        throw new Error(`ArcGIS API request failed: ${response.statusText}`);
+        throw new Error(`ArcGIS API request failed: ${response.status} ${response.statusText}`);
       }
 
       const result: ProjectionResult = await response.json();
       
+      // Check for API errors in response
+      if ('error' in result && result.error) {
+        throw new Error(`ArcGIS API error: ${result.error.message} (Code: ${result.error.code})`);
+      }
+      
       if (result.geometries && result.geometries.length > 0) {
-        return result.geometries.map(geom => ({
-          longitude: geom.x,
-          latitude: geom.y
-        }));
+        // Validate projected coordinates
+        const validResults = result.geometries
+          .filter(geom => 
+            geom && 
+            typeof geom.x === 'number' && 
+            typeof geom.y === 'number' && 
+            !isNaN(geom.x) && 
+            !isNaN(geom.y) &&
+            isFinite(geom.x) && 
+            isFinite(geom.y)
+          )
+          .map(geom => ({
+            longitude: geom.x,
+            latitude: geom.y
+          }));
+
+        if (validResults.length > 0) {
+          return validResults;
+        }
       }
 
-      throw new Error('No geometries returned from projection');
+      throw new Error('No valid geometries returned from projection');
     } catch (error) {
       console.error('Error projecting coordinates with ArcGIS:', error);
       throw error;
@@ -172,9 +211,27 @@ export const arcgisService = {
     imageHeight: number = 1000
   ): Promise<{ latitude: number; longitude: number } | null> {
     try {
+      // Validate world data
+      if (!worldData || 
+          typeof worldData.upperLeftX !== 'number' || 
+          typeof worldData.upperLeftY !== 'number' ||
+          typeof worldData.pixelSizeX !== 'number' || 
+          typeof worldData.pixelSizeY !== 'number' ||
+          isNaN(worldData.upperLeftX) || isNaN(worldData.upperLeftY) ||
+          isNaN(worldData.pixelSizeX) || isNaN(worldData.pixelSizeY)) {
+        console.warn('Invalid world file data provided');
+        return null;
+      }
+
       // Calculate center point of the image
       const centerX = worldData.upperLeftX + (imageWidth / 2) * worldData.pixelSizeX;
       const centerY = worldData.upperLeftY + (imageHeight / 2) * worldData.pixelSizeY;
+
+      // Validate calculated center coordinates
+      if (!isFinite(centerX) || !isFinite(centerY)) {
+        console.warn('Calculated center coordinates are not finite');
+        return null;
+      }
 
       // Project to WGS84
       const projectedCoords = await this.projectCoordinates(
@@ -184,7 +241,15 @@ export const arcgisService = {
       );
 
       if (projectedCoords.length > 0) {
-        return projectedCoords[0];
+        const result = projectedCoords[0];
+        
+        // Validate projected coordinates are within reasonable bounds
+        if (result.latitude >= -90 && result.latitude <= 90 && 
+            result.longitude >= -180 && result.longitude <= 180) {
+          return result;
+        } else {
+          console.warn('Projected coordinates are outside valid geographic bounds');
+        }
       }
 
       return null;

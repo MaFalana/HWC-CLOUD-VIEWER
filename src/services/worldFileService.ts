@@ -1,4 +1,3 @@
-
 import { arcgisService } from "./arcgisService";
 
 export interface WorldFileData {
@@ -78,14 +77,18 @@ export const worldFileService = {
       if (spatialReference) {
         const epsgCode = arcgisService.normalizeEpsgCode(spatialReference);
         if (epsgCode) {
-          const result = await arcgisService.worldFileToGeographic(
-            worldData,
-            epsgCode,
-            imageWidth,
-            imageHeight
-          );
-          if (result) {
-            return result;
+          try {
+            const result = await arcgisService.worldFileToGeographic(
+              worldData,
+              epsgCode,
+              imageWidth,
+              imageHeight
+            );
+            if (result) {
+              return result;
+            }
+          } catch (projectionError) {
+            console.warn('ArcGIS projection failed, falling back to approximation:', projectionError);
           }
         }
       }
@@ -93,6 +96,12 @@ export const worldFileService = {
       // Fallback to simple approximation
       const x = worldData.upperLeftX;
       const y = worldData.upperLeftY;
+      
+      // Validate coordinates
+      if (!isFinite(x) || !isFinite(y)) {
+        console.warn('World file coordinates are not finite');
+        return null;
+      }
       
       // Check if coordinates look like they're in feet (typical for state plane)
       const isInFeet = Math.abs(x) > 100000 || Math.abs(y) > 100000;
@@ -139,10 +148,26 @@ export const worldFileService = {
     imageHeight: number = 1000
   ): Promise<{ latitude?: number; longitude?: number } | null> {
     try {
+      // Validate world data
+      if (!worldData || 
+          typeof worldData.upperLeftX !== 'number' || 
+          typeof worldData.upperLeftY !== 'number' ||
+          typeof worldData.pixelSizeX !== 'number' || 
+          typeof worldData.pixelSizeY !== 'number') {
+        console.warn('Invalid world file data for center point calculation');
+        return null;
+      }
+
       // Calculate the center of the image in world coordinates
       const centerX = worldData.upperLeftX + (imageWidth / 2) * worldData.pixelSizeX;
       const centerY = worldData.upperLeftY + (imageHeight / 2) * worldData.pixelSizeY;
       
+      // Validate calculated center
+      if (!isFinite(centerX) || !isFinite(centerY)) {
+        console.warn('Calculated center coordinates are not finite');
+        return null;
+      }
+
       // Create a temporary world data object for the center point
       const centerWorldData: WorldFileData = {
         ...worldData,
