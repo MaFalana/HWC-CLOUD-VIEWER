@@ -35,6 +35,7 @@ interface PotreeViewer {
     setZoom: (zoom: number) => void;
     setMapType: (type: string) => void;
   };
+  destroy?: () => void;
 }
 
 interface PotreeLoadEvent {
@@ -53,6 +54,7 @@ interface PotreeStatic {
 declare global {
   interface Window {
     Potree: PotreeStatic;
+    potreeViewer?: PotreeViewer;
   }
 }
 
@@ -70,9 +72,45 @@ export default function PotreeViewer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const renderAreaRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<PotreeViewer | null>(null);
+
+  // Cleanup function to remove existing Potree elements
+  const cleanupPotree = () => {
+    try {
+      // Destroy existing viewer if it exists
+      if (window.potreeViewer && typeof window.potreeViewer.destroy === 'function') {
+        window.potreeViewer.destroy();
+      }
+      window.potreeViewer = undefined;
+      viewerRef.current = null;
+
+      // Remove existing Potree DOM elements
+      const existingContainer = document.querySelector('.potree_container');
+      if (existingContainer) {
+        existingContainer.remove();
+      }
+
+      const existingRenderArea = document.getElementById('potree_render_area');
+      if (existingRenderArea) {
+        existingRenderArea.remove();
+      }
+
+      const existingSidebar = document.getElementById('potree_sidebar_container');
+      if (existingSidebar) {
+        existingSidebar.remove();
+      }
+
+      console.log("Cleaned up existing Potree elements");
+    } catch (error) {
+      console.log("Error during cleanup:", error);
+    }
+  };
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
+
+    // Cleanup any existing Potree instances
+    cleanupPotree();
 
     // Create a simple initialization function that will be called after a delay
     const initializePotree = async () => {
@@ -112,56 +150,40 @@ export default function PotreeViewer() {
         setProjectName(projectData.projectName || "");
         setLoadingProgress(15);
         
-        // Create render area element if it doesn't exist
-        console.log("Creating render area element...");
-        if (!document.getElementById("potree_render_area")) {
-          const renderArea = document.createElement("div");
-          renderArea.id = "potree_render_area";
-          (renderArea as HTMLElement).style.width = "100%";
-          (renderArea as HTMLElement).style.height = "100vh";
-          (renderArea as HTMLElement).style.position = "absolute";
-          (renderArea as HTMLElement).style.top = "0";
-          (renderArea as HTMLElement).style.left = "0";
-          (renderArea as HTMLElement).style.backgroundImage = "url('/potree/build/potree/resources/images/background.jpg')";
-          
-          // Create sidebar logo element
-          const sidebarLogo = document.createElement("div");
-          sidebarLogo.id = "sidebar_logo";
-          renderArea.appendChild(sidebarLogo);
-          
-          // Create container if it doesn't exist
-          const container = document.querySelector(".potree_container") || document.createElement("div");
-          container.className = "potree_container";
-          if (!container.parentElement) {
-            (container as HTMLElement).style.position = "absolute";
-            (container as HTMLElement).style.width = "100%";
-            (container as HTMLElement).style.height = "100%";
-            (container as HTMLElement).style.left = "0";
-            (container as HTMLElement).style.top = "0";
-            document.body.appendChild(container);
-          }
-          
-          // Add render area to container
-          container.appendChild(renderArea);
-          
-          // Create sidebar container if it doesn't exist
-          if (!document.getElementById("potree_sidebar_container")) {
-            const sidebarContainer = document.createElement("div");
-            sidebarContainer.id = "potree_sidebar_container";
-            container.appendChild(sidebarContainer);
-          }
-        }
+        // Create fresh Potree container structure
+        console.log("Creating fresh Potree container structure...");
         
-        // Create sidebar element if it doesn't exist
-        console.log("Creating sidebar element...");
-        if (!document.getElementById("potree_sidebar_container")) {
-          const sidebarContainer = document.createElement("div");
-          sidebarContainer.id = "potree_sidebar_container";
-          const container = document.querySelector(".potree_container");
-          if (container) {
-            container.appendChild(sidebarContainer);
-          }
-        }
+        // Create main container
+        const container = document.createElement("div");
+        container.className = "potree_container";
+        container.style.position = "absolute";
+        container.style.width = "100%";
+        container.style.height = "100%";
+        container.style.left = "0";
+        container.style.top = "0";
+        container.style.zIndex = "1";
+        document.body.appendChild(container);
+        
+        // Create render area
+        const renderArea = document.createElement("div");
+        renderArea.id = "potree_render_area";
+        renderArea.style.width = "100%";
+        renderArea.style.height = "100vh";
+        renderArea.style.position = "absolute";
+        renderArea.style.top = "0";
+        renderArea.style.left = "0";
+        renderArea.style.backgroundImage = "url('/potree/build/potree/resources/images/background.jpg')";
+        container.appendChild(renderArea);
+        
+        // Create sidebar logo element
+        const sidebarLogo = document.createElement("div");
+        sidebarLogo.id = "sidebar_logo";
+        renderArea.appendChild(sidebarLogo);
+        
+        // Create sidebar container
+        const sidebarContainer = document.createElement("div");
+        sidebarContainer.id = "potree_sidebar_container";
+        container.appendChild(sidebarContainer);
         
         // Load CSS files
         const loadCSS = (href: string): void => {
@@ -256,7 +278,11 @@ export default function PotreeViewer() {
           throw new Error("Potree render area not found");
         }
         
+        // Create single viewer instance
         const viewer = new window.Potree.Viewer(renderAreaElement);
+        viewerRef.current = viewer;
+        window.potreeViewer = viewer;
+        
         viewer.setEDLEnabled(true);
         viewer.setFOV(60);
         viewer.setPointBudget(1_000_000);
@@ -264,7 +290,6 @@ export default function PotreeViewer() {
         
         viewer.loadGUI(() => {
           viewer.setLanguage("en");
-          viewer.toggleSidebar();
           console.log("Potree GUI loaded");
         });
         
@@ -391,19 +416,17 @@ export default function PotreeViewer() {
     
     return () => {
       clearTimeout(timeoutId);
+      cleanupPotree();
     };
-  }, [jobNumber, mapType]);
+  }, [jobNumber]);
 
   // Effect to update map type when it changes
   useEffect(() => {
-    if (!loading && project && window.Potree) {
+    if (!loading && project && viewerRef.current) {
       try {
-        const renderAreaElement = document.getElementById("potree_render_area");
-        if (renderAreaElement) {
-          const viewer = new window.Potree.Viewer(renderAreaElement);
-          if (viewer.mapView && typeof viewer.mapView.setMapType === "function") {
-            viewer.mapView.setMapType(mapType);
-          }
+        const viewer = viewerRef.current;
+        if (viewer.mapView && typeof viewer.mapView.setMapType === "function") {
+          viewer.mapView.setMapType(mapType);
         }
       } catch (error) {
         console.log("Error updating map type:", error);
@@ -531,8 +554,8 @@ export default function PotreeViewer() {
                 setSidebarVisible(!sidebarVisible);
                 // Try to toggle Potree sidebar if available
                 try {
-                  if (window.Potree && document.querySelector('.potree_sidebar_container')) {
-                    // Potree sidebar toggle logic would go here
+                  if (viewerRef.current && typeof viewerRef.current.toggleSidebar === 'function') {
+                    viewerRef.current.toggleSidebar();
                   }
                 } catch (sidebarError) {
                   console.log("Potree sidebar toggle not available", sidebarError);
@@ -658,45 +681,6 @@ export default function PotreeViewer() {
         </Card>
       </div>
 
-      {/* Navigation Compass */}
-      <div className="absolute bottom-4 right-4 z-40">
-        <div className="w-16 h-16 bg-black/50 rounded-full flex items-center justify-center">
-          <div className="w-12 h-12 border-2 border-white rounded-full relative">
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 w-0 h-0 border-l-2 border-r-2 border-b-4 border-transparent border-b-hwc-red"></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1 h-1 bg-white rounded-full"></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Potree Container with Refs */}
-      <div
-        ref={containerRef}
-        className="potree_container"
-        style={{
-          position: "absolute",
-          width: "100%",
-          height: "100%",
-          left: 0,
-          top: 0
-        }}
-      >
-        <div
-          ref={renderAreaRef}
-          id="potree_render_area"
-          style={{
-            backgroundImage: "url('/potree/build/potree/resources/images/background.jpg')",
-            width: "100%",
-            height: "100%"
-          }}
-        >
-          <div id="sidebar_logo"></div>
-        </div>
-        <div 
-          ref={sidebarRef}
-          id="potree_sidebar_container" 
-        />
-      </div>
-
       {/* Custom Styles */}
       <style jsx global>{`
         body {
@@ -705,27 +689,85 @@ export default function PotreeViewer() {
           overflow: hidden;
         }
         
+        /* Ensure Potree container is properly positioned */
+        .potree_container {
+          position: absolute !important;
+          width: 100% !important;
+          height: 100% !important;
+          left: 0 !important;
+          top: 0 !important;
+          z-index: 1 !important;
+        }
+        
+        /* Fix Potree sidebar scrolling and z-index issues */
         #potree_sidebar_container {
           background: rgba(41, 44, 48, 0.95) !important;
           backdrop-filter: blur(10px) !important;
           border-left: 1px solid rgba(238, 47, 39, 0.3) !important;
+          z-index: 30 !important;
+          overflow-y: auto !important;
+          max-height: 100vh !important;
+          position: fixed !important;
+          right: 0 !important;
+          top: 0 !important;
+          width: 300px !important;
+        }
+        
+        /* Ensure sidebar content is scrollable */
+        #potree_sidebar_container .potree_menu_content,
+        #potree_sidebar_container .ui-accordion-content,
+        #potree_sidebar_container .pv-menu-list {
+          overflow-y: auto !important;
+          max-height: none !important;
+        }
+        
+        /* Custom scrollbar for sidebar */
+        #potree_sidebar_container::-webkit-scrollbar {
+          width: 8px !important;
+        }
+        
+        #potree_sidebar_container::-webkit-scrollbar-track {
+          background: rgba(108, 104, 100, 0.3) !important;
+          border-radius: 4px !important;
+        }
+        
+        #potree_sidebar_container::-webkit-scrollbar-thumb {
+          background: rgba(238, 47, 39, 0.6) !important;
+          border-radius: 4px !important;
+        }
+        
+        #potree_sidebar_container::-webkit-scrollbar-thumb:hover {
+          background: rgba(238, 47, 39, 0.8) !important;
+        }
+        
+        /* Fix accordion content scrolling */
+        .ui-accordion-content {
+          overflow-y: auto !important;
+          max-height: 400px !important;
+          background: rgba(41, 44, 48, 0.8) !important;
+          color: white !important;
+          border: none !important;
         }
         
         .potree_menu_content {
           background: rgba(41, 44, 48, 0.95) !important;
           color: white !important;
+          overflow-y: auto !important;
         }
         
         .ui-accordion-header {
-          background: var(--hwc-red) !important;
+          background: rgba(238, 47, 39, 0.9) !important;
           color: white !important;
           border: none !important;
         }
         
-        .ui-accordion-content {
-          background: rgba(41, 44, 48, 0.8) !important;
-          color: white !important;
-          border: none !important;
+        .ui-accordion-header:hover {
+          background: rgba(238, 47, 39, 1) !important;
+        }
+        
+        .pv-menu-list {
+          overflow-y: auto !important;
+          max-height: 300px !important;
         }
         
         .pv-menu-list button,
@@ -737,7 +779,62 @@ export default function PotreeViewer() {
         }
         
         .pv-menu-list button:hover {
-          background: var(--hwc-red) !important;
+          background: rgba(238, 47, 39, 0.8) !important;
+        }
+        
+        /* Ensure render area is properly positioned */
+        #potree_render_area {
+          position: absolute !important;
+          width: 100% !important;
+          height: 100% !important;
+          top: 0 !important;
+          left: 0 !important;
+          z-index: 1 !important;
+        }
+        
+        /* Fix perfect scrollbar if it's being used */
+        .ps__rail-y {
+          z-index: 32 !important;
+          opacity: 0.6 !important;
+        }
+        
+        .ps__thumb-y {
+          background-color: rgba(238, 47, 39, 0.8) !important;
+        }
+        
+        /* Ensure menu items are clickable and scrollable */
+        #potree_sidebar_container .ui-accordion .ui-accordion-content {
+          padding: 10px !important;
+          overflow-y: auto !important;
+          max-height: 350px !important;
+        }
+        
+        /* Fix any dropdown or select issues */
+        #potree_sidebar_container select,
+        #potree_sidebar_container .ui-selectmenu-button {
+          z-index: 33 !important;
+        }
+        
+        /* Ensure Potree compass and navigation controls are visible */
+        .potree_navigation_cube,
+        .potree_compass {
+          z-index: 35 !important;
+          position: fixed !important;
+          bottom: 20px !important;
+          right: 20px !important;
+        }
+        
+        /* Style Potree navigation controls */
+        .potree_navigation_cube {
+          background: rgba(0, 0, 0, 0.7) !important;
+          border: 2px solid rgba(238, 47, 39, 0.5) !important;
+          border-radius: 8px !important;
+        }
+        
+        /* Ensure all Potree UI elements have proper z-index */
+        .potree_menu,
+        .potree_toolbar {
+          z-index: 31 !important;
         }
       `}</style>
     </>
