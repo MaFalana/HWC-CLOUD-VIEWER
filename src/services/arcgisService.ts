@@ -27,6 +27,10 @@ export interface ProjectionResult {
     x: number;
     y: number;
   }>;
+  error?: {
+    code: number;
+    message: string;
+  };
 }
 
 export interface GeometryServiceResponse<T> {
