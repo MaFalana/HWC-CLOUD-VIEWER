@@ -1,8 +1,5 @@
+
 // Service for using ArcGIS REST API for coordinate reference system operations
-export interface ArcGISGeometryService {
-  project: (geometries: any[], inSR: string | number, outSR: string | number) => Promise<any>;
-  findTransformations: (inSR: string | number, outSR: string | number, extentOfInterest?: any) => Promise<any>;
-}
 
 export interface Geometry {
   x: number;
@@ -33,6 +30,14 @@ export interface ProjectionResult {
   }>;
 }
 
+export interface GeometryServiceResponse<T> {
+  results: T[];
+  error?: {
+    code: number;
+    message: string;
+  };
+}
+
 export const arcgisService = {
   // ArcGIS Online Geometry Service URL
   geometryServiceUrl: 'https://utility.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer',
@@ -41,7 +46,7 @@ export const arcgisService = {
    * Project coordinates from one spatial reference system to another using ArcGIS REST API
    */
   async projectCoordinates(
-    coordinates: { x: number; y: number }[],
+    coordinates: Geometry[],
     fromSR: string | number,
     toSR: string | number = 4326 // Default to WGS84
   ): Promise<{ latitude: number; longitude: number }[]> {
@@ -53,7 +58,7 @@ export const arcgisService = {
 
       const params = new URLSearchParams({
         f: 'json',
-        geometries: JSON.stringify(geometries),
+        geometries: JSON.stringify({ geometryType: 'esriGeometryPoint', geometries }),
         inSR: fromSR.toString(),
         outSR: toSR.toString()
       });
