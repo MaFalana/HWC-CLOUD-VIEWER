@@ -1,8 +1,23 @@
-
 // Service for using ArcGIS REST API for coordinate reference system operations
 export interface ArcGISGeometryService {
   project: (geometries: any[], inSR: string | number, outSR: string | number) => Promise<any>;
   findTransformations: (inSR: string | number, outSR: string | number, extentOfInterest?: any) => Promise<any>;
+}
+
+export interface Geometry {
+  x: number;
+  y: number;
+}
+
+export interface GeometryCollection {
+  geometries: Geometry[];
+}
+
+export interface TransformationOptions {
+  xmin: number;
+  ymin: number;
+  xmax: number;
+  ymax: number;
 }
 
 export interface SpatialReference {
@@ -180,8 +195,8 @@ export const arcgisService = {
   async findTransformations(
     fromSR: string | number,
     toSR: string | number,
-    extentOfInterest?: { xmin: number; ymin: number; xmax: number; ymax: number }
-  ): Promise<any> {
+    extentOfInterest?: TransformationOptions
+  ): Promise<Record<string, unknown>> {
     try {
       const params = new URLSearchParams({
         f: 'json',
@@ -239,7 +254,7 @@ export const arcgisService = {
   /**
    * Get spatial reference information from EPSG code
    */
-  async getSpatialReferenceInfo(epsgCode: number): Promise<any> {
+  async getSpatialReferenceInfo(epsgCode: number): Promise<SpatialReference> {
     try {
       // This would typically use ArcGIS REST API or another service to get SR info
       // For now, we'll return basic info
@@ -249,7 +264,7 @@ export const arcgisService = {
       };
     } catch (error) {
       console.error('Error getting spatial reference info:', error);
-      return null;
+      return { wkid: epsgCode };
     }
   }
 };
