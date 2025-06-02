@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -114,6 +113,19 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   useEffect(() => {
     if (project && mode === "edit") {
+      // Format acquisition date properly for the date input
+      let formattedDate = "";
+      if (project.acquistionDate) {
+        try {
+          const date = new Date(project.acquistionDate);
+          if (!isNaN(date.getTime())) {
+            formattedDate = date.toISOString().split('T')[0];
+          }
+        } catch (error) {
+          console.warn("Invalid acquisition date:", project.acquistionDate);
+        }
+      }
+
       setFormData({
         jobNumber: project.jobNumber,
         projectName: project.projectName,
@@ -121,6 +133,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         location: project.location || { latitude: 0, longitude: 0, address: "" },
         crs: project.crs || { horizontal: "", vertical: "", geoidModel: "" },
         clientName: project.clientName || "",
+        acquistionDate: project.acquistionDate || "",
         projectType: project.projectType || "",
         tags: project.tags || [],
       });
@@ -132,6 +145,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         location: { latitude: 0, longitude: 0, address: "" },
         crs: { horizontal: "", vertical: "", geoidModel: "" },
         clientName: "",
+        acquistionDate: "",
         projectType: "",
         tags: [],
       });
@@ -199,12 +213,29 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     return (
       <div className="space-y-2">
         <Label>{label}</Label>
-        <Popover open={isOpen} onOpenChange={(open) => {
-          setIsOpen(open);
-          if (!open) {
-            setSearchValue("");
-          }
-        }}>
+        
+        {/* Separate Search Input */}
+        <div className="flex items-center gap-2 mb-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder={`Search ${label.toLowerCase()}...`}
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setSearchValue("")}
+            className="px-3"
+          >
+            Clear
+          </Button>
+        </div>
+
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -236,74 +267,59 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
-            <div className="flex flex-col">
-              {/* Search Input */}
-              <div className="flex items-center border-b px-3 py-2">
-                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                <Input
-                  placeholder={`Search ${label.toLowerCase()}...`}
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                  className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto"
-                  autoFocus
-                />
-              </div>
-              
-              {/* Options List */}
-              <div className="max-h-[300px] overflow-y-auto">
-                {loading ? (
-                  <div className="flex items-center justify-center p-4">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Loading options...
-                  </div>
-                ) : filteredOptions.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-gray-500">
-                    No options found
-                  </div>
-                ) : (
-                  filteredOptions.map((option) => (
-                    <div
-                      key={option.code}
-                      className="flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                      onClick={() => {
-                        onSelectChange(option.code);
-                        setIsOpen(false);
-                        setSearchValue("");
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mt-1 h-4 w-4 text-green-600",
-                          selectValue === option.code ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      <div className="flex flex-col items-start min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                            {option.code}
+            <div className="max-h-[300px] overflow-y-auto">
+              {loading ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Loading options...
+                </div>
+              ) : filteredOptions.length === 0 ? (
+                <div className="p-4 text-center text-sm text-gray-500">
+                  No options found
+                </div>
+              ) : (
+                filteredOptions.map((option) => (
+                  <div
+                    key={option.code}
+                    className="flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                    onClick={() => {
+                      onSelectChange(option.code);
+                      setIsOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mt-1 h-4 w-4 text-green-600",
+                        selectValue === option.code ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <div className="flex flex-col items-start min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          {option.code}
+                        </span>
+                        {option.recommended && (
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                            Recommended
                           </span>
-                          {option.recommended && (
-                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
-                              Recommended
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-sm font-medium text-gray-900 mb-1">
-                          {option.name}
-                        </div>
-                        {option.description && (
-                          <div className="text-xs text-gray-500 leading-relaxed">
-                            {option.description}
-                          </div>
                         )}
                       </div>
+                      <div className="text-sm font-medium text-gray-900 mb-1">
+                        {option.name}
+                      </div>
+                      {option.description && (
+                        <div className="text-xs text-gray-500 leading-relaxed">
+                          {option.description}
+                        </div>
+                      )}
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+                ))
+              )}
             </div>
           </PopoverContent>
         </Popover>
+        
         {selectedOption && (
           <div className="mt-2 p-3 bg-gray-50 rounded-md border">
             <div className="flex items-center gap-2 mb-1">
