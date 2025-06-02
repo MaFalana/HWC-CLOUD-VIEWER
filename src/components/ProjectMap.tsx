@@ -92,6 +92,13 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
            Math.abs(p.location.longitude) <= 180;
   });
 
+  console.log('Projects with location:', projectsWithLocation.length, 'out of', projects.length);
+  console.log('All projects:', projects.map(p => ({
+    jobNumber: p.jobNumber,
+    location: p.location,
+    crs: p.crs
+  })));
+
   // Initialize OpenStreetMap
   useEffect(() => {
     // Load OpenStreetMap CSS

@@ -51,8 +51,12 @@ export const projectService = {
         ...project,
         createdAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
         updatedAt: project.acquistionDate ? new Date(project.acquistionDate.split('TypeError')[0]) : new Date(),
-        // Ensure CRS is properly mapped
-        crs: project.crs || {
+        // Ensure CRS is properly mapped - check if it exists and has values
+        crs: project.crs ? {
+          horizontal: project.crs.horizontal || "",
+          vertical: project.crs.vertical || "",
+          geoidModel: project.crs.geoidModel || ""
+        } : {
           horizontal: "",
           vertical: "",
           geoidModel: ""
@@ -79,8 +83,12 @@ export const projectService = {
       ...data,
       createdAt: data.acquistionDate ? new Date(data.acquistionDate.split('TypeError')[0]) : new Date(),
       updatedAt: data.acquistionDate ? new Date(data.acquistionDate.split('TypeError')[0]) : new Date(),
-      // Ensure CRS is properly mapped
-      crs: data.crs || {
+      // Ensure CRS is properly mapped - check if it exists and has values
+      crs: data.crs ? {
+        horizontal: data.crs.horizontal || "",
+        vertical: data.crs.vertical || "",
+        geoidModel: data.crs.geoidModel || ""
+      } : {
         horizontal: "",
         vertical: "",
         geoidModel: ""

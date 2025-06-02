@@ -58,6 +58,11 @@ export default function Dashboard() {
             longitude: -86.1581,
             address: "Washington & Lawndale, Indianapolis, IN"
           },
+          crs: {
+            horizontal: "EPSG:3613",
+            vertical: "EPSG:6360",
+            geoidModel: "GEOID18"
+          },
           tags: ["bridge", "highway", "infrastructure"],
           thumbnailUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400"
         },
@@ -76,6 +81,11 @@ export default function Dashboard() {
             longitude: -86.1478,
             address: "Downtown Indianapolis, IN"
           },
+          crs: {
+            horizontal: "EPSG:2965",
+            vertical: "EPSG:6360",
+            geoidModel: "GEOID18"
+          },
           tags: ["commercial", "building", "inspection"]
         },
         {
@@ -92,6 +102,11 @@ export default function Dashboard() {
             latitude: 39.8283,
             longitude: -86.1755,
             address: "Peabody West, Indianapolis, IN"
+          },
+          crs: {
+            horizontal: "EPSG:3580",
+            vertical: "EPSG:6360",
+            geoidModel: "GEOID18"
           },
           tags: ["industrial", "facility", "survey"]
         },
@@ -110,7 +125,56 @@ export default function Dashboard() {
             longitude: -86.1652,
             address: "I-465 & US-31, Indianapolis, IN"
           },
+          crs: {
+            horizontal: "EPSG:2966",
+            vertical: "EPSG:6360",
+            geoidModel: "GEOID18"
+          },
           tags: ["highway", "infrastructure", "lidar"]
+        },
+        {
+          jobNumber: "2024-377-S",
+          projectName: "Evansville Bridge Survey",
+          clientName: "City of Evansville",
+          acquistionDate: "2024-08-20T09:15:00.000Z",
+          description: "Structural survey of downtown bridge using LiDAR technology",
+          status: "processing",
+          createdAt: new Date("2024-08-20"),
+          updatedAt: new Date("2024-08-20"),
+          projectType: "survey",
+          location: {
+            latitude: 37.9747,
+            longitude: -87.5558,
+            address: "Downtown Evansville, IN"
+          },
+          crs: {
+            horizontal: "EPSG:3613",
+            vertical: "EPSG:6360",
+            geoidModel: "GEOID18"
+          },
+          tags: ["bridge", "structural", "evansville"]
+        },
+        {
+          jobNumber: "2024-411-S",
+          projectName: "Fort Wayne Industrial Complex",
+          clientName: "Industrial Partners LLC",
+          acquistionDate: "2024-11-05T13:45:00.000Z",
+          description: "Complete facility mapping for expansion planning",
+          status: "active",
+          createdAt: new Date("2024-11-05"),
+          updatedAt: new Date("2024-11-05"),
+          projectType: "mapping",
+          location: {
+            latitude: 41.0793,
+            longitude: -85.1394,
+            address: "Fort Wayne, IN"
+          },
+          crs: {
+            horizontal: "EPSG:3533",
+            vertical: "EPSG:6360",
+            geoidModel: "GEOID18"
+          },
+          tags: ["industrial", "mapping", "fort-wayne"]
         }
       ]);
     } finally {

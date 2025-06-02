@@ -364,161 +364,33 @@ export const arcgisService = {
   },
 
   /**
-   * Get coordinate reference systems from ArcGIS API
+   * Get coordinate reference systems with enhanced epsg.io integration
    */
   async getCRSOptions(): Promise<{ horizontal: CRSOption[]; vertical: CRSOption[]; geoid: CRSOption[] }> {
     try {
-      // For now, return the fallback options which include all Indiana systems
-      // In the future, this could be enhanced to fetch from ArcGIS REST API
-      const fallbackOptions = this.getFallbackCRSOptions();
+      // Load from static JSON file instead of API calls
+      const indianaEpsgData = await import("@/data/indianaEpsgCodes.json");
       
-      // Add any additional systems that might be fetched from ArcGIS API
-      // This is where you could add API calls to ArcGIS REST services
-      
-      return fallbackOptions;
+      return {
+        horizontal: indianaEpsgData.horizontal,
+        vertical: indianaEpsgData.vertical,
+        geoid: indianaEpsgData.geoid
+      };
     } catch (error) {
-      console.error("Error fetching CRS options:", error);
+      console.error("Error loading Indiana EPSG codes:", error);
       return this.getFallbackCRSOptions();
     }
   },
 
   /**
-   * Get horizontal coordinate reference systems (projected and geographic)
+   * Get horizontal CRS options with detailed information from static JSON
    */
-  async getHorizontalCRS(): Promise<CRSOption[]> {
+  async getHorizontalCRSWithDetails(): Promise<CRSOption[]> {
     try {
-      // Comprehensive list of Indiana coordinate systems and common CRS
-      const commonHorizontalCodes = [
-        // Indiana State Plane Zones
-        2965, // NAD83 / Indiana East (ftUS)
-        2966, // NAD83 / Indiana West (ftUS)
-        6342, // NAD83(2011) / Indiana East (ftUS)
-        6343, // NAD83(2011) / Indiana West (ftUS)
-        
-        // Indiana County Coordinate Systems (some examples)
-        3532, // NAD83 / Indiana East (ftUS) - alternative
-        3533, // NAD83 / Indiana West (ftUS) - alternative
-        
-        // Common Geographic Systems
-        4326, // WGS84
-        4269, // NAD83
-        4267, // NAD27
-        
-        // UTM Zones covering Indiana
-        26916, // UTM Zone 16N NAD83
-        26917, // UTM Zone 17N NAD83
-        32616, // UTM Zone 16N WGS84
-        32617, // UTM Zone 17N WGS84
-        
-        // Web Mercator
-        3857, // Web Mercator
-        
-        // Additional Indiana systems
-        6458, // NAD83(2011) / Indiana East
-        6459, // NAD83(2011) / Indiana East (ftUS)
-        6460, // NAD83(2011) / Indiana West
-        6461, // NAD83(2011) / Indiana West (ftUS)
-      ];
-
-      const horizontalSystems: CRSOption[] = [];
-
-      // Add hardcoded Indiana systems first to ensure they're available
-      const indianaSystems = [
-        {
-          code: "EPSG:6458",
-          name: "NAD83(2011) / Indiana East",
-          type: "horizontal" as const,
-          recommended: false,
-          description: "Indiana State Plane East Zone (meters)"
-        },
-        {
-          code: "EPSG:6459",
-          name: "NAD83(2011) / Indiana East (ftUS)",
-          type: "horizontal" as const,
-          recommended: true,
-          description: "Indiana State Plane East Zone (US Survey Feet)"
-        },
-        {
-          code: "EPSG:6460",
-          name: "NAD83(2011) / Indiana West",
-          type: "horizontal" as const,
-          recommended: false,
-          description: "Indiana State Plane West Zone (meters)"
-        },
-        {
-          code: "EPSG:6461",
-          name: "NAD83(2011) / Indiana West (ftUS)",
-          type: "horizontal" as const,
-          recommended: true,
-          description: "Indiana State Plane West Zone (US Survey Feet)"
-        },
-        {
-          code: "EPSG:2965",
-          name: "NAD83 / Indiana East (ftUS)",
-          type: "horizontal" as const,
-          recommended: true,
-          description: "Indiana State Plane East Zone (US Survey Feet)"
-        },
-        {
-          code: "EPSG:2966",
-          name: "NAD83 / Indiana West (ftUS)",
-          type: "horizontal" as const,
-          recommended: true,
-          description: "Indiana State Plane West Zone (US Survey Feet)"
-        },
-        {
-          code: "EPSG:3532",
-          name: "NAD83 / InGCS Vanderburgh (ftUS)",
-          type: "horizontal" as const,
-          recommended: true,
-          description: "Indiana Geographic Coordinate System - Vanderburgh County (US Survey Feet)"
-        },
-        {
-          code: "EPSG:3533",
-          name: "NAD83(2011) / InGCS Vanderburgh (ftUS)",
-          type: "horizontal" as const,
-          recommended: true,
-          description: "Indiana Geographic Coordinate System - Vanderburgh County NAD83(2011) (US Survey Feet)"
-        }
-      ];
-
-      horizontalSystems.push(...indianaSystems);
-
-      // Try to fetch details for other systems
-      for (const code of commonHorizontalCodes) {
-        // Skip if we already added this system
-        if (horizontalSystems.some(sys => sys.code === `EPSG:${code}`)) {
-          continue;
-        }
-
-        try {
-          const srInfo = await this.getSpatialReferenceDetails(code);
-          if (srInfo) {
-            horizontalSystems.push({
-              code: `EPSG:${code}`,
-              name: srInfo.name || `EPSG:${code}`,
-              type: "horizontal",
-              recommended: this.isRecommendedHorizontal(code),
-              description: srInfo.description
-            });
-          }
-        } catch (error) {
-          console.warn(`Failed to get details for EPSG:${code}:`, error);
-          // Add basic fallback
-          horizontalSystems.push({
-            code: `EPSG:${code}`,
-            name: `EPSG:${code}`,
-            type: "horizontal",
-            recommended: this.isRecommendedHorizontal(code),
-            description: undefined
-          });
-        }
-      }
-
-      return horizontalSystems;
+      const indianaEpsgData = await import("@/data/indianaEpsgCodes.json");
+      return indianaEpsgData.horizontal;
     } catch (error) {
-      console.error('Error getting horizontal CRS:', error);
-      // Return fallback Indiana systems
+      console.error('Error loading horizontal CRS from JSON:', error);
       return this.getFallbackCRSOptions().horizontal;
     }
   },
@@ -611,7 +483,7 @@ export const arcgisService = {
   },
 
   /**
-   * Get detailed information about a spatial reference system
+   * Get detailed information about a spatial reference system from epsg.io
    */
   async getSpatialReferenceDetails(epsgCode: number): Promise<ArcGISSpatialReference | null> {
     try {
@@ -651,11 +523,11 @@ export const arcgisService = {
   },
 
   /**
-   * Check if a horizontal CRS is recommended for typical surveying work
+   * Check if a horizontal CRS is recommended for Indiana surveying work
    */
   isRecommendedHorizontal(epsgCode: number): boolean {
-    // Recommend Indiana state plane coordinates in US Survey Feet
-    const recommendedCodes = [2965, 2966, 6342, 6343]; // Indiana East/West in ftUS
+    // Recommend Indiana state plane coordinates in US Survey Feet and Vanderburgh County
+    const recommendedCodes = [2965, 2966, 6459, 6461, 3613]; // Indiana East/West in ftUS + Vanderburgh
     return recommendedCodes.includes(epsgCode);
   },
 
