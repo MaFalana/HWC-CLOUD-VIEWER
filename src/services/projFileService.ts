@@ -128,15 +128,39 @@ export const projFileService = {
    */
   getLocationFromProj(projData: ProjFileData): { latitude?: number; longitude?: number } | null {
     try {
-      // Extract central meridian and latitude of origin
+      // Extract central meridian and latitude of origin from parameters
       const centralMeridian = projData.parameters['central_meridian'];
       const latitudeOfOrigin = projData.parameters['latitude_of_origin'];
+      const falseEasting = projData.parameters['false_easting'];
+      const falseNorthing = projData.parameters['false_northing'];
       
+      // For most state plane coordinate systems, we can use the central meridian and latitude of origin
+      // as a reasonable approximation of the project location
       if (centralMeridian !== undefined && latitudeOfOrigin !== undefined) {
         return {
           longitude: centralMeridian,
           latitude: latitudeOfOrigin
         };
+      }
+      
+      // If we have false easting/northing, we can try to derive approximate location
+      // This is a simplified approach - in reality, you'd need proper coordinate transformation
+      if (falseEasting !== undefined && falseNorthing !== undefined) {
+        // For Indiana state plane coordinates, approximate conversion
+        if (projData.projcs.toLowerCase().includes('indiana')) {
+          // Rough approximation for Indiana coordinates
+          const approxLat = 39.5 + (falseNorthing - 250000) / 364000; // Very rough approximation
+          const approxLon = -86.5 + (falseEasting - 240000) / 364000; // Very rough approximation
+          
+          // Clamp to reasonable Indiana bounds
+          const lat = Math.max(37.5, Math.min(41.5, approxLat));
+          const lon = Math.max(-88.5, Math.min(-84.5, approxLon));
+          
+          return {
+            latitude: lat,
+            longitude: lon
+          };
+        }
       }
       
       return null;

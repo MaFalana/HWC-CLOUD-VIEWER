@@ -81,7 +81,16 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
     }
   };
 
-  const projectsWithLocation = projects.filter(p => p.location && p.location.latitude && p.location.longitude);
+  const projectsWithLocation = projects.filter(p => {
+    // Check if project has valid location coordinates
+    return p.location && 
+           p.location.latitude && 
+           p.location.longitude && 
+           p.location.latitude !== 0 && 
+           p.location.longitude !== 0 &&
+           Math.abs(p.location.latitude) <= 90 &&
+           Math.abs(p.location.longitude) <= 180;
+  });
 
   // Initialize OpenStreetMap
   useEffect(() => {

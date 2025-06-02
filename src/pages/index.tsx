@@ -77,6 +77,40 @@ export default function Dashboard() {
             address: "Downtown Indianapolis, IN"
           },
           tags: ["commercial", "building", "inspection"]
+        },
+        {
+          jobNumber: "2023-075-A",
+          projectName: "Peabody West 1",
+          clientName: "Platinum Properties",
+          acquistionDate: "2023-03-28T16:50:40.866Z",
+          description: "Comprehensive point cloud survey of industrial facility",
+          status: "completed",
+          createdAt: new Date("2023-03-28"),
+          updatedAt: new Date("2023-03-28"),
+          projectType: "survey",
+          location: {
+            latitude: 39.8283,
+            longitude: -86.1755,
+            address: "Peabody West, Indianapolis, IN"
+          },
+          tags: ["industrial", "facility", "survey"]
+        },
+        {
+          jobNumber: "2024-410-S",
+          projectName: "Highway Infrastructure Survey",
+          clientName: "INDOT",
+          acquistionDate: "2024-10-15T14:30:00.000Z",
+          description: "LiDAR survey of highway infrastructure for maintenance planning",
+          status: "active",
+          createdAt: new Date("2024-10-15"),
+          updatedAt: new Date("2024-10-15"),
+          projectType: "survey",
+          location: {
+            latitude: 39.7392,
+            longitude: -86.1652,
+            address: "I-465 & US-31, Indianapolis, IN"
+          },
+          tags: ["highway", "infrastructure", "lidar"]
         }
       ]);
     } finally {
