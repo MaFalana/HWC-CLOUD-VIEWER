@@ -515,40 +515,51 @@
           const loadPointCloud = async () => {
             updateLoadingProgress(70);
             
-            const baseUrl = "http://localhost:4400/pointclouds/";
+            // Try to load from different possible locations
+            const possiblePaths = [
+              // Try the job-specific cloud.js first
+              `/pointclouds/${jobNumber}/cloud.js`,
+              // Then try the example cloud.js
+              `/pointclouds/example/cloud.js`,
+              // Then try the example metadata.json
+              `/pointclouds/example/metadata.json`,
+              // Finally, try a known Potree example
+              `/potree/pointclouds/lion_takanawa/cloud.js`
+            ];
+            
             let pathToLoad = null;
             
-            // First try to load cloud.js directly
-            const cloudJsPath = `${baseUrl}${jobNumber}/cloud.js`;
-            const cloudJsExists = await checkFileExists(cloudJsPath);
-            
-            if (cloudJsExists) {
-              pathToLoad = cloudJsPath;
-              console.log("Using cloud.js for point cloud loading:", pathToLoad);
-            } else {
-              // If cloud.js doesn't exist, try metadata.json
-              const metadataPath = `${baseUrl}${jobNumber}/metadata.json`;
-              const metadataExists = await checkFileExists(metadataPath);
-              
-              if (metadataExists) {
-                pathToLoad = metadataPath;
-                console.log("Using metadata.json for point cloud loading:", pathToLoad);
-              } else {
-                // If neither exists, use the example point cloud
-                pathToLoad = "/pointclouds/example/metadata.json";
-                console.log("Using example point cloud as fallback:", pathToLoad);
+            // Check each path in order
+            for (const path of possiblePaths) {
+              if (await checkFileExists(path)) {
+                pathToLoad = path;
+                console.log(`Found point cloud at: ${path}`);
+                break;
               }
             }
             
+            if (!pathToLoad) {
+              console.error("Could not find any point cloud data");
+              updateLoadingProgress(100);
+              return;
+            }
+            
+            // Extract the name from the path
+            const pointCloudName = pathToLoad.split('/').pop().split('.')[0];
+            
             // Load the point cloud
-            Potree.loadPointCloud(pathToLoad, jobNumber, (e) => {
+            Potree.loadPointCloud(pathToLoad, pointCloudName, e => {
               if (e.pointcloud) {
                 console.log("Point cloud loaded successfully");
                 viewer.scene.addPointCloud(e.pointcloud);
+                
+                // Set point cloud material properties
                 e.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-                e.pointcloud.material.size = 1.0; // Adjust point size
-                e.pointcloud.material.pointColorType = Potree.PointColorType.RGB; // Use RGB colors
-                viewer.fitToScreen(0.5);
+                e.pointcloud.material.size = 1.0;
+                e.pointcloud.material.pointColorType = Potree.PointColorType.RGB;
+                
+                // Fit the point cloud to the screen
+                viewer.fitToScreen();
                 
                 updateLoadingProgress(90);
                 
