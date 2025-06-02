@@ -87,11 +87,13 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
           </div>
         )}
         
-        <div className="absolute top-3 left-3">
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(project.status)}`}>
-            {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-          </span>
-        </div>
+        {project.status && (
+          <div className="absolute top-3 left-3">
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(project.status)}`}>
+              {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+            </span>
+          </div>
+        )}
       </div>
       
       <CardContent className="p-4">
@@ -126,10 +128,12 @@ export function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
             </div>
           )}
           
-          <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-            <Calendar className="w-3 h-3 mr-1" />
-            <span>{formatDate(project.createdAt)}</span>
-          </div>
+          {project.createdAt && (
+            <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+              <Calendar className="w-3 h-3 mr-1" />
+              <span>{formatDate(project.createdAt)}</span>
+            </div>
+          )}
         </div>
       </CardContent>
       
