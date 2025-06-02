@@ -1,3 +1,4 @@
+
 import { Project } from "@/types/project";
 import { sourcesJsonService } from "@/services/sourcesJsonService";
 import { worldFileService } from "@/services/worldFileService";
@@ -56,6 +57,115 @@ interface PotreeCloudJs {
 
 export const potreeLocationService = {
   /**
+   * Extract location data from world file
+   */
+  async extractLocationFromWorldFile(jobNumber: string): Promise<Partial<Project> | null> {
+    try {
+      // Try to fetch world file with different extensions
+      const worldFileExtensions = [".tfw", ".jgw", ".wld", ".tifw", ".pgw", ".gfw"];
+      let worldFileData = null;
+      
+      for (const ext of worldFileExtensions) {
+        try {
+          const response = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}${ext}`);
+          if (response.ok) {
+            const content = await response.text();
+            worldFileData = worldFileService.parseWorldFile(content);
+            if (worldFileData) {
+              console.log(`Found world file with extension ${ext}:`, worldFileData);
+              break;
+            }
+          }
+        } catch (error) {
+          console.log(`No world file with extension ${ext} found:`, error instanceof Error ? error.message : "Unknown error");
+        }
+      }
+      
+      if (!worldFileData) {
+        console.log("No valid world file found for job:", jobNumber);
+        return null;
+      }
+      
+      // Get geographic coordinates from world file data
+      const geographicCoords = await worldFileService.worldFileToGeographic(worldFileData);
+      
+      if (!geographicCoords || !geographicCoords.latitude || !geographicCoords.longitude) {
+        console.log("Could not convert world file coordinates to geographic coordinates");
+        return null;
+      }
+      
+      // Build project data
+      const projectData: Partial<Project> = {
+        jobNumber,
+        projectName: `Project ${jobNumber}`,
+        description: "Point cloud project with world file data",
+        projectType: "survey",
+        location: {
+          latitude: geographicCoords.latitude,
+          longitude: geographicCoords.longitude,
+          source: "world_file" as const,
+          confidence: "high" as const
+        }
+      };
+      
+      console.log("Extracted project data from world file:", projectData);
+      return projectData;
+      
+    } catch (error) {
+      console.error("Error extracting location from world file:", error);
+      return null;
+    }
+  },
+  
+  /**
+   * Extract location data from .prj file
+   */
+  async extractLocationFromProjFile(jobNumber: string): Promise<Partial<Project> | null> {
+    try {
+      // Try to fetch .prj file
+      const projData = await projFileService.fetchProjFile(jobNumber);
+      
+      if (!projData) {
+        console.log("No .prj file found or could not parse it");
+        return null;
+      }
+      
+      console.log("Found .prj file data:", projData);
+      
+      // Extract CRS information
+      const crs = projFileService.projDataToCRS(projData);
+      
+      // Get location from proj data
+      const geographicCoords = await projFileService.getLocationFromProj(projData);
+      
+      // Build project data
+      const projectData: Partial<Project> = {
+        jobNumber,
+        projectName: `Project ${jobNumber}`,
+        description: "Point cloud project with projection data",
+        projectType: "survey",
+        crs
+      };
+      
+      if (geographicCoords && geographicCoords.latitude && geographicCoords.longitude) {
+        projectData.location = {
+          latitude: geographicCoords.latitude,
+          longitude: geographicCoords.longitude,
+          source: "proj_file" as const,
+          confidence: "medium" as const
+        };
+      }
+      
+      console.log("Extracted project data from .prj file:", projectData);
+      return projectData;
+      
+    } catch (error) {
+      console.error("Error extracting location from .prj file:", error);
+      return null;
+    }
+  },
+
+  /**
    * Extract location data from Potree point cloud metadata
    */
   async extractLocationFromPotree(jobNumber: string): Promise<Partial<Project> | null> {
@@ -64,7 +174,7 @@ export const potreeLocationService = {
       
       // Try to fetch world file first (highest priority)
       try {
-        const worldFileData = await worldFileService.extractLocationFromWorldFile(jobNumber);
+        const worldFileData = await this.extractLocationFromWorldFile(jobNumber);
         if (worldFileData) {
           console.log("Found world file data, using for location");
           return worldFileData;
@@ -75,7 +185,7 @@ export const potreeLocationService = {
       
       // Try to fetch .prj file next
       try {
-        const projFileData = await projFileService.extractLocationFromProjFile(jobNumber);
+        const projFileData = await this.extractLocationFromProjFile(jobNumber);
         if (projFileData) {
           console.log("Found .prj file data, using for location");
           return projFileData;
