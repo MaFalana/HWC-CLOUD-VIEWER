@@ -179,7 +179,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     isOpen: boolean,
     setIsOpen: (open: boolean) => void
   ) => {
-    // Filter options based on search
+    // Filter options based on search - show all options when search is empty
     const filteredOptions = searchValue.trim() === "" 
       ? options 
       : options.filter(option => 
@@ -195,37 +195,24 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         <Label>{label}</Label>
         
         {/* Search Input */}
-        <div className="flex items-center gap-2 mb-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder={`Search ${label.toLowerCase()}...`}
-              value={searchValue}
-              onChange={(e) => {
-                setSearchValue(e.target.value);
-                if (!isOpen) setIsOpen(true);
-              }}
-              onFocus={() => setIsOpen(true)}
-              className="pl-10"
-              autoComplete="off"
-            />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setSearchValue("");
-              setIsOpen(!isOpen);
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder={`Search ${label.toLowerCase()}...`}
+            value={searchValue}
+            onChange={(e) => {
+              setSearchValue(e.target.value);
+              if (!isOpen) setIsOpen(true);
             }}
-            className="px-3"
-          >
-            {isOpen ? "Close" : "Show All"}
-          </Button>
+            onFocus={() => setIsOpen(true)}
+            className="pl-10"
+            autoComplete="off"
+          />
         </div>
 
         {/* Selected Value Display */}
         {selectedOption && (
-          <div className="p-3 bg-gray-50 rounded-md border mb-2">
+          <div className="p-3 bg-gray-50 rounded-md border">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-mono text-sm font-medium text-blue-600">
                 {selectedOption.code}
