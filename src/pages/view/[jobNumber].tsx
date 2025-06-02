@@ -210,20 +210,52 @@ export default function PotreeViewer() {
 
         console.log("Potree is available, creating viewer...");
 
-        // Wait for DOM element to be ready
-        await new Promise<void>((resolve) => {
+        // Wait for DOM element to be ready with better error handling
+        await new Promise<void>((resolve, reject) => {
+          let attempts = 0;
+          const maxAttempts = 30;
+          
           const checkElement = () => {
+            attempts++;
             const element = document.getElementById("potree_render_area");
-            if (element && element.offsetWidth > 0 && element.offsetHeight > 0) {
-              console.log("DOM element ready with dimensions:", {
-                width: element.offsetWidth,
-                height: element.offsetHeight
-              });
-              resolve();
+            
+            if (element) {
+              // Force dimensions if they're not set
+              if (element.offsetWidth === 0 || element.offsetHeight === 0) {
+                element.style.width = "100%";
+                element.style.height = "100vh";
+                element.style.position = "absolute";
+                element.style.top = "0";
+                element.style.left = "0";
+                
+                // Wait a bit for the styles to apply
+                setTimeout(() => {
+                  if (element.offsetWidth > 0 && element.offsetHeight > 0) {
+                    console.log("DOM element ready with forced dimensions:", {
+                      width: element.offsetWidth,
+                      height: element.offsetHeight
+                    });
+                    resolve();
+                  } else if (attempts >= maxAttempts) {
+                    reject(new Error("DOM element could not be sized properly"));
+                  } else {
+                    setTimeout(checkElement, 100);
+                  }
+                }, 100);
+              } else {
+                console.log("DOM element ready with dimensions:", {
+                  width: element.offsetWidth,
+                  height: element.offsetHeight
+                });
+                resolve();
+              }
+            } else if (attempts >= maxAttempts) {
+              reject(new Error("DOM element not found after maximum attempts"));
             } else {
               setTimeout(checkElement, 100);
             }
           };
+          
           checkElement();
         });
 
@@ -246,10 +278,14 @@ export default function PotreeViewer() {
           viewer.setLanguage("en");
           viewer.toggleSidebar();
           setLoadingProgress(90);
+          console.log("Potree GUI loaded");
         });
 
+        console.log("Loading point cloud...");
+        
         const loadCallback = (e: PotreeLoadEvent) => {
           if (e.pointcloud) {
+            console.log("Point cloud loaded successfully");
             viewer.scene.addPointCloud(e.pointcloud);
             e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
             viewer.fitToScreen(0.5);
@@ -281,12 +317,20 @@ export default function PotreeViewer() {
           }
         };
 
-        if (pathToLoad.endsWith("cloud.js")) {
-          window.Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
-        } else {
-          window.Potree.loadPointCloud(metadataPath, jobNumber, loadCallback);
+        try {
+          if (pathToLoad.endsWith("cloud.js")) {
+            window.Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
+          } else {
+            window.Potree.loadPointCloud(metadataPath, jobNumber, loadCallback);
+          }
+        } catch (loadError) {
+          console.error("Error loading point cloud:", loadError);
+          // Continue anyway to show the viewer interface
+          setLoadingProgress(100);
+          setTimeout(() => {
+            setLoading(false);
+          }, 500);
         }
-
       } catch (error) {
         console.error("Error loading viewer:", error);
         setError(`Failed to initialize point cloud viewer: ${error instanceof Error ? error.message : 'Unknown error'}`);
