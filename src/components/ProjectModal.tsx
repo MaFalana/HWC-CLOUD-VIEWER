@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -69,12 +70,14 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   const [crsLoading, setCrsLoading] = useState(false);
   const [crsError, setCrsError] = useState<string | null>(null);
 
-  // Debounce function for API calls
-  const debounce = useCallback((func: Function, delay: number) => {
+  // Debounce function for API calls with proper TypeScript typing
+  const debounce = useCallback((fn: (...args: string[]) => Promise<void>, delay: number) => {
     let timeoutId: NodeJS.Timeout;
-    return (...args: any[]) => {
+    return (...args: string[]) => {
       clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func.apply(null, args), delay);
+      timeoutId = setTimeout(() => {
+        fn(...args);
+      }, delay);
     };
   }, []);
 
@@ -103,10 +106,13 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   // Handle horizontal search input changes
   useEffect(() => {
+    // Always open the dropdown when typing
     if (horizontalSearch.trim()) {
+      setHorizontalOpen(true);
       setHorizontalSearchLoading(true);
       debouncedHorizontalSearch(horizontalSearch);
     } else {
+      // When search is empty, show all options
       setHorizontalSearchResults([]);
       setHorizontalSearchLoading(false);
     }
@@ -237,7 +243,8 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             value={horizontalSearch}
             onChange={(e) => {
               setHorizontalSearch(e.target.value);
-              if (!horizontalOpen) setHorizontalOpen(true);
+              // Always open dropdown when typing
+              setHorizontalOpen(true);
             }}
             onFocus={() => setHorizontalOpen(true)}
             className="pl-10"
@@ -365,7 +372,8 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             value={searchValue}
             onChange={(e) => {
               setSearchValue(e.target.value);
-              if (!isOpen) setIsOpen(true);
+              // Always open dropdown when typing
+              setIsOpen(true);
             }}
             onFocus={() => setIsOpen(true)}
             className="pl-10"
