@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -212,9 +211,13 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-full p-0" style={{ width: "var(--radix-popover-trigger-width)" }}>
-            <Command>
-              <CommandInput placeholder={`Search ${label.toLowerCase()}...`} />
-              <CommandList>
+            <Command shouldFilter={true}>
+              <CommandInput 
+                placeholder={`Search ${label.toLowerCase()}...`}
+                className="h-9 border-0 focus:ring-0 focus:outline-none"
+                autoFocus
+              />
+              <CommandList className="max-h-[300px] overflow-y-auto">
                 <CommandEmpty>No options found.</CommandEmpty>
                 <CommandGroup>
                   {loading ? (
@@ -231,12 +234,12 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
                           onSelectChange(option.code);
                           setIsOpen(false);
                         }}
-                        className="py-3"
+                        className="py-3 hover:bg-gray-50 focus:bg-gray-50 data-[selected=true]:bg-gray-50"
                       >
                         <div className="flex items-start gap-3 w-full">
                           <Check
                             className={cn(
-                              "mt-1 h-4 w-4",
+                              "mt-1 h-4 w-4 text-green-600",
                               selectValue === option.code ? "opacity-100" : "opacity-0"
                             )}
                           />
