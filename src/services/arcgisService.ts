@@ -1,4 +1,5 @@
 // Service for using ArcGIS REST API for coordinate reference system operations
+import { CRSOption } from "@/types/project";
 
 export interface Geometry {
   x: number;
@@ -20,6 +21,7 @@ export interface SpatialReference {
   wkid?: number;
   latestWkid?: number;
   wkt?: string;
+  name?: string;
 }
 
 export interface ProjectionResult {
@@ -41,9 +43,28 @@ export interface GeometryServiceResponse<T> {
   };
 }
 
+export interface ArcGISSpatialReference {
+  wkid: number;
+  latestWkid?: number;
+  name: string;
+  description?: string;
+  wkt?: string;
+}
+
+export interface ArcGISCRSResponse {
+  spatialReferences: ArcGISSpatialReference[];
+  error?: {
+    code: number;
+    message: string;
+  };
+}
+
 export const arcgisService = {
   // ArcGIS Online Geometry Service URL
   geometryServiceUrl: 'https://utility.arcgisonline.com/ArcGIS/rest/services/Geometry/GeometryServer',
+  
+  // ArcGIS Online Spatial Reference Service URL
+  spatialReferenceServiceUrl: 'https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services',
 
   /**
    * Project coordinates from one spatial reference system to another using ArcGIS REST API
@@ -340,5 +361,294 @@ export const arcgisService = {
       console.error('Error getting spatial reference info:', error);
       return { wkid: epsgCode };
     }
-  }
+  },
+
+  /**
+   * Get coordinate reference systems from ArcGIS API
+   */
+  async getCRSOptions(): Promise<{
+    horizontal: CRSOption[];
+    vertical: CRSOption[];
+    geoid: CRSOption[];
+  }> {
+    try {
+      // Get common horizontal coordinate systems (projected and geographic)
+      const horizontalSystems = await this.getHorizontalCRS();
+      
+      // Get vertical datums
+      const verticalSystems = await this.getVerticalCRS();
+      
+      // Get geoid models
+      const geoidModels = await this.getGeoidModels();
+
+      return {
+        horizontal: horizontalSystems,
+        vertical: verticalSystems,
+        geoid: geoidModels
+      };
+    } catch (error) {
+      console.error('Error fetching CRS options from ArcGIS:', error);
+      
+      // Return fallback options if API fails
+      return this.getFallbackCRSOptions();
+    }
+  },
+
+  /**
+   * Get horizontal coordinate reference systems (projected and geographic)
+   */
+  async getHorizontalCRS(): Promise<CRSOption[]> {
+    try {
+      // Common horizontal CRS codes that are widely used
+      const commonHorizontalCodes = [
+        4326, // WGS84
+        4269, // NAD83
+        4267, // NAD27
+        3857, // Web Mercator
+        2965, // NAD83 Indiana East (ftUS)
+        2966, // NAD83 Indiana West (ftUS)
+        26916, // UTM Zone 16N NAD83
+        26917, // UTM Zone 17N NAD83
+        32616, // UTM Zone 16N WGS84
+        32617, // UTM Zone 17N WGS84
+        6342, // NAD83(2011) Indiana East (ftUS)
+        6343, // NAD83(2011) Indiana West (ftUS)
+      ];
+
+      const horizontalSystems: CRSOption[] = [];
+
+      for (const code of commonHorizontalCodes) {
+        try {
+          const srInfo = await this.getSpatialReferenceDetails(code);
+          if (srInfo) {
+            horizontalSystems.push({
+              code: `EPSG:${code}`,
+              name: srInfo.name || `EPSG:${code}`,
+              type: "horizontal",
+              recommended: this.isRecommendedHorizontal(code),
+              description: srInfo.description
+            });
+          }
+        } catch (error) {
+          console.warn(`Failed to get details for EPSG:${code}:`, error);
+        }
+      }
+
+      return horizontalSystems;
+    } catch (error) {
+      console.error('Error getting horizontal CRS:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get vertical coordinate reference systems
+   */
+  async getVerticalCRS(): Promise<CRSOption[]> {
+    try {
+      // Common vertical datums
+      const verticalSystems = [
+        {
+          code: "EPSG:5703",
+          name: "NAVD88 height",
+          type: "vertical" as const,
+          recommended: false,
+          description: "North American Vertical Datum of 1988 (meters)"
+        },
+        {
+          code: "EPSG:6360",
+          name: "NAVD88 height (ftUS)",
+          type: "vertical" as const,
+          recommended: true,
+          description: "North American Vertical Datum of 1988 (US Survey Feet)"
+        },
+        {
+          code: "EPSG:5701",
+          name: "MSL height",
+          type: "vertical" as const,
+          recommended: false,
+          description: "Mean Sea Level height"
+        },
+        {
+          code: "EPSG:5702",
+          name: "NGVD29 height",
+          type: "vertical" as const,
+          recommended: false,
+          description: "National Geodetic Vertical Datum of 1929"
+        }
+      ];
+
+      return verticalSystems;
+    } catch (error) {
+      console.error('Error getting vertical CRS:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get geoid models
+   */
+  async getGeoidModels(): Promise<CRSOption[]> {
+    try {
+      const geoidModels = [
+        {
+          code: "GEOID18",
+          name: "GEOID18",
+          type: "geoid" as const,
+          recommended: true,
+          description: "Current NOAA geoid model for CONUS (2019)"
+        },
+        {
+          code: "GEOID12B",
+          name: "GEOID12B",
+          type: "geoid" as const,
+          recommended: false,
+          description: "Previous NOAA geoid model for CONUS (2012)"
+        },
+        {
+          code: "GEOID09",
+          name: "GEOID09",
+          type: "geoid" as const,
+          recommended: false,
+          description: "Legacy NOAA geoid model for CONUS (2009)"
+        },
+        {
+          code: "GEOID03",
+          name: "GEOID03",
+          type: "geoid" as const,
+          recommended: false,
+          description: "Legacy NOAA geoid model for CONUS (2003)"
+        }
+      ];
+
+      return geoidModels;
+    } catch (error) {
+      console.error('Error getting geoid models:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get detailed information about a spatial reference system
+   */
+  async getSpatialReferenceDetails(epsgCode: number): Promise<ArcGISSpatialReference | null> {
+    try {
+      // Try to get SR info from ArcGIS REST API
+      const response = await fetch(
+        `https://epsg.io/${epsgCode}.json`,
+        {
+          headers: {
+            'Accept': 'application/json'
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          wkid: epsgCode,
+          latestWkid: epsgCode,
+          name: data.name || `EPSG:${epsgCode}`,
+          description: data.area || data.scope
+        };
+      }
+
+      // Fallback to basic info if external API fails
+      return {
+        wkid: epsgCode,
+        latestWkid: epsgCode,
+        name: `EPSG:${epsgCode}`
+      };
+    } catch (error) {
+      console.warn(`Failed to get details for EPSG:${epsgCode}:`, error);
+      return {
+        wkid: epsgCode,
+        latestWkid: epsgCode,
+        name: `EPSG:${epsgCode}`
+      };
+    }
+  },
+
+  /**
+   * Check if a horizontal CRS is recommended for typical surveying work
+   */
+  isRecommendedHorizontal(epsgCode: number): boolean {
+    // Recommend Indiana state plane coordinates in US Survey Feet
+    const recommendedCodes = [2965, 2966, 6342, 6343]; // Indiana East/West in ftUS
+    return recommendedCodes.includes(epsgCode);
+  },
+
+  /**
+   * Get fallback CRS options if API calls fail
+   */
+  getFallbackCRSOptions(): {
+    horizontal: CRSOption[];
+    vertical: CRSOption[];
+    geoid: CRSOption[];
+  } {
+    return {
+      horizontal: [
+        {
+          code: "EPSG:2965",
+          name: "NAD83 / Indiana East (ftUS)",
+          type: "horizontal",
+          recommended: true,
+          description: "Indiana State Plane East Zone in US Survey Feet"
+        },
+        {
+          code: "EPSG:2966",
+          name: "NAD83 / Indiana West (ftUS)",
+          type: "horizontal",
+          recommended: true,
+          description: "Indiana State Plane West Zone in US Survey Feet"
+        },
+        {
+          code: "EPSG:4326",
+          name: "WGS84",
+          type: "horizontal",
+          recommended: false,
+          description: "World Geodetic System 1984"
+        },
+        {
+          code: "EPSG:4269",
+          name: "NAD83",
+          type: "horizontal",
+          recommended: false,
+          description: "North American Datum 1983"
+        }
+      ],
+      vertical: [
+        {
+          code: "EPSG:6360",
+          name: "NAVD88 height (ftUS)",
+          type: "vertical",
+          recommended: true,
+          description: "North American Vertical Datum of 1988 (US Survey Feet)"
+        },
+        {
+          code: "EPSG:5703",
+          name: "NAVD88 height",
+          type: "vertical",
+          recommended: false,
+          description: "North American Vertical Datum of 1988 (meters)"
+        }
+      ],
+      geoid: [
+        {
+          code: "GEOID18",
+          name: "GEOID18",
+          type: "geoid",
+          recommended: true,
+          description: "Current NOAA geoid model for CONUS (2019)"
+        },
+        {
+          code: "GEOID12B",
+          name: "GEOID12B",
+          type: "geoid",
+          recommended: false,
+          description: "Previous NOAA geoid model for CONUS (2012)"
+        }
+      ]
+    };
+  },
 };
