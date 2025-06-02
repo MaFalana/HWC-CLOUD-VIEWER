@@ -391,7 +391,7 @@
   <script>
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const jobNumber = urlParams.get('jobNumber');
+    const jobNumber = urlParams.get('jobNumber') || 'example';
     const mapType = urlParams.get('mapType') || 'default';
     const latitude = parseFloat(urlParams.get('latitude') || '39.7684');
     const longitude = parseFloat(urlParams.get('longitude') || '-86.1581');
@@ -405,12 +405,20 @@
       document.getElementById('loading-text').textContent = `Loading Potree Viewer... ${Math.round(progress)}%`;
       
       // Send progress to parent window
-      window.parent.postMessage({ type: 'loadingProgress', progress }, '*');
+      try {
+        window.parent.postMessage({ type: 'loadingProgress', progress }, '*');
+      } catch (e) {
+        console.error("Error sending message to parent:", e);
+      }
       
       if (progress >= 100) {
         setTimeout(() => {
           document.getElementById('loading-indicator').style.display = 'none';
-          window.parent.postMessage({ type: 'loadingComplete' }, '*');
+          try {
+            window.parent.postMessage({ type: 'loadingComplete' }, '*');
+          } catch (e) {
+            console.error("Error sending completion message to parent:", e);
+          }
         }, 500);
       }
     };
@@ -432,7 +440,7 @@
         
         viewer.setEDLEnabled(true);
         viewer.setFOV(60);
-        viewer.setPointBudget(1_000_000);
+        viewer.setPointBudget(3_000_000); // Increased point budget for better visualization
         viewer.setDescription(projectName);
         
         updateLoadingProgress(30);
@@ -485,57 +493,30 @@
             }
             
             // Notify parent that styling is complete
-            window.parent.postMessage({ type: 'stylingComplete' }, '*');
+            try {
+              window.parent.postMessage({ type: 'stylingComplete' }, '*');
+            } catch (e) {
+              console.error("Error sending styling message to parent:", e);
+            }
             updateLoadingProgress(60);
           }, 500);
           
-          // Determine which file to load
-          const base = "http://localhost:4400/pointclouds/";
-          
-          // Function to check if a file exists
-          const checkFileExists = async (url) => {
-            try {
-              const response = await fetch(url, { method: 'HEAD' });
-              return response.ok;
-            } catch (error) {
-              return false;
-            }
-          };
-          
           // Load point cloud
-          const loadPointCloud = async () => {
-            let pathToLoad = null;
-            
-            // Check for cloud.js
-            if (await checkFileExists(`${base}${jobNumber}/cloud.js`)) {
-              pathToLoad = `${base}${jobNumber}/cloud.js`;
-              console.log("Using cloud.js for point cloud loading");
-            } 
-            // Check for metadata.json
-            else if (await checkFileExists(`${base}${jobNumber}/metadata.json`)) {
-              pathToLoad = `${base}${jobNumber}/metadata.json`;
-              console.log("Using metadata.json for point cloud loading");
-            }
-            // Check for sources.json
-            else if (await checkFileExists(`${base}${jobNumber}/sources.json`)) {
-              // For sources.json, use example metadata.json as fallback
-              pathToLoad = "/pointclouds/example/metadata.json";
-              console.log("Using example metadata.json for point cloud loading (sources.json found)");
-            }
-            // Use example metadata.json as fallback
-            else {
-              pathToLoad = "/pointclouds/example/metadata.json";
-              console.log("Using example metadata.json for point cloud loading (no files found)");
-            }
-            
+          const loadPointCloud = () => {
             updateLoadingProgress(70);
             
-            // Load the point cloud
-            const loadCallback = (e) => {
+            // Always use the example point cloud for now
+            // This ensures we have something to display while debugging
+            const pathToLoad = "/pointclouds/example/metadata.json";
+            console.log("Loading example point cloud from:", pathToLoad);
+            
+            Potree.loadPointCloud(pathToLoad, "example", (e) => {
               if (e.pointcloud) {
                 console.log("Point cloud loaded successfully");
                 viewer.scene.addPointCloud(e.pointcloud);
                 e.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                e.pointcloud.material.size = 1.0; // Adjust point size
+                e.pointcloud.material.pointColorType = Potree.PointColorType.RGB; // Use RGB colors
                 viewer.fitToScreen(0.5);
                 
                 updateLoadingProgress(90);
@@ -560,15 +541,13 @@
                 updateLoadingProgress(100);
               } else {
                 console.error("Failed to load point cloud");
-                window.parent.postMessage({ type: 'loadingError', error: 'Failed to load point cloud' }, '*');
+                try {
+                  window.parent.postMessage({ type: 'loadingError', error: 'Failed to load point cloud' }, '*');
+                } catch (e) {
+                  console.error("Error sending error message to parent:", e);
+                }
               }
-            };
-            
-            if (pathToLoad.endsWith("cloud.js")) {
-              Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
-            } else {
-              Potree.loadPointCloud(pathToLoad, jobNumber, loadCallback);
-            }
+            });
           };
           
           // Start loading the point cloud
@@ -596,12 +575,20 @@
         });
       } catch (error) {
         console.error("Error initializing Potree viewer:", error);
-        window.parent.postMessage({ type: 'loadingError', error: 'Failed to initialize Potree viewer: ' + error.message }, '*');
+        try {
+          window.parent.postMessage({ type: 'loadingError', error: 'Failed to initialize Potree viewer: ' + error.message }, '*');
+        } catch (e) {
+          console.error("Error sending error message to parent:", e);
+        }
       }
     });
     
     // Send initial loading message to parent
-    window.parent.postMessage({ type: 'iframeLoaded' }, '*');
+    try {
+      window.parent.postMessage({ type: 'iframeLoaded' }, '*');
+    } catch (e) {
+      console.error("Error sending initial message to parent:", e);
+    }
   </script>
 </body>
 </html>
