@@ -9,6 +9,7 @@ interface MapTilerResult {
   name: string;
   area?: string;
   unit?: string;
+  bbox?: [number, number, number, number]; // [west, south, east, north]
   deprecated: boolean;
 }
 
@@ -17,72 +18,70 @@ interface MapTilerResponse {
   total: number;
 }
 
+// Cache for storing fetched CRS data
+let crsCache: { horizontal: CRSOption[]; vertical: CRSOption[]; geoid: CRSOption[] } | null = null;
+
 export const crsService = {
   /**
-   * Search for CRS using static data first, then MapTiler API if needed
+   * Search for CRS using MapTiler API, focusing on NAD83(2011) Indiana ftUS systems
    */
   async searchCRS(query: string): Promise<CRSOption[]> {
     try {
-      // First get all static Indiana CRS data
-      const staticData = await this.getStaticIndianaCRS();
+      // Search for NAD83(2011) Indiana-specific coordinate systems
+      const searchQuery = `NAD83(2011) ${query} Indiana ftUS`;
       
-      // Filter static data based on search query
-      const filteredStatic = staticData.filter(crs => 
-        crs.name.toLowerCase().includes(query.toLowerCase()) ||
-        crs.code.toLowerCase().includes(query.toLowerCase()) ||
-        (crs.description && crs.description.toLowerCase().includes(query.toLowerCase()))
-      );
-
-      // If we have good results from static data, return them
-      if (filteredStatic.length > 0) {
-        return filteredStatic.sort((a, b) => {
-          if (a.recommended && !b.recommended) return -1;
-          if (!a.recommended && b.recommended) return 1;
-          return a.name.localeCompare(b.name);
-        });
-      }
-
-      // If no static results, try MapTiler API
-      try {
-        const response = await fetch(`/api/maptiler/search?query=${encodeURIComponent(query)}`, {
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const data: MapTilerResponse = await response.json();
-          
-          // Process MapTiler results and convert to CRSOption format
-          const newResults: CRSOption[] = data.results
-            .filter(result => 
-              result.id && 
-              result.name && 
-              !result.deprecated &&
-              (result.area?.toLowerCase().includes('indiana') || 
-               result.name.toLowerCase().includes('indiana') ||
-               result.name.toLowerCase().includes('ingcs'))
-            )
-            .map(result => ({
-              code: `${result.id.authority}:${result.id.code}`,
-              name: result.name,
-              type: "horizontal" as const,
-              recommended: this.isRecommendedCRS(result.id.authority, result.id.code),
-              description: result.area || result.name
-            }));
-
-          return newResults.sort((a, b) => {
-            if (a.recommended && !b.recommended) return -1;
-            if (!a.recommended && b.recommended) return 1;
-            return a.name.localeCompare(b.name);
-          });
+      const response = await fetch(`/api/maptiler/search?query=${encodeURIComponent(searchQuery)}`, {
+        headers: {
+          'Accept': 'application/json'
         }
-      } catch (apiError) {
-        console.warn('MapTiler API request failed:', apiError);
+      });
+
+      if (!response.ok) {
+        console.warn('MapTiler API request failed:', response.status);
+        return [];
       }
 
-      // Return empty array if no results found
-      return [];
+      const data: MapTilerResponse = await response.json();
+      
+      // Process MapTiler results and convert to CRSOption format
+      const results: CRSOption[] = data.results
+        .filter(result => 
+          result.id && 
+          result.name && 
+          !result.deprecated &&
+          result.id.authority === 'EPSG' &&
+          // Focus on NAD83(2011) systems
+          result.name.toLowerCase().includes('nad83(2011)') &&
+          // Only ftUS systems
+          (result.unit === 'US survey foot' || 
+           result.name.toLowerCase().includes('ftus') ||
+           result.name.toLowerCase().includes('(ftus)') ||
+           result.name.toLowerCase().includes('us feet') ||
+           result.name.toLowerCase().includes('survey feet')) &&
+          // Indiana systems only
+          (result.area?.toLowerCase().includes('indiana') || 
+           result.name.toLowerCase().includes('indiana') ||
+           result.name.toLowerCase().includes('ingcs'))
+        )
+        .map(result => ({
+          code: `EPSG:${result.id.code}`,
+          name: result.name,
+          type: "horizontal" as const,
+          recommended: this.isRecommendedCRS(result.id.authority, result.id.code),
+          description: result.area || result.name,
+          bbox: result.bbox
+        }));
+
+      // Cache the results
+      if (results.length > 0) {
+        await this.cacheCRS(results);
+      }
+
+      return results.sort((a, b) => {
+        if (a.recommended && !b.recommended) return -1;
+        if (!a.recommended && b.recommended) return 1;
+        return a.name.localeCompare(b.name);
+      });
 
     } catch (error) {
       console.error('Error searching CRS:', error);
@@ -91,19 +90,30 @@ export const crsService = {
   },
 
   /**
-   * Get all CRS options (static data + cached)
+   * Get all CRS options using MapTiler API
    */
   async getAllCRSOptions(): Promise<{ horizontal: CRSOption[]; vertical: CRSOption[]; geoid: CRSOption[] }> {
     try {
-      const horizontal = await this.getStaticIndianaCRS();
+      // Return cached data if available
+      if (crsCache) {
+        return crsCache;
+      }
+
+      // Fetch horizontal CRS from MapTiler API
+      const horizontal = await this.fetchIndianaHorizontalCRS();
       const vertical = await this.getVerticalCRS();
       const geoid = await this.getGeoidModels();
 
-      return {
+      const result = {
         horizontal,
         vertical,
         geoid
       };
+
+      // Cache the result
+      crsCache = result;
+      
+      return result;
     } catch (error) {
       console.error('Error getting CRS options:', error);
       return this.getFallbackCRS();
@@ -111,14 +121,71 @@ export const crsService = {
   },
 
   /**
-   * Get static Indiana CRS data from JSON file
+   * Fetch Indiana NAD83(2011) horizontal CRS systems from MapTiler API
    */
-  async getStaticIndianaCRS(): Promise<CRSOption[]> {
+  async fetchIndianaHorizontalCRS(): Promise<CRSOption[]> {
     try {
-      const indianaEpsgData = await import("@/data/indianaEpsgCodes.json");
-      return indianaEpsgData.horizontal as CRSOption[];
+      const queries = [
+        'NAD83(2011) Indiana East ftUS',
+        'NAD83(2011) Indiana West ftUS', 
+        'NAD83(2011) InGCS ftUS',
+        'NAD83(2011) Indiana State Plane ftUS',
+        'NAD83(2011) Indiana County ftUS'
+      ];
+
+      const allResults: CRSOption[] = [];
+      
+      for (const query of queries) {
+        const results = await this.searchCRS(query);
+        
+        // Add unique results
+        results.forEach(result => {
+          if (!allResults.find(existing => existing.code === result.code)) {
+            allResults.push(result);
+          }
+        });
+      }
+
+      // Add known important NAD83(2011) Indiana systems if not found
+      const knownSystems = [
+        {
+          code: "EPSG:6459",
+          name: "NAD83(2011) / Indiana East (ftUS)",
+          type: "horizontal" as const,
+          recommended: true,
+          description: "Indiana State Plane East Zone NAD83(2011) in US Survey Feet"
+        },
+        {
+          code: "EPSG:6461",
+          name: "NAD83(2011) / Indiana West (ftUS)",
+          type: "horizontal" as const,
+          recommended: true,
+          description: "Indiana State Plane West Zone NAD83(2011) in US Survey Feet"
+        },
+        {
+          code: "EPSG:7328",
+          name: "NAD83(2011) / InGCS Johnson-Marion (ftUS)",
+          type: "horizontal" as const,
+          recommended: true,
+          description: "Indiana Geographic Coordinate System - Johnson-Marion County NAD83(2011) (US Survey Feet)"
+        }
+      ];
+
+      // Add known systems if not already present
+      knownSystems.forEach(known => {
+        if (!allResults.find(existing => existing.code === known.code)) {
+          allResults.push(known);
+        }
+      });
+
+      return allResults.sort((a, b) => {
+        if (a.recommended && !b.recommended) return -1;
+        if (!a.recommended && b.recommended) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
     } catch (error) {
-      console.error('Error loading static Indiana CRS data:', error);
+      console.error('Error fetching Indiana horizontal CRS:', error);
       return this.getFallbackCRS().horizontal;
     }
   },
@@ -127,55 +194,97 @@ export const crsService = {
    * Get vertical CRS options
    */
   async getVerticalCRS(): Promise<CRSOption[]> {
-    try {
-      const indianaEpsgData = await import("@/data/indianaEpsgCodes.json");
-      return indianaEpsgData.vertical as CRSOption[];
-    } catch (error) {
-      console.error('Error loading vertical CRS data:', error);
-      return this.getFallbackCRS().vertical;
-    }
+    return [
+      {
+        code: "EPSG:6360",
+        name: "NAVD88 height (ftUS)",
+        type: "vertical",
+        recommended: true,
+        description: "North American Vertical Datum of 1988 (US Survey Feet)"
+      },
+      {
+        code: "EPSG:5703",
+        name: "NAVD88 height",
+        type: "vertical",
+        recommended: false,
+        description: "North American Vertical Datum of 1988 (meters)"
+      },
+      {
+        code: "EPSG:5701",
+        name: "MSL height",
+        type: "vertical",
+        recommended: false,
+        description: "Mean Sea Level height"
+      },
+      {
+        code: "EPSG:5702",
+        name: "NGVD29 height",
+        type: "vertical",
+        recommended: false,
+        description: "National Geodetic Vertical Datum of 1929"
+      }
+    ];
   },
 
   /**
    * Get geoid model options
    */
   async getGeoidModels(): Promise<CRSOption[]> {
-    try {
-      const indianaEpsgData = await import("@/data/indianaEpsgCodes.json");
-      return indianaEpsgData.geoid as CRSOption[];
-    } catch (error) {
-      console.error('Error loading geoid model data:', error);
-      return this.getFallbackCRS().geoid;
-    }
+    return [
+      {
+        code: "GEOID18",
+        name: "GEOID18",
+        type: "geoid",
+        recommended: true,
+        description: "Current NOAA geoid model for CONUS (2019)"
+      },
+      {
+        code: "GEOID12B",
+        name: "GEOID12B",
+        type: "geoid",
+        recommended: false,
+        description: "Previous NOAA geoid model for CONUS (2012)"
+      },
+      {
+        code: "GEOID09",
+        name: "GEOID09",
+        type: "geoid",
+        recommended: false,
+        description: "Legacy NOAA geoid model for CONUS (2009)"
+      },
+      {
+        code: "GEOID03",
+        name: "GEOID03",
+        type: "geoid",
+        recommended: false,
+        description: "Legacy NOAA geoid model for CONUS (2003)"
+      }
+    ];
   },
 
   /**
-   * Get cached CRS data
+   * Get location from bbox data
    */
-  async getCachedCRS(): Promise<{ horizontal: CRSOption[]; vertical: CRSOption[]; geoid: CRSOption[] }> {
-    try {
-      const cacheData = await import("@/data/crsCache.json");
-      return {
-        horizontal: cacheData.horizontal as CRSOption[],
-        vertical: cacheData.vertical as CRSOption[],
-        geoid: cacheData.geoid as CRSOption[]
-      };
-    } catch (error) {
-      console.error('Error loading cached CRS:', error);
-      return this.getFallbackCRS();
-    }
+  getLocationFromBbox(bbox: [number, number, number, number]): { latitude: number; longitude: number; address: string } {
+    // bbox format: [west, south, east, north]
+    const [west, south, east, north] = bbox;
+    
+    // Calculate center point
+    const latitude = (south + north) / 2;
+    const longitude = (west + east) / 2;
+    
+    return {
+      latitude,
+      longitude,
+      address: "Indiana"
+    };
   },
 
   /**
-   * Cache CRS results (Note: In a real app, this would write to a database or file system)
+   * Cache CRS results in localStorage
    */
   async cacheCRS(newResults: CRSOption[]): Promise<void> {
     try {
-      // In a browser environment, we can't write to files
-      // This would typically be handled by a server endpoint
-      console.log('Would cache CRS results:', newResults);
-      
-      // For now, we'll store in localStorage as a temporary cache
       const existing = localStorage.getItem('crs_cache');
       const cache = existing ? JSON.parse(existing) : { horizontal: [], vertical: [], geoid: [] };
       
@@ -198,10 +307,8 @@ export const crsService = {
   isRecommendedCRS(authority: string, code: number): boolean {
     if (authority === 'EPSG') {
       const recommendedCodes = [
-        2965, 2966, // Indiana State Plane East/West (ftUS)
         6459, 6461, // Indiana State Plane East/West NAD83(2011) (ftUS)
-        3613, // Vanderburgh County
-        7328  // Johnson-Marion County
+        7328  // Johnson-Marion County NAD83(2011)
       ];
       return recommendedCodes.includes(code);
     }
@@ -209,37 +316,30 @@ export const crsService = {
   },
 
   /**
-   * Get fallback CRS options
+   * Get fallback CRS options - NAD83(2011) systems only
    */
   getFallbackCRS(): { horizontal: CRSOption[]; vertical: CRSOption[]; geoid: CRSOption[] } {
     return {
       horizontal: [
         {
-          code: "EPSG:2965",
-          name: "NAD83 / Indiana East (ftUS)",
+          code: "EPSG:6459",
+          name: "NAD83(2011) / Indiana East (ftUS)",
           type: "horizontal",
           recommended: true,
-          description: "Indiana State Plane East Zone in US Survey Feet"
+          description: "Indiana State Plane East Zone NAD83(2011) in US Survey Feet"
         },
         {
-          code: "EPSG:2966",
-          name: "NAD83 / Indiana West (ftUS)",
+          code: "EPSG:6461",
+          name: "NAD83(2011) / Indiana West (ftUS)",
           type: "horizontal",
           recommended: true,
-          description: "Indiana State Plane West Zone in US Survey Feet"
-        },
-        {
-          code: "EPSG:3613",
-          name: "NAD83 / InGCS Vanderburgh (ftUS)",
-          type: "horizontal",
-          recommended: true,
-          description: "Indiana Geographic Coordinate System - Vanderburgh County (US Survey Feet)"
+          description: "Indiana State Plane West Zone NAD83(2011) in US Survey Feet"
         },
         {
           code: "EPSG:7328",
           name: "NAD83(2011) / InGCS Johnson-Marion (ftUS)",
           type: "horizontal",
-          recommended: false,
+          recommended: true,
           description: "Indiana Geographic Coordinate System - Johnson-Marion County NAD83(2011) (US Survey Feet)"
         }
       ],
