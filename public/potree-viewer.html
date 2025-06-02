@@ -501,54 +501,16 @@
             updateLoadingProgress(60);
           }, 500);
           
-          // Function to check if a file exists
-          const checkFileExists = async (url) => {
-            try {
-              const response = await fetch(url, { method: 'HEAD' });
-              return response.ok;
-            } catch (error) {
-              return false;
-            }
-          };
-          
           // Load point cloud
           const loadPointCloud = async () => {
             updateLoadingProgress(70);
             
-            // Try to load from different possible locations
-            const possiblePaths = [
-              // Try the job-specific cloud.js first
-              `/pointclouds/${jobNumber}/cloud.js`,
-              // Then try the example cloud.js
-              `/pointclouds/example/cloud.js`,
-              // Then try the example metadata.json
-              `/pointclouds/example/metadata.json`,
-              // Finally, try a known Potree example
-              `/potree/pointclouds/lion_takanawa/cloud.js`
-            ];
-            
-            let pathToLoad = null;
-            
-            // Check each path in order
-            for (const path of possiblePaths) {
-              if (await checkFileExists(path)) {
-                pathToLoad = path;
-                console.log(`Found point cloud at: ${path}`);
-                break;
-              }
-            }
-            
-            if (!pathToLoad) {
-              console.error("Could not find any point cloud data");
-              updateLoadingProgress(100);
-              return;
-            }
-            
-            // Extract the name from the path
-            const pointCloudName = pathToLoad.split('/').pop().split('.')[0];
+            // Directly use the backend URL with the job number
+            const cloudJsUrl = `http://localhost:4400/pointclouds/${jobNumber}/cloud.js`;
+            console.log("Attempting to load point cloud from:", cloudJsUrl);
             
             // Load the point cloud
-            Potree.loadPointCloud(pathToLoad, pointCloudName, e => {
+            Potree.loadPointCloud(cloudJsUrl, jobNumber, e => {
               if (e.pointcloud) {
                 console.log("Point cloud loaded successfully");
                 viewer.scene.addPointCloud(e.pointcloud);
@@ -582,12 +544,33 @@
                 
                 updateLoadingProgress(100);
               } else {
-                console.error("Failed to load point cloud");
-                try {
-                  window.parent.postMessage({ type: 'loadingError', error: 'Failed to load point cloud' }, '*');
-                } catch (e) {
-                  console.error("Error sending error message to parent:", e);
-                }
+                console.error("Failed to load point cloud from:", cloudJsUrl);
+                
+                // Try fallback to example point cloud
+                console.log("Trying fallback to example point cloud...");
+                Potree.loadPointCloud("/pointclouds/example/metadata.json", "example", fallbackE => {
+                  if (fallbackE.pointcloud) {
+                    console.log("Fallback point cloud loaded successfully");
+                    viewer.scene.addPointCloud(fallbackE.pointcloud);
+                    
+                    // Set point cloud material properties
+                    fallbackE.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                    fallbackE.pointcloud.material.size = 1.0;
+                    fallbackE.pointcloud.material.pointColorType = Potree.PointColorType.RGB;
+                    
+                    // Fit the point cloud to the screen
+                    viewer.fitToScreen();
+                    
+                    updateLoadingProgress(100);
+                  } else {
+                    console.error("Failed to load fallback point cloud");
+                    try {
+                      window.parent.postMessage({ type: 'loadingError', error: 'Failed to load point cloud' }, '*');
+                    } catch (e) {
+                      console.error("Error sending error message to parent:", e);
+                    }
+                  }
+                });
               }
             });
           };
