@@ -43,6 +43,11 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   const [verticalSearch, setVerticalSearch] = useState("");
   const [geoidSearch, setGeoidSearch] = useState("");
 
+  // Add state to control dropdown open state
+  const [horizontalOpen, setHorizontalOpen] = useState(false);
+  const [verticalOpen, setVerticalOpen] = useState(false);
+  const [geoidOpen, setGeoidOpen] = useState(false);
+
   // CRS options from ArcGIS API
   const [crsOptions, setCrsOptions] = useState<{
     horizontal: CRSOption[];
@@ -180,7 +185,9 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     selectValue: string | undefined,
     onSelectChange: (value: string) => void,
     options: CRSOption[],
-    loading: boolean
+    loading: boolean,
+    isOpen: boolean,
+    setIsOpen: (open: boolean) => void
   ) => (
     <div>
       <Label>{label}</Label>
@@ -189,7 +196,14 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         <Input
           placeholder={`Search ${label.toLowerCase()}...`}
           value={searchValue}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => {
+            onSearchChange(e.target.value);
+            // Open dropdown when user starts typing
+            if (e.target.value.length > 0 && !isOpen) {
+              setIsOpen(true);
+            }
+          }}
+          onFocus={() => setIsOpen(true)}
           className="pl-10 mb-2"
           disabled={loading}
         />
@@ -198,11 +212,13 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         value={selectValue}
         onValueChange={onSelectChange}
         disabled={loading}
+        open={isOpen}
+        onOpenChange={setIsOpen}
       >
         <SelectTrigger>
           <SelectValue placeholder={loading ? "Loading..." : placeholder} />
         </SelectTrigger>
-        <SelectContent className="max-w-md">
+        <SelectContent className="max-w-md max-h-60 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center p-4">
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -210,7 +226,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             </div>
           ) : options.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
-              No options available
+              {searchValue ? `No results found for "${searchValue}"` : "No options available"}
             </div>
           ) : (
             options.map((option) => (
@@ -421,7 +437,9 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
                 crs: { ...prev.crs!, horizontal: value }
               })),
               filteredHorizontalOptions,
-              crsLoading
+              crsLoading,
+              horizontalOpen,
+              setHorizontalOpen
             )}
 
             {renderCRSSelect(
@@ -435,7 +453,9 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
                 crs: { ...prev.crs!, vertical: value }
               })),
               filteredVerticalOptions,
-              crsLoading
+              crsLoading,
+              verticalOpen,
+              setVerticalOpen
             )}
 
             {renderCRSSelect(
@@ -449,7 +469,9 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
                 crs: { ...prev.crs!, geoidModel: value }
               })),
               filteredGeoidOptions,
-              crsLoading
+              crsLoading,
+              geoidOpen,
+              setGeoidOpen
             )}
           </div>
 

@@ -477,6 +477,20 @@ export const arcgisService = {
           type: "horizontal" as const,
           recommended: true,
           description: "Indiana State Plane West Zone (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3532",
+          name: "NAD83 / InGCS Vanderburgh (ftUS)",
+          type: "horizontal" as const,
+          recommended: true,
+          description: "Indiana Geographic Coordinate System - Vanderburgh County (US Survey Feet)"
+        },
+        {
+          code: "EPSG:3533",
+          name: "NAD83(2011) / InGCS Vanderburgh (ftUS)",
+          type: "horizontal" as const,
+          recommended: true,
+          description: "Indiana Geographic Coordinate System - Vanderburgh County NAD83(2011) (US Survey Feet)"
         }
       ];
 
@@ -748,6 +762,8 @@ export const arcgisService = {
       6459: "NAD83(2011) / Indiana East (ftUS)",
       6460: "NAD83(2011) / Indiana West",
       6461: "NAD83(2011) / Indiana West (ftUS)",
+      3532: "NAD83 / InGCS Vanderburgh (ftUS)",
+      3533: "NAD83(2011) / InGCS Vanderburgh (ftUS)",
       26916: "NAD83 / UTM zone 16N",
       26917: "NAD83 / UTM zone 17N",
       32616: "WGS 84 / UTM zone 16N",
@@ -773,6 +789,8 @@ export const arcgisService = {
       6459: "Indiana State Plane East Zone in US Survey Feet (NAD83 2011)",
       6460: "Indiana State Plane West Zone in meters (NAD83 2011)",
       6461: "Indiana State Plane West Zone in US Survey Feet (NAD83 2011)",
+      3532: "Indiana Geographic Coordinate System - Vanderburgh County (US Survey Feet)",
+      3533: "Indiana Geographic Coordinate System - Vanderburgh County NAD83(2011) (US Survey Feet)",
       26916: "UTM Zone 16 North (NAD83)",
       26917: "UTM Zone 17 North (NAD83)",
       32616: "UTM Zone 16 North (WGS84)",
