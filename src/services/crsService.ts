@@ -16,6 +16,9 @@ interface MapTilerResult {
 interface MapTilerResponse {
   results: MapTilerResult[];
   total: number;
+  error?: string;
+  message?: string;
+  fallback?: boolean;
 }
 
 // Cache for storing fetched CRS data

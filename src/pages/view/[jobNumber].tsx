@@ -4,8 +4,9 @@ import Head from "next/head";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Menu, X } from "lucide-react";
+import { ArrowLeft, Menu, X, MapPin, Info } from "lucide-react";
 import { Project } from "@/types/project";
+import { potreeLocationService } from "@/services/potreeLocationService";
 
 // Define types for Potree
 interface PointCloudMaterial {
@@ -60,6 +61,8 @@ interface ProjectData extends Project {
     latitude: number;
     longitude: number;
     address?: string;
+    source?: string;
+    confidence?: string;
   };
 }
 
@@ -73,6 +76,7 @@ export default function PotreeViewer() {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [showProjectInfo, setShowProjectInfo] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const renderAreaRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -84,6 +88,39 @@ export default function PotreeViewer() {
     const initializePotree = async () => {
       try {
         console.log("Starting Potree initialization...");
+        
+        // First, try to get project data from Potree metadata
+        setLoadingProgress(10);
+        const potreeProjectData = await potreeLocationService.getProjectInfo(jobNumber);
+        
+        let projectData: ProjectData = {
+          jobNumber: jobNumber as string,
+          projectName: `Project ${jobNumber}`,
+          clientName: "Demo Client",
+          acquistionDate: new Date().toISOString(),
+          description: "Demo project for testing Potree viewer",
+          status: "active" as const,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          projectType: "survey",
+          location: {
+            latitude: 39.7684,
+            longitude: -86.1581,
+            address: "Indianapolis, IN",
+            source: "fallback",
+            confidence: "low"
+          }
+        };
+
+        // Merge Potree data if available
+        if (potreeProjectData) {
+          projectData = { ...projectData, ...potreeProjectData };
+          console.log("Using Potree project data:", projectData);
+        }
+
+        setProject(projectData);
+        setProjectName(projectData.projectName);
+        setLoadingProgress(15);
         
         // Create render area element if it doesn't exist
         console.log("Creating render area element...");
@@ -205,23 +242,6 @@ export default function PotreeViewer() {
         }
         
         // Try to fetch project info from API
-        let projectData: ProjectData = {
-          jobNumber: jobNumber as string,
-          projectName: `Project ${jobNumber}`,
-          clientName: "Demo Client",
-          acquistionDate: new Date().toISOString(),
-          description: "Demo project for testing Potree viewer",
-          status: "active" as const,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          projectType: "survey",
-          location: {
-            latitude: 39.7684,
-            longitude: -86.1581,
-            address: "Indianapolis, IN"
-          }
-        };
-        
         try {
           const res = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/info.json`);
           if (res.ok) {
@@ -284,6 +304,7 @@ export default function PotreeViewer() {
                     if (typeof mapView.setZoom === 'function') {
                       mapView.setZoom(15);
                     }
+                    console.log(`Map positioned at: ${projectData.location.latitude}, ${projectData.location.longitude} (source: ${projectData.location.source})`);
                   }
                 } catch (mapError) {
                   console.error("Failed to set map location:", mapError);
@@ -421,9 +442,30 @@ export default function PotreeViewer() {
             <h1 className="text-lg font-semibold">
               {projectName || project?.projectName || `Project ${jobNumber}`}
             </h1>
+            {project?.location && (
+              <div className="flex items-center gap-2 text-sm text-hwc-light">
+                <MapPin className="h-3 w-3" />
+                <span>
+                  {project.location.latitude.toFixed(4)}, {project.location.longitude.toFixed(4)}
+                  {project.location.source && (
+                    <span className="ml-1 text-xs opacity-75">
+                      ({project.location.source})
+                    </span>
+                  )}
+                </span>
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowProjectInfo(!showProjectInfo)}
+              className="text-white hover:bg-hwc-red/20"
+            >
+              <Info className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -461,6 +503,60 @@ export default function PotreeViewer() {
           </div>
         </div>
       </div>
+
+      {/* Project Info Panel */}
+      {showProjectInfo && project && (
+        <div className="absolute top-20 right-4 z-40 w-80">
+          <Card className="bg-white/95 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <h3 className="font-semibold mb-3">Project Information</h3>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="font-medium">Job Number:</span> {project.jobNumber}
+                </div>
+                <div>
+                  <span className="font-medium">Project Name:</span> {project.projectName}
+                </div>
+                {project.clientName && (
+                  <div>
+                    <span className="font-medium">Client:</span> {project.clientName}
+                  </div>
+                )}
+                {project.description && (
+                  <div>
+                    <span className="font-medium">Description:</span> {project.description}
+                  </div>
+                )}
+                {project.location && (
+                  <div>
+                    <span className="font-medium">Location:</span>
+                    <div className="ml-2 text-xs">
+                      <div>Lat: {project.location.latitude.toFixed(6)}</div>
+                      <div>Lon: {project.location.longitude.toFixed(6)}</div>
+                      {project.location.source && (
+                        <div className="text-gray-500">
+                          Source: {project.location.source} 
+                          {project.location.confidence && ` (${project.location.confidence})`}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {project.crs && (
+                  <div>
+                    <span className="font-medium">Coordinate System:</span>
+                    <div className="ml-2 text-xs">
+                      <div>Horizontal: {project.crs.horizontal}</div>
+                      {project.crs.vertical && <div>Vertical: {project.crs.vertical}</div>}
+                      {project.crs.geoidModel && <div>Geoid: {project.crs.geoidModel}</div>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Map Type Controls */}
       <div className="absolute top-20 left-4 z-40">

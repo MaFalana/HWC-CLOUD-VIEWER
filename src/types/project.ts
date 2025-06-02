@@ -1,4 +1,3 @@
-
 // Define the parsed .prj file structure
 export interface ParsedPRJ {
   projcs: string;
@@ -33,6 +32,8 @@ export interface Project {
     latitude: number;
     longitude: number;
     address?: string;
+    source?: 'potree_metadata' | 'potree_bounds' | 'crs_derived' | 'manual' | 'fallback';
+    confidence?: 'high' | 'medium' | 'low';
   };
   crs?: {
     horizontal: string;
@@ -84,6 +85,7 @@ export interface CRSOption {
   type: "horizontal" | "vertical" | "geoid";
   recommended?: boolean;
   description?: string;
+  bbox?: [number, number, number, number]; // [west, south, east, north]
 }
 
 // Type guard function to validate parsed PRJ data
