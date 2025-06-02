@@ -563,19 +563,21 @@ export default function PotreeViewer() {
         </div>
       </div>
 
-      {/* Sidebar Toggle Button - positioned near sidebar */}
-      <div className="absolute top-24 right-6 z-40">
+      {/* Custom Sidebar Toggle Button - positioned correctly */}
+      <div className="absolute top-20 right-6 z-40">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => {
             setSidebarVisible(!sidebarVisible);
-            try {
-              if (viewerRef.current && typeof viewerRef.current.toggleSidebar === 'function') {
-                viewerRef.current.toggleSidebar();
+            // Custom sidebar toggle implementation
+            const sidebar = document.getElementById('potree_sidebar_container');
+            if (sidebar) {
+              if (sidebarVisible) {
+                sidebar.style.display = 'none';
+              } else {
+                sidebar.style.display = 'block';
               }
-            } catch (sidebarError) {
-              console.log("Potree sidebar toggle not available", sidebarError);
             }
           }}
           className="text-white hover:bg-hwc-red/20 bg-hwc-dark/95 backdrop-blur-md border border-hwc-red/20"
@@ -586,7 +588,7 @@ export default function PotreeViewer() {
 
       {/* Project Info Panel */}
       {showProjectInfo && project && (
-        <div className="absolute top-24 right-20 z-40 w-96">
+        <div className="absolute top-20 right-20 z-40 w-96">
           <Card className="bg-hwc-dark/95 backdrop-blur-md border border-hwc-red/20 text-white">
             <CardContent className="p-6">
               <h3 className="font-semibold mb-4 text-lg">Project Information</h3>
@@ -643,7 +645,7 @@ export default function PotreeViewer() {
       )}
 
       {/* Map Type Controls */}
-      <div className="absolute top-24 left-6 z-40">
+      <div className="absolute top-20 left-6 z-40">
         <Card className="bg-hwc-dark/95 backdrop-blur-md border border-hwc-red/20">
           <CardContent className="p-3">
             <div className="grid grid-cols-2 gap-2">
@@ -708,7 +710,7 @@ export default function PotreeViewer() {
           background: #292C30 !important;
         }
         
-        /* Fix Potree sidebar with modern styling */
+        /* Fix Potree sidebar with modern styling - ensure it starts below header */
         #potree_sidebar_container {
           background: rgba(41, 44, 48, 0.98) !important;
           backdrop-filter: blur(20px) !important;
@@ -719,40 +721,41 @@ export default function PotreeViewer() {
           position: fixed !important;
           right: 0 !important;
           top: 80px !important;
-          width: 280px !important;
+          width: 320px !important;
           box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3) !important;
+          display: ${sidebarVisible ? 'block' : 'none'} !important;
         }
         
         /* Sidebar content styling */
         #potree_sidebar_container .potree_menu_content {
           overflow-y: auto !important;
           max-height: calc(100vh - 100px) !important;
-          padding: 16px !important;
+          padding: 20px !important;
         }
         
         /* Accordion styling with modern design */
         #potree_sidebar_container .ui-accordion .ui-accordion-content {
           overflow-y: auto !important;
-          max-height: 300px !important;
-          padding: 12px !important;
+          max-height: 400px !important;
+          padding: 16px !important;
           background: rgba(221, 212, 204, 0.05) !important;
-          border-radius: 6px !important;
-          margin-top: 4px !important;
+          border-radius: 8px !important;
+          margin-top: 8px !important;
         }
         
         /* Custom scrollbar */
         #potree_sidebar_container::-webkit-scrollbar {
-          width: 4px !important;
+          width: 6px !important;
         }
         
         #potree_sidebar_container::-webkit-scrollbar-track {
           background: rgba(108, 104, 100, 0.2) !important;
-          border-radius: 2px !important;
+          border-radius: 3px !important;
         }
         
         #potree_sidebar_container::-webkit-scrollbar-thumb {
           background: rgba(238, 47, 39, 0.6) !important;
-          border-radius: 2px !important;
+          border-radius: 3px !important;
         }
         
         #potree_sidebar_container::-webkit-scrollbar-thumb:hover {
@@ -764,11 +767,11 @@ export default function PotreeViewer() {
           background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7)) !important;
           color: white !important;
           border: none !important;
-          border-radius: 6px !important;
-          margin-bottom: 2px !important;
-          padding: 10px 14px !important;
+          border-radius: 8px !important;
+          margin-bottom: 4px !important;
+          padding: 12px 16px !important;
           font-weight: 500 !important;
-          font-size: 13px !important;
+          font-size: 14px !important;
           z-index: 31 !important;
           transition: all 0.2s ease !important;
         }
@@ -776,17 +779,17 @@ export default function PotreeViewer() {
         .ui-accordion-header:hover {
           background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important;
           transform: translateY(-1px) !important;
-          box-shadow: 0 2px 8px rgba(238, 47, 39, 0.3) !important;
+          box-shadow: 0 4px 12px rgba(238, 47, 39, 0.3) !important;
         }
         
         .ui-accordion-content {
           background: rgba(41, 44, 48, 0.9) !important;
           color: white !important;
           border: none !important;
-          border-radius: 6px !important;
+          border-radius: 8px !important;
           z-index: 31 !important;
           overflow-y: auto !important;
-          max-height: 300px !important;
+          max-height: 400px !important;
         }
         
         /* Menu content styling */
@@ -799,7 +802,7 @@ export default function PotreeViewer() {
         /* Menu list styling */
         .pv-menu-list {
           overflow-y: auto !important;
-          max-height: 250px !important;
+          max-height: 350px !important;
         }
         
         .pv-menu-list button,
@@ -808,9 +811,9 @@ export default function PotreeViewer() {
           background: rgba(221, 212, 204, 0.1) !important;
           color: white !important;
           border: 1px solid rgba(238, 47, 39, 0.3) !important;
-          border-radius: 4px !important;
-          padding: 6px 10px !important;
-          font-size: 12px !important;
+          border-radius: 6px !important;
+          padding: 8px 12px !important;
+          font-size: 13px !important;
           transition: all 0.2s ease !important;
         }
         
@@ -819,47 +822,59 @@ export default function PotreeViewer() {
           border-color: rgba(238, 47, 39, 0.6) !important;
         }
         
-        /* Fix tools grid layout - ensure proper grid display */
+        /* Modern tools grid layout - CRITICAL FIX */
         .potree_toolbar,
         .potree_menu_tools,
         .pv-menu-tools,
-        div[class*="tools"],
-        div[class*="toolbar"] {
+        div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube),
+        div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) {
+          display: grid !important;
+          grid-template-columns: repeat(4, 1fr) !important;
+          gap: 8px !important;
+          padding: 16px !important;
+          background: rgba(221, 212, 204, 0.05) !important;
+          border-radius: 12px !important;
+          margin: 8px 0 !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+        
+        /* Force grid layout for measurement tools specifically */
+        div[class*="measurement"] .potree_toolbar,
+        div[class*="measurement"] .potree_menu_tools,
+        div[class*="measurement"] .pv-menu-tools {
           display: grid !important;
           grid-template-columns: repeat(4, 1fr) !important;
           gap: 6px !important;
-          padding: 12px !important;
-          background: rgba(221, 212, 204, 0.05) !important;
-          border-radius: 8px !important;
-          margin: 6px 0 !important;
         }
         
-        /* Ensure all tool buttons are properly styled */
+        /* Modern tool buttons */
         .potree_toolbar button,
         .potree_menu_tools button,
         .pv-menu-tools button,
         .potree_toolbar .potree_button,
         .potree_menu_tools .potree_button,
         .pv-menu-tools .potree_button,
-        div[class*="tools"] button,
-        div[class*="toolbar"] button,
-        div[class*="tools"] .potree_button,
-        div[class*="toolbar"] .potree_button {
+        div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button,
+        div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button,
+        div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button,
+        div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button {
           width: 100% !important;
-          height: 36px !important;
+          height: 44px !important;
           margin: 0 !important;
-          padding: 6px !important;
+          padding: 8px !important;
           background: rgba(221, 212, 204, 0.1) !important;
           border: 1px solid rgba(238, 47, 39, 0.2) !important;
-          border-radius: 6px !important;
+          border-radius: 8px !important;
           color: white !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
           transition: all 0.2s ease !important;
-          font-size: 11px !important;
+          font-size: 12px !important;
           font-weight: 500 !important;
           cursor: pointer !important;
+          box-sizing: border-box !important;
         }
         
         /* Tool button hover effects */
@@ -869,14 +884,14 @@ export default function PotreeViewer() {
         .potree_toolbar .potree_button:hover,
         .potree_menu_tools .potree_button:hover,
         .pv-menu-tools .potree_button:hover,
-        div[class*="tools"] button:hover,
-        div[class*="toolbar"] button:hover,
-        div[class*="tools"] .potree_button:hover,
-        div[class*="toolbar"] .potree_button:hover {
+        div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button:hover,
+        div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button:hover,
+        div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button:hover,
+        div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button:hover {
           background: rgba(238, 47, 39, 0.2) !important;
           border-color: rgba(238, 47, 39, 0.5) !important;
-          transform: translateY(-1px) !important;
-          box-shadow: 0 2px 8px rgba(238, 47, 39, 0.2) !important;
+          transform: translateY(-2px) !important;
+          box-shadow: 0 4px 12px rgba(238, 47, 39, 0.2) !important;
         }
         
         /* Active tool button styling */
@@ -892,17 +907,17 @@ export default function PotreeViewer() {
         .potree_toolbar .potree_button.selected,
         .potree_menu_tools .potree_button.selected,
         .pv-menu-tools .potree_button.selected,
-        div[class*="tools"] button.active,
-        div[class*="toolbar"] button.active,
-        div[class*="tools"] .potree_button.active,
-        div[class*="toolbar"] .potree_button.active,
-        div[class*="tools"] button.selected,
-        div[class*="toolbar"] button.selected,
-        div[class*="tools"] .potree_button.selected,
-        div[class*="toolbar"] .potree_button.selected {
+        div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button.active,
+        div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button.active,
+        div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.active,
+        div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.active,
+        div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button.selected,
+        div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button.selected,
+        div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.selected,
+        div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.selected {
           background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7)) !important;
           border: 2px solid rgba(238, 47, 39, 1) !important;
-          box-shadow: 0 0 12px rgba(238, 47, 39, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+          box-shadow: 0 0 16px rgba(238, 47, 39, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
           color: white !important;
           transform: translateY(-1px) !important;
         }
@@ -914,12 +929,12 @@ export default function PotreeViewer() {
         .potree_toolbar .potree_button img,
         .potree_menu_tools .potree_button img,
         .pv-menu-tools .potree_button img,
-        div[class*="tools"] img,
-        div[class*="toolbar"] img,
-        div[class*="tools"] .potree_button img,
-        div[class*="toolbar"] .potree_button img {
-          width: 16px !important;
-          height: 16px !important;
+        div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) img,
+        div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) img,
+        div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button img,
+        div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button img {
+          width: 18px !important;
+          height: 18px !important;
           filter: brightness(0) invert(1) !important;
         }
         
@@ -956,12 +971,12 @@ export default function PotreeViewer() {
           padding: 8px 12px !important;
         }
         
-        /* Modern compass and navigation controls */
+        /* Modern compass and navigation controls - positioned in bottom left */
         .potree_compass {
           z-index: 35 !important;
           position: fixed !important;
           bottom: 24px !important;
-          right: 24px !important;
+          left: 24px !important;
           background: rgba(41, 44, 48, 0.95) !important;
           border: 2px solid rgba(238, 47, 39, 0.6) !important;
           border-radius: 50% !important;
@@ -977,7 +992,7 @@ export default function PotreeViewer() {
           z-index: 35 !important;
           position: fixed !important;
           bottom: 24px !important;
-          right: 104px !important;
+          left: 104px !important;
           background: rgba(41, 44, 48, 0.95) !important;
           border: 2px solid rgba(238, 47, 39, 0.6) !important;
           border-radius: 12px !important;
