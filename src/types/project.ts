@@ -74,4 +74,6 @@ export interface CRSOption {
   code: string;
   name: string;
   type: "horizontal" | "vertical" | "geoid";
+  recommended?: boolean;
+  description?: string;
 }
