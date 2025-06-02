@@ -533,15 +533,12 @@ export const arcgisService = {
    */
   async getSpatialReferenceDetails(epsgCode: number): Promise<ArcGISSpatialReference | null> {
     try {
-      // Try to get SR info from ArcGIS REST API
-      const response = await fetch(
-        `https://epsg.io/${epsgCode}.json`,
-        {
-          headers: {
-            'Accept': 'application/json'
-          }
+      // Use our Next.js API proxy to avoid CORS issues
+      const response = await fetch(`/api/crs/${epsgCode}`, {
+        headers: {
+          'Accept': 'application/json'
         }
-      );
+      });
 
       if (response.ok) {
         const data = await response.json();
