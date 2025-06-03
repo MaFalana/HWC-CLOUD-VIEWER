@@ -24,16 +24,16 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
     const checkThumbnail = async () => {
       try {
         // Try to fetch the TIF/TIFF thumbnail
-        const tifResponse = await fetch(`http://localhost:5000/pointclouds/${project.jobNumber}/${project.jobNumber}.tif`, { method: 'HEAD' });
+        const tifResponse = await fetch(`https://hwc-backend-server.vercel.app/pointclouds/${project.jobNumber}/${project.jobNumber}.tif`, { method: 'HEAD' });
         if (tifResponse.ok) {
-          setThumbnailUrl(`http://localhost:5000/pointclouds/${project.jobNumber}/${project.jobNumber}.tif`);
+          setThumbnailUrl(`https://hwc-backend-server.vercel.app/pointclouds/${project.jobNumber}/${project.jobNumber}.tif`);
           return;
         }
         
         // Try TIFF extension if TIF doesn't exist
-        const tiffResponse = await fetch(`http://localhost:5000/pointclouds/${project.jobNumber}/${project.jobNumber}.tiff`, { method: 'HEAD' });
+        const tiffResponse = await fetch(`https://hwc-backend-server.vercel.app/pointclouds/${project.jobNumber}/${project.jobNumber}.tiff`, { method: 'HEAD' });
         if (tiffResponse.ok) {
-          setThumbnailUrl(`http://localhost:5000/pointclouds/${project.jobNumber}/${project.jobNumber}.tiff`);
+          setThumbnailUrl(`https://hwc-backend-server.vercel.app/pointclouds/${project.jobNumber}/${project.jobNumber}.tiff`);
           return;
         }
         
