@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Eye, Edit, Trash2, Layers } from "lucide-react";
 import { Project } from "@/types/project";
 import { useRouter } from "next/router";
+import { transformProjectLocation } from "@/services/coordinateTransformService";
 
 interface ProjectMapProps {
   projects: Project[];
@@ -58,6 +59,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
   const router = useRouter();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [mapType, setMapType] = useState<"street" | "satellite">("street");
+  const [transformedProjects, setTransformedProjects] = useState<(Project & { transformedLocation?: { latitude: number; longitude: number } })[]>([]);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const markersRef = useRef<LeafletMarker[]>([]);
@@ -81,22 +83,48 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
     }
   };
 
-  const projectsWithLocation = projects.filter(p => {
-    // Check if project has valid location coordinates
-    return p.location && 
-           p.location.latitude && 
-           p.location.longitude && 
-           p.location.latitude !== 0 && 
-           p.location.longitude !== 0 &&
-           Math.abs(p.location.latitude) <= 90 &&
-           Math.abs(p.location.longitude) <= 180;
+  // Transform project coordinates when projects change
+  useEffect(() => {
+    const transformProjects = async () => {
+      console.log("Transforming project coordinates...");
+      const transformed = await Promise.all(
+        projects.map(async (project) => {
+          const transformedLocation = await transformProjectLocation(project);
+          console.log(`Project ${project.jobNumber}:`, {
+            original: project.location,
+            crs: project.crs?.horizontal,
+            transformed: transformedLocation
+          });
+          return {
+            ...project,
+            transformedLocation
+          };
+        })
+      );
+      setTransformedProjects(transformed);
+    };
+
+    transformProjects();
+  }, [projects]);
+
+  const projectsWithLocation = transformedProjects.filter(p => {
+    const location = p.transformedLocation || p.location;
+    // Check if project has valid transformed location coordinates
+    return location && 
+           location.latitude && 
+           location.longitude && 
+           location.latitude !== 0 && 
+           location.longitude !== 0 &&
+           Math.abs(location.latitude) <= 90 &&
+           Math.abs(location.longitude) <= 180;
   });
 
-  console.log('Projects with location:', projectsWithLocation.length, 'out of', projects.length);
-  console.log('All projects:', projects.map(p => ({
+  console.log('Projects with valid location:', projectsWithLocation.length, 'out of', projects.length);
+  console.log('Transformed projects:', transformedProjects.map(p => ({
     jobNumber: p.jobNumber,
-    location: p.location,
-    crs: p.crs
+    originalLocation: p.location,
+    transformedLocation: p.transformedLocation,
+    crs: p.crs?.horizontal
   })));
 
   // Initialize OpenStreetMap
@@ -164,14 +192,15 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current = [];
 
-      // Add markers for projects
+      // Add markers for projects using transformed coordinates
       const bounds = window.L.latLngBounds([]);
       let hasValidMarkers = false;
       
       projectsWithLocation.forEach(project => {
-        if (project.location && project.location.latitude && project.location.longitude) {
+        const location = project.transformedLocation || project.location;
+        if (location && location.latitude && location.longitude) {
           // Validate coordinates are within reasonable bounds
-          if (Math.abs(project.location.latitude) <= 90 && Math.abs(project.location.longitude) <= 180) {
+          if (Math.abs(location.latitude) <= 90 && Math.abs(location.longitude) <= 180) {
             const markerIcon = window.L.divIcon({
               className: 'custom-div-icon',
               html: `<div class="marker-pin ${getStatusColor(project.status).replace('bg-', '')}"></div>`,
@@ -180,7 +209,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
             });
 
             const marker = window.L.marker(
-              [project.location.latitude, project.location.longitude],
+              [location.latitude, location.longitude],
               { icon: markerIcon }
             );
 
@@ -191,10 +220,12 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
             // Add marker to map
             marker.addTo(map);
             markersRef.current.push(marker);
-            bounds.extend([project.location.latitude, project.location.longitude]);
+            bounds.extend([location.latitude, location.longitude]);
             hasValidMarkers = true;
+            
+            console.log(`Added marker for ${project.jobNumber} at [${location.latitude}, ${location.longitude}]`);
           } else {
-            console.warn(`Project ${project.jobNumber} has invalid coordinates:`, project.location);
+            console.warn(`Project ${project.jobNumber} has invalid transformed coordinates:`, location);
           }
         }
       });
@@ -216,7 +247,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
         mapRef.current = null;
       }
     };
-  }, [projects, mapType, projectsWithLocation]);
+  }, [transformedProjects, mapType, projectsWithLocation]);
 
   return (
     <div className="relative h-[calc(100vh-200px)] bg-gray-100 rounded-lg overflow-hidden">
