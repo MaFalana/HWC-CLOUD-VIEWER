@@ -130,13 +130,7 @@ export const projFileService = {
    */
   async getLocationFromProj(projData: ProjFileData): Promise<{ latitude?: number; longitude?: number } | null> {
     try {
-      // First try using ArcGIS REST API for accurate projection
-      const arcgisResult = await arcgisService.getLocationFromProjFile(projData);
-      if (arcgisResult) {
-        return arcgisResult;
-      }
-
-      // Fallback to improved approximation if ArcGIS fails
+      // Fallback to improved approximation without ArcGIS
       const centralMeridian = projData.parameters['central_meridian'];
       const latitudeOfOrigin = projData.parameters['latitude_of_origin'];
       const falseEasting = projData.parameters['false_easting'];
@@ -192,6 +186,31 @@ export const projFileService = {
             latitude: 39.7,
             longitude: -86.2
           };
+        }
+      }
+      
+      // Extract location from EPSG code if available
+      if (projData.epsgCode) {
+        // Handle common Indiana EPSG codes
+        if (projData.epsgCode === 'EPSG:2965') { // Indiana West
+          return { latitude: 39.7, longitude: -86.5 };
+        } else if (projData.epsgCode === 'EPSG:2966') { // Indiana East
+          return { latitude: 40.0, longitude: -85.5 };
+        } else if (projData.epsgCode === 'EPSG:3613') { // Vanderburgh County
+          return { latitude: 37.9747, longitude: -87.5558 };
+        }
+      }
+      
+      // Extract location from projection name if available
+      if (projData.projcs) {
+        if (projData.projcs.includes('Vanderburgh')) {
+          return { latitude: 37.9747, longitude: -87.5558 };
+        } else if (projData.projcs.includes('West')) {
+          return { latitude: 39.7, longitude: -86.5 };
+        } else if (projData.projcs.includes('East')) {
+          return { latitude: 40.0, longitude: -85.5 };
+        } else if (projData.projcs.includes('Indiana')) {
+          return { latitude: 39.7, longitude: -86.2 };
         }
       }
       

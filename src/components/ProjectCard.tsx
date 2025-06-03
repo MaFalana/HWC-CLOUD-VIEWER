@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [thumbnailError, setThumbnailError] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 
   const handleOpen = () => {
     router.push(`/view/${project.jobNumber}`);
