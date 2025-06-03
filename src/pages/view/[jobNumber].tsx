@@ -24,7 +24,7 @@ export default function PotreeViewer() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   
   // Backend URL for point cloud data
-  const BACKEND_URL = "http://localhost:5000";
+  const BACKEND_URL = "https://hwc-backend-server.vercel.app";
   
   useEffect(() => {
     // Print the backend URL in the console log
