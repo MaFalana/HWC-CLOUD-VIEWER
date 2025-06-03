@@ -1,6 +1,5 @@
 
 // Service for parsing .proj files and extracting CRS information
-import { worldFileService } from "./worldFileService";
 
 interface ProjFileData {
   projcs: string;

@@ -121,8 +121,6 @@ const inverseTransverseMercator = (
   
   // Earth radius in meters
   const a = 6378137.0; // WGS84 semi-major axis
-  // WGS84 first eccentricity squared - used in more precise calculations
-  // const e2 = 0.00669437999014;
   
   // Central meridian and latitude of origin in radians
   const lon0 = toRadians(params.centralMeridian);
@@ -271,6 +269,49 @@ export const transformProjectLocation = async (project: {
       return { latitude, longitude };
     }
     
+    // Find the CRS data in Indiana.json
+    const crsData = indianaData.find(item => `${item.id.authority}:${item.id.code}` === horizontalCRS);
+    
+    // If we have CRS data with a bbox, use the center of the bbox as a fallback location
+    if (crsData && crsData.bbox) {
+      const [minLon, minLat, maxLon, maxLat] = crsData.bbox;
+      
+      // Try to transform the coordinates first
+      try {
+        const transformed = await transformCoordinates({
+          fromCRS: horizontalCRS,
+          toCRS: "EPSG:4326",
+          coordinates: [latitude, longitude]
+        });
+        
+        // Verify the transformed coordinates are within a reasonable range
+        if (Math.abs(transformed.latitude) <= 90 && Math.abs(transformed.longitude) <= 180) {
+          console.log(`Successfully transformed coordinates for ${horizontalCRS}:`, {
+            from: [latitude, longitude],
+            to: [transformed.latitude, transformed.longitude]
+          });
+          
+          return {
+            latitude: transformed.latitude,
+            longitude: transformed.longitude
+          };
+        }
+      } catch (error) {
+        console.error("Error in coordinate transformation:", error);
+      }
+      
+      // If transformation failed or produced invalid results, use the center of the bbox
+      const centerLat = (minLat + maxLat) / 2;
+      const centerLon = (minLon + maxLon) / 2;
+      
+      console.log(`Using CRS bbox center as fallback for ${horizontalCRS}: [${centerLat}, ${centerLon}]`);
+      return { 
+        latitude: centerLat, 
+        longitude: centerLon 
+      };
+    }
+    
+    // If no CRS data found, try a direct transformation
     const transformed = await transformCoordinates({
       fromCRS: horizontalCRS,
       toCRS: "EPSG:4326",
@@ -289,19 +330,11 @@ export const transformProjectLocation = async (project: {
   } catch (error) {
     console.error("Error transforming coordinates:", error);
     
-    // If transformation fails, use the center of the CRS bbox as a fallback
-    const crsData = indianaData.find(item => `${item.id.authority}:${item.id.code}` === horizontalCRS);
-    if (crsData && crsData.bbox) {
-      const [minLon, minLat, maxLon, maxLat] = crsData.bbox;
-      const centerLat = (minLat + maxLat) / 2;
-      const centerLon = (minLon + maxLon) / 2;
-      
-      console.log(`Using CRS bbox center as fallback: [${centerLat}, ${centerLon}]`);
-      return { latitude: centerLat, longitude: centerLon };
-    }
-    
-    // Last resort fallback to original coordinates
-    return { latitude, longitude };
+    // Last resort fallback to center of Indiana
+    return { 
+      latitude: 39.7684, 
+      longitude: -86.1581 
+    };
   }
 };
 

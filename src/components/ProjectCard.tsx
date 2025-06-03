@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Eye, Edit, Trash2, Calendar, MapPin } from "lucide-react";
 import { Project } from "@/types/project";
 import { useRouter } from "next/router";
-import Image from "next/image";
 
 interface ProjectCardProps {
   project: Project;
@@ -16,8 +15,6 @@ interface ProjectCardProps {
 
 export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
   const router = useRouter();
-  const [isHovered, setIsHovered] = useState(false);
-  const [imageError, setImageError] = useState(false);
 
   const handleOpen = () => {
     router.push(`/view/${project.jobNumber}`);
@@ -42,18 +39,10 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
     <Card className="group hover:shadow-lg transition-shadow duration-200 card-hover">
       <div 
         className="relative h-40 bg-gray-200 overflow-hidden"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
       >
-        {!imageError ? (
-          <div className="flex items-center justify-center h-full bg-hwc-light/30">
-            <div className="text-hwc-dark/50 text-lg font-semibold">No Image</div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-full bg-hwc-light/30">
-            <div className="text-hwc-dark/50 text-lg font-semibold">No Image</div>
-          </div>
-        )}
+        <div className="flex items-center justify-center h-full bg-hwc-light/30">
+          <div className="text-hwc-dark/50 text-lg font-semibold">No Image</div>
+        </div>
         <div className="absolute top-2 right-2 flex gap-1">
           <Badge className={`${getStatusColor(project.status)} text-white`}>
             {project.status}
