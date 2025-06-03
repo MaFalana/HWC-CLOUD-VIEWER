@@ -1,4 +1,3 @@
-
 // Coordinate transformation service for converting between different CRS
 // Primarily for converting InGCS county coordinates to WGS84 for web mapping
 
@@ -191,12 +190,12 @@ const transformWithMapTiler = async (
     const sourceCRS = fromCRS.split(":")[1];
     const targetCRS = toCRS.split(":")[1] || "4326"; // Default to WGS84 if not specified
     
-    // For Vanderburgh County example: https://api.maptiler.com/coordinates/transform/{{lon,lat}}.json?s_srs=7366&t_srs=4326
     const [x, y] = coordinates;
     
-    // Construct the URL - note that for projected coordinates, we need to swap x and y
-    // MapTiler expects [lon, lat] or [easting, northing]
-    const url = `${MAPTILER_API_URL}/${y},${x}.json?s_srs=${sourceCRS}&t_srs=${targetCRS}`;
+    // For projected coordinates, we need to use the correct order
+    // MapTiler expects [lon, lat] for geographic coordinates or [x, y] for projected coordinates
+    // For Indiana State Plane, x is easting and y is northing
+    const url = `${MAPTILER_API_URL}/${x},${y}.json?s_srs=${sourceCRS}&t_srs=${targetCRS}`;
     
     console.log(`Calling MapTiler API: ${url}`);
     
@@ -208,7 +207,7 @@ const transformWithMapTiler = async (
     const data = await response.json();
     console.log("MapTiler API response:", data);
     
-    // MapTiler returns [lon, lat], but we want [lat, lon]
+    // MapTiler returns [lon, lat] for geographic coordinates
     if (data && Array.isArray(data) && data.length >= 2) {
       return {
         latitude: data[1],  // lat is second in the response
@@ -330,58 +329,33 @@ export const transformProjectLocation = async (project: {
   
   try {
     // Check if coordinates are already in a reasonable geographic range
-    if (!isProjectedCoordinates(latitude, longitude)) {
+    if (Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180 &&
+        Math.abs(latitude) > 0.01 && Math.abs(longitude) > 0.01) {
       console.log(`Project coordinates already in geographic range: [${latitude}, ${longitude}]`);
       return { latitude, longitude };
     }
     
     // Try MapTiler API first for accurate transformation
     try {
-      const maptilerResult = await transformWithMapTiler(horizontalCRS, "EPSG:4326", [latitude, longitude]);
+      // For Indiana State Plane coordinates, we need to use the correct order
+      // For projected coordinates, x is easting (longitude) and y is northing (latitude)
+      const maptilerResult = await transformWithMapTiler(horizontalCRS, "EPSG:4326", [longitude, latitude]);
       if (maptilerResult) {
         console.log(`MapTiler transformed project coordinates from ${horizontalCRS} to EPSG:4326:`, {
-          from: [latitude, longitude],
-          to: [maptilerResult.latitude, maptilerResult.longitude]
+          from: [longitude, latitude],
+          to: [maptilerResult.longitude, maptilerResult.latitude]
         });
         
         return maptilerResult;
       }
     } catch (error) {
-      console.error("MapTiler transformation failed, falling back to local transformation:", error);
+      console.error("MapTiler transformation failed, falling back to bbox center:", error);
     }
     
-    // Find the CRS data in Indiana.json
+    // If MapTiler API fails, use the center of the CRS bbox as a fallback
     const crsData = indianaData.find(item => `${item.id.authority}:${item.id.code}` === horizontalCRS);
-    
-    // If we have CRS data with a bbox, use the center of the bbox as a fallback location
     if (crsData && crsData.bbox) {
       const [minLon, minLat, maxLon, maxLat] = crsData.bbox;
-      
-      // Try to transform the coordinates first
-      try {
-        const transformed = await transformCoordinates({
-          fromCRS: horizontalCRS,
-          toCRS: "EPSG:4326",
-          coordinates: [latitude, longitude]
-        });
-        
-        // Verify the transformed coordinates are within a reasonable range
-        if (Math.abs(transformed.latitude) <= 90 && Math.abs(transformed.longitude) <= 180) {
-          console.log(`Successfully transformed coordinates for ${horizontalCRS}:`, {
-            from: [latitude, longitude],
-            to: [transformed.latitude, transformed.longitude]
-          });
-          
-          return {
-            latitude: transformed.latitude,
-            longitude: transformed.longitude
-          };
-        }
-      } catch (error) {
-        console.error("Error in coordinate transformation:", error);
-      }
-      
-      // If transformation failed or produced invalid results, use the center of the bbox
       const centerLat = (minLat + maxLat) / 2;
       const centerLon = (minLon + maxLon) / 2;
       
@@ -392,21 +366,10 @@ export const transformProjectLocation = async (project: {
       };
     }
     
-    // If no CRS data found, try a direct transformation
-    const transformed = await transformCoordinates({
-      fromCRS: horizontalCRS,
-      toCRS: "EPSG:4326",
-      coordinates: [latitude, longitude]
-    });
-    
-    console.log(`Transformed project coordinates from ${horizontalCRS} to EPSG:4326:`, {
-      from: [latitude, longitude],
-      to: [transformed.latitude, transformed.longitude]
-    });
-    
-    return {
-      latitude: transformed.latitude,
-      longitude: transformed.longitude
+    // Last resort fallback to center of Indiana
+    return { 
+      latitude: 39.7684, 
+      longitude: -86.1581 
     };
   } catch (error) {
     console.error("Error transforming coordinates:", error);
@@ -421,7 +384,7 @@ export const transformProjectLocation = async (project: {
 
 // Create a named export object to fix the linting error
 const coordinateTransformService = {
-  transformCoordinates,
+  transformWithMapTiler,
   transformProjectLocation
 };
 

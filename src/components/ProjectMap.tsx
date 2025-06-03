@@ -113,11 +113,27 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
             };
           }
           
-          // Otherwise, try to transform the coordinates
-          const transformedLocation = await transformProjectLocation(project);
+          // Try to transform the coordinates using MapTiler API
+          try {
+            const transformedLocation = await transformProjectLocation(project);
+            
+            if (transformedLocation) {
+              console.log(`Successfully transformed coordinates for ${project.jobNumber}:`, {
+                from: project.location,
+                to: transformedLocation
+              });
+              
+              return {
+                ...project,
+                transformedLocation
+              };
+            }
+          } catch (error) {
+            console.error(`Error transforming coordinates for ${project.jobNumber}:`, error);
+          }
           
           // If transformation failed, try to use the center of the CRS bbox as a fallback
-          if (!transformedLocation && project.crs?.horizontal) {
+          if (project.crs?.horizontal) {
             const crsCode = project.crs.horizontal;
             const crsData = indianaData.find(item => `${item.id.authority}:${item.id.code}` === crsCode);
             
@@ -137,16 +153,11 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
             }
           }
           
-          console.log(`Project ${project.jobNumber}:`, {
-            original: project.location,
-            crs: project.crs?.horizontal,
-            transformed: transformedLocation
-          });
-          
+          // Default to center of Indiana if all else fails
           return {
             ...project,
-            transformedLocation: transformedLocation || {
-              latitude: 39.7684,  // Default to center of Indiana if transformation fails
+            transformedLocation: {
+              latitude: 39.7684,
               longitude: -86.1581
             }
           };
