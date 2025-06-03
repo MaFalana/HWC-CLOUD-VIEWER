@@ -190,14 +190,16 @@ const transformWithMapTiler = async (
     
     const [x, y] = coordinates;
     
-    // Use the MapTiler API format with API key
-    const apiKey = "3zy0Sl3tcfZaOQFhQD8J";
+    // Use the MapTiler API format with API key from environment or fallback
+    const apiKey = process.env.NEXT_PUBLIC_MAPTILER_API_KEY || "3zy0Sl3tcfZaOQFhQD8J";
     const url = `https://api.maptiler.com/coordinates/transform/${x},${y}.json?s_srs=${sourceCRS}&t_srs=${targetCRS}&key=${apiKey}`;
     
     console.log(`Calling MapTiler API: ${url}`);
     
     const response = await fetch(url);
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`MapTiler API error: ${response.status} ${response.statusText}`, errorText);
       throw new Error(`MapTiler API error: ${response.statusText}`);
     }
     
