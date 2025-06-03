@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ interface ProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: CreateProjectData) => void;
-  project?: Project | null;
+  project: Project | null;
   mode: "create" | "edit";
 }
 
@@ -67,8 +68,10 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   const indianaCRSOptions: CRSOption[] = indianaData.results.map(item => ({
     code: `${item.id.authority}:${item.id.code}`,
     name: item.name,
+    type: "horizontal", // All Indiana CRS options are horizontal
     description: item.area || "",
-    recommended: false
+    recommended: false,
+    bbox: item.bbox as [number, number, number, number]
   }));
 
   // Search results for horizontal CRS (filtered from Indiana data)
@@ -88,41 +91,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
       option.name.toLowerCase().includes(searchLower) ||
       (option.description && option.description.toLowerCase().includes(searchLower))
     );
-  }, []);
-
-  // Debounce function for API calls with proper TypeScript typing
-  const debounce = useCallback((fn: (...args: string[]) => Promise<void>, delay: number) => {
-    let timeoutId: NodeJS.Timeout;
-    return (...args: string[]) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        fn(...args);
-      }, delay);
-    };
-  }, []);
-
-  // Debounced search function for horizontal CRS
-  const debouncedHorizontalSearch = useCallback(
-    debounce(async (query: string) => {
-      if (query.trim().length < 2) {
-        setHorizontalSearchResults([]);
-        setHorizontalSearchLoading(false);
-        return;
-      }
-
-      setHorizontalSearchLoading(true);
-      try {
-        const results = await crsService.searchCRS(query);
-        setHorizontalSearchResults(results);
-      } catch (error) {
-        console.error('Error searching horizontal CRS:', error);
-        setHorizontalSearchResults([]);
-      } finally {
-        setHorizontalSearchLoading(false);
-      }
-    }, 300),
-    []
-  );
+  }, [indianaCRSOptions]);
 
   // Handle horizontal search input changes
   useEffect(() => {
@@ -197,62 +166,89 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   };
 
   useEffect(() => {
-    if (project && mode === "edit") {
+    if (isOpen && project && mode === "edit") {
       setFormData({
         jobNumber: project.jobNumber,
         projectName: project.projectName,
         description: project.description || "",
-        location: project.location || { latitude: 0, longitude: 0, address: "" },
-        crs: project.crs || { horizontal: "", vertical: "", geoidModel: "" },
         clientName: project.clientName || "",
-        acquistionDate: project.acquistionDate || "",
+        acquistionDate: project.acquistionDate,
+        location: project.location || {
+          latitude: 0,
+          longitude: 0,
+          address: "",
+        },
+        crs: project.crs || {
+          horizontal: "",
+          vertical: "",
+          geoidModel: "",
+        },
         projectType: project.projectType || "",
         tags: project.tags || [],
       });
-    } else if (mode === "create") {
+    } else if (isOpen && mode === "create") {
+      // Reset form for new project
       setFormData({
         jobNumber: "",
         projectName: "",
         description: "",
-        location: { latitude: 0, longitude: 0, address: "" },
-        crs: { horizontal: "", vertical: "", geoidModel: "" },
+        location: {
+          latitude: 0,
+          longitude: 0,
+          address: "",
+        },
+        crs: {
+          horizontal: "",
+          vertical: "",
+          geoidModel: "",
+        },
         clientName: "",
-        acquistionDate: "",
         projectType: "",
         tags: [],
       });
     }
-  }, [project, mode, isOpen]);
+  }, [isOpen, project, mode]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Log the CRS data being submitted
-    console.log('Submitting project with CRS data:', {
-      horizontal: formData.crs?.horizontal,
-      vertical: formData.crs?.vertical,
-      geoidModel: formData.crs?.geoidModel
-    });
-    
-    onSubmit(formData);
-    onClose();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const addTag = () => {
+  const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      location: {
+        ...prev.location!,
+        [name]: name === "address" ? value : parseFloat(value) || 0,
+      },
+    }));
+  };
+
+  const handleAddTag = () => {
     if (tagInput.trim() && !formData.tags?.includes(tagInput.trim())) {
       setFormData(prev => ({
         ...prev,
-        tags: [...(prev.tags || []), tagInput.trim()]
+        tags: [...(prev.tags || []), tagInput.trim()],
       }));
       setTagInput("");
     }
   };
 
-  const removeTag = (tagToRemove: string) => {
+  const handleRemoveTag = (tag: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags?.filter(tag => tag !== tagToRemove) || []
+      tags: prev.tags?.filter(t => t !== tag),
     }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+    onClose();
   };
 
   const renderHorizontalCRSSelect = () => {
@@ -372,43 +368,24 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     );
   };
 
-  const renderCRSSelect = (
-    label: string,
-    options: CRSOption[],
-    value: string | undefined,
-    onChange: (value: string) => void,
-    searchValue: string,
-    setSearchValue: (value: string) => void,
-    isOpen: boolean,
-    setIsOpen: (open: boolean) => void
-  ) => {
-    // Filter options based on search - show all options when search is empty
-    const filteredOptions = searchValue.trim() === "" 
-      ? options 
-      : options.filter(option => 
-          option.code.toLowerCase().includes(searchValue.toLowerCase()) ||
-          option.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-          (option.description && option.description.toLowerCase().includes(searchValue.toLowerCase()))
-        );
-    
-    const selectedOption = options.find(opt => opt.code === value);
+  const renderVerticalCRSSelect = () => {
+    const selectedOption = crsOptions.vertical.find(opt => opt.code === formData.crs?.vertical);
 
     return (
       <div className="space-y-2">
-        <Label>{label}</Label>
+        <Label>Vertical CRS</Label>
         
         {/* Search Input */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder={`Search ${label.toLowerCase()}...`}
-            value={searchValue}
+            placeholder="Search vertical CRS options..."
+            value={verticalSearch}
             onChange={(e) => {
-              setSearchValue(e.target.value);
-              // Always open dropdown when typing
-              setIsOpen(true);
+              setVerticalSearch(e.target.value);
+              setVerticalOpen(true);
             }}
-            onFocus={() => setIsOpen(true)}
+            onFocus={() => setVerticalOpen(true)}
             className="pl-10"
             autoComplete="off"
           />
@@ -439,58 +416,175 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         )}
 
         {/* Options List */}
-        {isOpen && (
+        {verticalOpen && (
           <div className="border rounded-md max-h-[300px] overflow-y-auto bg-white shadow-lg">
-            {crsLoading ? (
-              <div className="flex items-center justify-center p-4">
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span>Loading options...</span>
-              </div>
-            ) : filteredOptions.length === 0 ? (
+            {crsOptions.vertical.length === 0 ? (
               <div className="p-4 text-center text-sm text-gray-500">
-                No options found
+                No vertical CRS options available
               </div>
             ) : (
-              filteredOptions.map((option) => (
-                <div
-                  key={option.code}
-                  className={`flex items-start gap-3 p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${
-                    value === option.code ? "bg-blue-50" : ""
-                  }`}
-                  onClick={() => {
-                    onChange(option.code);
-                    setIsOpen(false);
-                    setSearchValue("");
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mt-1 h-4 w-4 text-green-600",
-                      value === option.code ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                        {option.code}
-                      </span>
-                      {option.recommended && (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
-                          Recommended
+              crsOptions.vertical
+                .filter(option => 
+                  !verticalSearch.trim() || 
+                  option.code.toLowerCase().includes(verticalSearch.toLowerCase()) ||
+                  option.name.toLowerCase().includes(verticalSearch.toLowerCase()) ||
+                  (option.description && option.description.toLowerCase().includes(verticalSearch.toLowerCase()))
+                )
+                .map((option) => (
+                  <div
+                    key={option.code}
+                    className={`flex items-start gap-3 p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                      formData.crs?.vertical === option.code ? "bg-blue-50" : ""
+                    }`}
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        crs: { ...prev.crs!, vertical: option.code }
+                      }));
+                      setVerticalOpen(false);
+                      setVerticalSearch("");
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mt-1 h-4 w-4 text-green-600",
+                        formData.crs?.vertical === option.code ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <div className="flex flex-col items-start min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          {option.code}
                         </span>
+                        {option.recommended && (
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm font-medium text-gray-900 mb-1">
+                        {option.name}
+                      </div>
+                      {option.description && (
+                        <div className="text-xs text-gray-500 leading-relaxed">
+                          {option.description}
+                        </div>
                       )}
                     </div>
-                    <div className="text-sm font-medium text-gray-900 mb-1">
-                      {option.name}
-                    </div>
-                    {option.description && (
-                      <div className="text-xs text-gray-500 leading-relaxed">
-                        {option.description}
-                      </div>
-                    )}
                   </div>
-                </div>
-              ))
+                ))
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderGeoidModelSelect = () => {
+    const selectedOption = crsOptions.geoid.find(opt => opt.code === formData.crs?.geoidModel);
+
+    return (
+      <div className="space-y-2">
+        <Label>Geoid Model</Label>
+        
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Search geoid model options..."
+            value={geoidSearch}
+            onChange={(e) => {
+              setGeoidSearch(e.target.value);
+              setGeoidOpen(true);
+            }}
+            onFocus={() => setGeoidOpen(true)}
+            className="pl-10"
+            autoComplete="off"
+          />
+        </div>
+
+        {/* Selected Value Display */}
+        {selectedOption && (
+          <div className="p-3 bg-gray-50 rounded-md border">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-mono text-sm font-medium text-blue-600">
+                {selectedOption.code}
+              </span>
+              {selectedOption.recommended && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                  Recommended
+                </span>
+              )}
+            </div>
+            <div className="text-sm font-medium text-gray-900 mb-1">
+              {selectedOption.name}
+            </div>
+            {selectedOption.description && (
+              <div className="text-xs text-gray-600">
+                {selectedOption.description}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Options List */}
+        {geoidOpen && (
+          <div className="border rounded-md max-h-[300px] overflow-y-auto bg-white shadow-lg">
+            {crsOptions.geoid.length === 0 ? (
+              <div className="p-4 text-center text-sm text-gray-500">
+                No geoid model options available
+              </div>
+            ) : (
+              crsOptions.geoid
+                .filter(option => 
+                  !geoidSearch.trim() || 
+                  option.code.toLowerCase().includes(geoidSearch.toLowerCase()) ||
+                  option.name.toLowerCase().includes(geoidSearch.toLowerCase()) ||
+                  (option.description && option.description.toLowerCase().includes(geoidSearch.toLowerCase()))
+                )
+                .map((option) => (
+                  <div
+                    key={option.code}
+                    className={`flex items-start gap-3 p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                      formData.crs?.geoidModel === option.code ? "bg-blue-50" : ""
+                    }`}
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        crs: { ...prev.crs!, geoidModel: option.code }
+                      }));
+                      setGeoidOpen(false);
+                      setGeoidSearch("");
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mt-1 h-4 w-4 text-green-600",
+                        formData.crs?.geoidModel === option.code ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    <div className="flex flex-col items-start min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          {option.code}
+                        </span>
+                        {option.recommended && (
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium">
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-sm font-medium text-gray-900 mb-1">
+                        {option.name}
+                      </div>
+                      {option.description && (
+                        <div className="text-xs text-gray-500 leading-relaxed">
+                          {option.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
             )}
           </div>
         )}
@@ -499,202 +593,173 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Create New Project" : "Edit Project"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="jobNumber">Job Number *</Label>
-              <Input
-                id="jobNumber"
-                value={formData.jobNumber}
-                onChange={(e) => setFormData(prev => ({ ...prev, jobNumber: e.target.value }))}
-                required
-                disabled={mode === "edit"}
-              />
-            </div>
-            <div>
-              <Label htmlFor="projectName">Project Name *</Label>
-              <Input
-                id="projectName"
-                value={formData.projectName}
-                onChange={(e) => setFormData(prev => ({ ...prev, projectName: e.target.value }))}
-                required
-              />
-            </div>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="jobNumber">Job Number</Label>
+                <Input
+                  id="jobNumber"
+                  name="jobNumber"
+                  value={formData.jobNumber}
+                  onChange={handleInputChange}
+                  required
+                  disabled={mode === "edit"}
+                />
+              </div>
 
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              rows={3}
-            />
-          </div>
+              <div>
+                <Label htmlFor="projectName">Project Name</Label>
+                <Input
+                  id="projectName"
+                  name="projectName"
+                  value={formData.projectName}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="clientName">Client</Label>
-              <Input
-                id="clientName"
-                value={formData.clientName}
-                onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="acquistionDate">Acquisition Date</Label>
-              <Input
-                id="acquistionDate"
-                type="date"
-                value={formData.acquistionDate ? new Date(formData.acquistionDate).toISOString().split('T')[0] : ""}
-                onChange={(e) => setFormData(prev => ({ ...prev, acquistionDate: e.target.value ? new Date(e.target.value).toISOString() : "" }))}
-              />
-            </div>
-          </div>
+              <div>
+                <Label htmlFor="clientName">Client Name</Label>
+                <Input
+                  id="clientName"
+                  name="clientName"
+                  value={formData.clientName}
+                  onChange={handleInputChange}
+                />
+              </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <Label htmlFor="projectType">Project Type</Label>
-              <Select
-                value={formData.projectType}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, projectType: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="survey">Survey</SelectItem>
-                  <SelectItem value="construction">Construction</SelectItem>
-                  <SelectItem value="inspection">Inspection</SelectItem>
-                  <SelectItem value="mapping">Mapping</SelectItem>
-                  <SelectItem value="monitoring">Monitoring</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+              <div>
+                <Label htmlFor="projectType">Project Type</Label>
+                <Select
+                  value={formData.projectType}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, projectType: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select project type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="survey">Survey</SelectItem>
+                    <SelectItem value="mapping">Mapping</SelectItem>
+                    <SelectItem value="inspection">Inspection</SelectItem>
+                    <SelectItem value="monitoring">Monitoring</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Location</h3>
-            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="acquistionDate">Acquisition Date</Label>
+                <Input
+                  id="acquistionDate"
+                  name="acquistionDate"
+                  type="date"
+                  value={formData.acquistionDate ? new Date(formData.acquistionDate).toISOString().split('T')[0] : ""}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label>Tags</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {formData.tags?.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                      {tag}
+                      <X
+                        className="h-3 w-3 cursor-pointer"
+                        onClick={() => handleRemoveTag(tag)}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
+                    placeholder="Add a tag"
+                  />
+                  <Button type="button" onClick={handleAddTag} variant="outline">
+                    Add
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
               <div>
                 <Label htmlFor="latitude">Latitude</Label>
                 <Input
                   id="latitude"
+                  name="latitude"
                   type="number"
-                  step="any"
-                  value={formData.location?.latitude || ""}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    location: { ...prev.location!, latitude: parseFloat(e.target.value) || 0 }
-                  }))}
+                  step="0.000001"
+                  value={formData.location?.latitude || 0}
+                  onChange={handleLocationChange}
                 />
               </div>
+
               <div>
                 <Label htmlFor="longitude">Longitude</Label>
                 <Input
                   id="longitude"
+                  name="longitude"
                   type="number"
-                  step="any"
-                  value={formData.location?.longitude || ""}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    location: { ...prev.location!, longitude: parseFloat(e.target.value) || 0 }
-                  }))}
+                  step="0.000001"
+                  value={formData.location?.longitude || 0}
+                  onChange={handleLocationChange}
                 />
               </div>
+
               <div>
                 <Label htmlFor="address">Address</Label>
                 <Input
                   id="address"
+                  name="address"
                   value={formData.location?.address || ""}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    location: { ...prev.location!, address: e.target.value }
-                  }))}
+                  onChange={handleLocationChange}
                 />
               </div>
-            </div>
-          </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Coordinate Reference System</h3>
-              {crsLoading && (
-                <div className="flex items-center text-sm text-gray-500">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Loading CRS options...
+              {crsError && (
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-md text-sm">
+                  {crsError}
                 </div>
               )}
-            </div>
 
-            {crsError && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                <p className="text-sm text-yellow-800">{crsError}</p>
-              </div>
-            )}
-            
-            {renderHorizontalCRSSelect()}
-
-            {renderCRSSelect(
-              "Vertical CRS",
-              crsOptions.vertical,
-              formData.crs?.vertical,
-              (value) => setFormData(prev => ({
-                ...prev,
-                crs: { ...prev.crs!, vertical: value }
-              })),
-              verticalSearch,
-              setVerticalSearch,
-              verticalOpen,
-              setVerticalOpen
-            )}
-
-            {renderCRSSelect(
-              "Geoid Model",
-              crsOptions.geoid,
-              formData.crs?.geoidModel,
-              (value) => setFormData(prev => ({
-                ...prev,
-                crs: { ...prev.crs!, geoidModel: value }
-              })),
-              geoidSearch,
-              setGeoidSearch,
-              geoidOpen,
-              setGeoidOpen
-            )}
-          </div>
-
-          <div>
-            <Label>Tags</Label>
-            <div className="flex gap-2 mb-2">
-              <Input
-                placeholder="Add tag..."
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-              />
-              <Button type="button" onClick={addTag} variant="outline">
-                Add
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {formData.tags?.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                  {tag}
-                  <X
-                    className="h-3 w-3 cursor-pointer"
-                    onClick={() => removeTag(tag)}
-                  />
-                </Badge>
-              ))}
+              {crsLoading ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  <span>Loading coordinate systems...</span>
+                </div>
+              ) : (
+                <>
+                  {renderHorizontalCRSSelect()}
+                  {renderVerticalCRSSelect()}
+                  {renderGeoidModelSelect()}
+                </>
+              )}
             </div>
           </div>
 
@@ -702,8 +767,8 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" className="bg-hwc-red hover:bg-hwc-red/90">
-              {mode === "create" ? "Create Project" : "Update Project"}
+            <Button type="submit">
+              {mode === "create" ? "Create Project" : "Save Changes"}
             </Button>
           </DialogFooter>
         </form>
