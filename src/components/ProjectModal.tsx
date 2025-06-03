@@ -122,13 +122,14 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     setCrsError(null);
     
     try {
-      const options = await crsService.getAllCRSOptions();
+      // Use only fallback options - no API calls needed
+      const fallback = crsService.getFallbackCRS();
       
-      // Use Indiana data for horizontal CRS, API data for vertical and geoid
+      // Use Indiana data for horizontal CRS, fallback data for vertical and geoid
       setCrsOptions({
         horizontal: indianaCRSOptions,
-        vertical: options.vertical,
-        geoid: options.geoid
+        vertical: fallback.vertical,
+        geoid: fallback.geoid
       });
     } catch (error) {
       console.error("Failed to load CRS options:", error);
@@ -603,11 +604,17 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" aria-describedby="project-modal-description">
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Create New Project" : "Edit Project"}
           </DialogTitle>
+          <div id="project-modal-description" className="sr-only">
+            {mode === "create" 
+              ? "Form to create a new project with details like job number, name, location, and coordinate reference system"
+              : "Form to edit existing project details including name, location, and coordinate reference system"
+            }
+          </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
