@@ -6,6 +6,7 @@ import { Eye, Edit, Trash2, Layers } from "lucide-react";
 import { Project } from "@/types/project";
 import { useRouter } from "next/router";
 import { transformProjectLocation } from "@/services/coordinateTransformService";
+import indianaData from "@/data/Indiana.json";
 
 interface ProjectMapProps {
   projects: Project[];
@@ -89,15 +90,65 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
       console.log("Transforming project coordinates...");
       const transformed = await Promise.all(
         projects.map(async (project) => {
+          // If the project has no location or CRS, use the center of Indiana as a fallback
+          if (!project.location || !project.crs?.horizontal) {
+            console.log(`Project ${project.jobNumber} has no location or CRS, using fallback`);
+            return {
+              ...project,
+              transformedLocation: {
+                latitude: 39.7684,
+                longitude: -86.1581
+              }
+            };
+          }
+          
+          // If the coordinates are already in a reasonable geographic range, use them directly
+          if (project.location.latitude > -90 && project.location.latitude < 90 &&
+              project.location.longitude > -180 && project.location.longitude < 180 &&
+              Math.abs(project.location.latitude) > 0.01 && Math.abs(project.location.longitude) > 0.01) {
+            console.log(`Project ${project.jobNumber} already has geographic coordinates`);
+            return {
+              ...project,
+              transformedLocation: project.location
+            };
+          }
+          
+          // Otherwise, try to transform the coordinates
           const transformedLocation = await transformProjectLocation(project);
+          
+          // If transformation failed, try to use the center of the CRS bbox as a fallback
+          if (!transformedLocation && project.crs?.horizontal) {
+            const crsCode = project.crs.horizontal;
+            const crsData = indianaData.find(item => `${item.id.authority}:${item.id.code}` === crsCode);
+            
+            if (crsData && crsData.bbox) {
+              const [minLon, minLat, maxLon, maxLat] = crsData.bbox;
+              const centerLat = (minLat + maxLat) / 2;
+              const centerLon = (minLon + maxLon) / 2;
+              
+              console.log(`Using CRS bbox center for ${project.jobNumber}: [${centerLat}, ${centerLon}]`);
+              return {
+                ...project,
+                transformedLocation: {
+                  latitude: centerLat,
+                  longitude: centerLon
+                }
+              };
+            }
+          }
+          
           console.log(`Project ${project.jobNumber}:`, {
             original: project.location,
             crs: project.crs?.horizontal,
             transformed: transformedLocation
           });
+          
           return {
             ...project,
-            transformedLocation
+            transformedLocation: transformedLocation || {
+              latitude: 39.7684,  // Default to center of Indiana if transformation fails
+              longitude: -86.1581
+            }
           };
         })
       );

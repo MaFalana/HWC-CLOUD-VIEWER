@@ -1,5 +1,8 @@
+
 // Coordinate transformation service for converting between different CRS
 // Primarily for converting InGCS county coordinates to WGS84 for web mapping
+
+import indianaData from "@/data/Indiana.json";
 
 interface TransformationParams {
   fromCRS: string;
@@ -80,6 +83,22 @@ const INDIANA_TRANSFORMATIONS: Record<string, {
     falseEasting: 240000,
     falseNorthing: 36000,
     scaleFactor: 1.000013
+  },
+  // Indiana East - EPSG:6459
+  "EPSG:6459": {
+    centralMeridian: -85.5,
+    latitudeOfOrigin: 40.0,
+    falseEasting: 240000,
+    falseNorthing: 36000,
+    scaleFactor: 1.000013
+  },
+  // Indiana West - EPSG:6461
+  "EPSG:6461": {
+    centralMeridian: -86.5,
+    latitudeOfOrigin: 39.5,
+    falseEasting: 240000,
+    falseNorthing: 36000,
+    scaleFactor: 1.000013
   }
 };
 
@@ -125,6 +144,34 @@ const inverseTransverseMercator = (
   return [toDegrees(lat), toDegrees(lon)];
 };
 
+// Get transformation parameters for a given CRS code
+const getTransformationParams = (crsCode: string): typeof INDIANA_TRANSFORMATIONS[string] | null => {
+  // First check our predefined transformations
+  if (INDIANA_TRANSFORMATIONS[crsCode]) {
+    return INDIANA_TRANSFORMATIONS[crsCode];
+  }
+  
+  // If not found, try to find it in the Indiana data
+  const crsData = indianaData.find(item => `${item.id.authority}:${item.id.code}` === crsCode);
+  if (crsData) {
+    // Use the bbox to approximate the central meridian and latitude of origin
+    const [minLon, minLat, maxLon, maxLat] = crsData.bbox;
+    const centralMeridian = (minLon + maxLon) / 2;
+    const latitudeOfOrigin = (minLat + maxLat) / 2;
+    
+    // Use standard values for other parameters
+    return {
+      centralMeridian,
+      latitudeOfOrigin,
+      falseEasting: 240000, // Standard for Indiana
+      falseNorthing: 36000, // Standard for Indiana
+      scaleFactor: 1.000013 // Standard for Indiana
+    };
+  }
+  
+  return null;
+};
+
 // Check if coordinates appear to be in a projected coordinate system
 const isProjectedCoordinates = (lat: number, lon: number): boolean => {
   // If coordinates are very large (> 1000), they're likely projected coordinates
@@ -140,42 +187,59 @@ export const transformCoordinates = async (params: TransformationParams): Promis
   console.log(`Transforming coordinates from ${fromCRS} to ${toCRS}:`, coordinates);
   
   // If target is WGS84 and source is an Indiana county system
-  if (toCRS === "EPSG:4326" && INDIANA_TRANSFORMATIONS[fromCRS]) {
-    const transformParams = INDIANA_TRANSFORMATIONS[fromCRS];
+  if (toCRS === "EPSG:4326") {
+    const transformParams = getTransformationParams(fromCRS);
     
-    // Check if coordinates look like projected coordinates
-    if (isProjectedCoordinates(x, y)) {
-      console.log("Coordinates appear to be projected, transforming...");
-      const [lat, lon] = inverseTransverseMercator(x, y, transformParams);
-      
-      console.log(`Transformed coordinates: [${lat}, ${lon}]`);
-      
-      return {
-        latitude: lat,
-        longitude: lon,
-        originalX: x,
-        originalY: y,
-        fromCRS,
-        toCRS
-      };
-    } else {
-      console.log("Coordinates appear to already be geographic, using as-is");
-      return {
-        latitude: x,
-        longitude: y,
-        originalX: x,
-        originalY: y,
-        fromCRS,
-        toCRS
-      };
+    if (transformParams) {
+      // Check if coordinates look like projected coordinates
+      if (isProjectedCoordinates(x, y)) {
+        console.log("Coordinates appear to be projected, transforming...");
+        const [lat, lon] = inverseTransverseMercator(x, y, transformParams);
+        
+        console.log(`Transformed coordinates: [${lat}, ${lon}]`);
+        
+        return {
+          latitude: lat,
+          longitude: lon,
+          originalX: x,
+          originalY: y,
+          fromCRS,
+          toCRS
+        };
+      } else {
+        console.log("Coordinates appear to already be geographic, using as-is");
+        return {
+          latitude: x,
+          longitude: y,
+          originalX: x,
+          originalY: y,
+          fromCRS,
+          toCRS
+        };
+      }
     }
   }
   
   // If no transformation is needed or available, return coordinates as-is
-  console.log("No transformation available, using coordinates as-is");
+  console.log("No transformation available or needed, using coordinates as-is");
+  
+  // If coordinates are already in a reasonable geographic range, use them directly
+  if (!isProjectedCoordinates(x, y)) {
+    return {
+      latitude: x,
+      longitude: y,
+      originalX: x,
+      originalY: y,
+      fromCRS,
+      toCRS
+    };
+  }
+  
+  // For projected coordinates without a known transformation, use the center of Indiana as a fallback
+  console.log("Using fallback coordinates for Indiana");
   return {
-    latitude: x,
-    longitude: y,
+    latitude: 39.7684,
+    longitude: -86.1581,
     originalX: x,
     originalY: y,
     fromCRS,
@@ -201,10 +265,21 @@ export const transformProjectLocation = async (project: {
   }
   
   try {
+    // Check if coordinates are already in a reasonable geographic range
+    if (!isProjectedCoordinates(latitude, longitude)) {
+      console.log(`Project coordinates already in geographic range: [${latitude}, ${longitude}]`);
+      return { latitude, longitude };
+    }
+    
     const transformed = await transformCoordinates({
       fromCRS: horizontalCRS,
       toCRS: "EPSG:4326",
       coordinates: [latitude, longitude]
+    });
+    
+    console.log(`Transformed project coordinates from ${horizontalCRS} to EPSG:4326:`, {
+      from: [latitude, longitude],
+      to: [transformed.latitude, transformed.longitude]
     });
     
     return {
@@ -213,7 +288,20 @@ export const transformProjectLocation = async (project: {
     };
   } catch (error) {
     console.error("Error transforming coordinates:", error);
-    return { latitude, longitude }; // Fallback to original coordinates
+    
+    // If transformation fails, use the center of the CRS bbox as a fallback
+    const crsData = indianaData.find(item => `${item.id.authority}:${item.id.code}` === horizontalCRS);
+    if (crsData && crsData.bbox) {
+      const [minLon, minLat, maxLon, maxLat] = crsData.bbox;
+      const centerLat = (minLat + maxLat) / 2;
+      const centerLon = (minLon + maxLon) / 2;
+      
+      console.log(`Using CRS bbox center as fallback: [${centerLat}, ${centerLon}]`);
+      return { latitude: centerLat, longitude: centerLon };
+    }
+    
+    // Last resort fallback to original coordinates
+    return { latitude, longitude };
   }
 };
 
