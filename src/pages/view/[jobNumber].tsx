@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Menu, X, MapPin, Info } from "lucide-react";
 import { Project } from "@/types/project";
 import { potreeLocationService } from "@/services/potreeLocationService";
+import { projectService } from "@/services/projectService";
 
 export default function PotreeViewer() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function PotreeViewer() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   
   // Backend URL for point cloud data
-  const BACKEND_URL = "http://localhost:4400";
+  const BACKEND_URL = "http://localhost:5000";
   
   useEffect(() => {
     // Print the backend URL in the console log
@@ -36,14 +37,26 @@ export default function PotreeViewer() {
     const fetchProjectData = async () => {
       try {
         setLoadingProgress(10);
+        
+        // First, try to get the project data from MongoDB using projectService
+        let mongoProjectData: Project | null = null;
+        try {
+          mongoProjectData = await projectService.getProject(jobNumber);
+          console.log("MongoDB project data:", mongoProjectData);
+        } catch (error) {
+          console.log("Failed to fetch project data from MongoDB:", error);
+        }
+        
+        // Next, get the Potree project data
         const potreeProjectData = await potreeLocationService.getProjectInfo(jobNumber);
         
+        // Create a base project data object
         let projectData: Partial<Project> = {
           jobNumber: jobNumber as string,
           projectName: `Project ${jobNumber}`,
           clientName: "Demo Client",
           acquistionDate: new Date().toISOString(),
-          description: "Demo project for testing Potree viewer",
+          description: "Point cloud project",
           status: "active" as const,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -57,30 +70,17 @@ export default function PotreeViewer() {
           }
         };
 
-        // Merge Potree data if available
-        if (potreeProjectData) {
+        // Merge data in priority order: MongoDB data (highest priority), then Potree data
+        if (mongoProjectData) {
+          projectData = { ...projectData, ...mongoProjectData };
+          console.log("Using MongoDB project data:", projectData);
+        } else if (potreeProjectData) {
           projectData = { ...projectData, ...potreeProjectData };
           console.log("Using Potree project data:", projectData);
         }
 
         setProject(projectData as Project);
         setProjectName(projectData.projectName || "");
-        setLoadingProgress(30);
-
-        // Try to fetch project info from API
-        try {
-          const res = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/info.json`);
-          if (res.ok) {
-            const data = await res.json();
-            console.log("Project data:", data);
-            setProjectName(data.projectName);
-            projectData = { ...projectData, ...data };
-            setProject(projectData as Project);
-          }
-        } catch (error) {
-          console.log("No project info found, using extracted data");
-        }
-
         setLoadingProgress(50);
 
         // Set up message listener for iframe communication
