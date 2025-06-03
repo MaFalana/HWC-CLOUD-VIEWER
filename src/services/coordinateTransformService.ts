@@ -19,6 +19,9 @@ interface TransformedCoordinates {
   toCRS: string;
 }
 
+// MapTiler API for coordinate transformations
+const MAPTILER_API_URL = "https://api.maptiler.com/coordinates/transform";
+
 // Indiana State Plane coordinate system transformations
 // These are approximate transformations for common Indiana county systems
 const INDIANA_TRANSFORMATIONS: Record<string, {
@@ -177,6 +180,49 @@ const isProjectedCoordinates = (lat: number, lon: number): boolean => {
   return Math.abs(lat) > 1000 || Math.abs(lon) > 1000;
 };
 
+// Transform coordinates using MapTiler API
+const transformWithMapTiler = async (
+  fromCRS: string,
+  toCRS: string,
+  coordinates: [number, number]
+): Promise<{ latitude: number; longitude: number } | null> => {
+  try {
+    // Extract EPSG code number from the full code (e.g., "EPSG:7366" -> "7366")
+    const sourceCRS = fromCRS.split(":")[1];
+    const targetCRS = toCRS.split(":")[1] || "4326"; // Default to WGS84 if not specified
+    
+    // For Vanderburgh County example: https://api.maptiler.com/coordinates/transform/{{lon,lat}}.json?s_srs=7366&t_srs=4326
+    const [x, y] = coordinates;
+    
+    // Construct the URL - note that for projected coordinates, we need to swap x and y
+    // MapTiler expects [lon, lat] or [easting, northing]
+    const url = `${MAPTILER_API_URL}/${y},${x}.json?s_srs=${sourceCRS}&t_srs=${targetCRS}`;
+    
+    console.log(`Calling MapTiler API: ${url}`);
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`MapTiler API error: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log("MapTiler API response:", data);
+    
+    // MapTiler returns [lon, lat], but we want [lat, lon]
+    if (data && Array.isArray(data) && data.length >= 2) {
+      return {
+        latitude: data[1],  // lat is second in the response
+        longitude: data[0]  // lon is first in the response
+      };
+    }
+    
+    throw new Error("Invalid response format from MapTiler API");
+  } catch (error) {
+    console.error("Error using MapTiler API:", error);
+    return null;
+  }
+};
+
 // Transform coordinates from one CRS to another
 export const transformCoordinates = async (params: TransformationParams): Promise<TransformedCoordinates> => {
   const { fromCRS, toCRS, coordinates } = params;
@@ -186,6 +232,26 @@ export const transformCoordinates = async (params: TransformationParams): Promis
   
   // If target is WGS84 and source is an Indiana county system
   if (toCRS === "EPSG:4326") {
+    // First try MapTiler API for accurate transformation
+    try {
+      const maptilerResult = await transformWithMapTiler(fromCRS, toCRS, coordinates);
+      if (maptilerResult) {
+        console.log(`MapTiler transformed coordinates: [${maptilerResult.latitude}, ${maptilerResult.longitude}]`);
+        
+        return {
+          latitude: maptilerResult.latitude,
+          longitude: maptilerResult.longitude,
+          originalX: x,
+          originalY: y,
+          fromCRS,
+          toCRS
+        };
+      }
+    } catch (error) {
+      console.error("MapTiler transformation failed, falling back to local transformation:", error);
+    }
+    
+    // Fall back to local transformation if MapTiler fails
     const transformParams = getTransformationParams(fromCRS);
     
     if (transformParams) {
@@ -267,6 +333,21 @@ export const transformProjectLocation = async (project: {
     if (!isProjectedCoordinates(latitude, longitude)) {
       console.log(`Project coordinates already in geographic range: [${latitude}, ${longitude}]`);
       return { latitude, longitude };
+    }
+    
+    // Try MapTiler API first for accurate transformation
+    try {
+      const maptilerResult = await transformWithMapTiler(horizontalCRS, "EPSG:4326", [latitude, longitude]);
+      if (maptilerResult) {
+        console.log(`MapTiler transformed project coordinates from ${horizontalCRS} to EPSG:4326:`, {
+          from: [latitude, longitude],
+          to: [maptilerResult.latitude, maptilerResult.longitude]
+        });
+        
+        return maptilerResult;
+      }
+    } catch (error) {
+      console.error("MapTiler transformation failed, falling back to local transformation:", error);
     }
     
     // Find the CRS data in Indiana.json
