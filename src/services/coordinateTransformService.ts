@@ -329,36 +329,48 @@ export const transformProjectLocation = async (project: {
   }
   
   try {
-    // Check if coordinates are already in a reasonable geographic range
-    if (Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180 &&
-        Math.abs(latitude) > 0.01 && Math.abs(longitude) > 0.01) {
-      console.log(`Project coordinates already in geographic range: [${latitude}, ${longitude}]`);
-      return { latitude, longitude };
-    }
+    // For county coordinate systems (InGCS), coordinates are typically very large projected values
+    // Check if coordinates are projected (large numbers indicating county coordinates)
+    const isProjected = Math.abs(latitude) > 1000 || Math.abs(longitude) > 1000;
     
-    // For projected coordinates (large numbers), try MapTiler API transformation
-    if (Math.abs(latitude) > 1000 || Math.abs(longitude) > 1000) {
-      console.log(`Detected projected coordinates, attempting transformation via MapTiler API`);
+    if (isProjected) {
+      console.log(`Detected county/projected coordinates, attempting transformation via MapTiler API`);
       
       try {
-        // For projected coordinates, the order is typically easting (x), northing (y)
-        // In our case, longitude is easting and latitude is northing
-        const maptilerResult = await transformWithMapTiler(horizontalCRS, "EPSG:4326", [longitude, latitude]);
+        // For county coordinates, try both coordinate orders to see which works
+        // First try: longitude (easting), latitude (northing) - typical for projected systems
+        let maptilerResult = await transformWithMapTiler(horizontalCRS, "EPSG:4326", [longitude, latitude]);
+        
+        // If that doesn't work or gives invalid results, try the reverse order
+        if (!maptilerResult || Math.abs(maptilerResult.latitude) > 90 || Math.abs(maptilerResult.longitude) > 180) {
+          console.log("First coordinate order failed, trying reverse order");
+          maptilerResult = await transformWithMapTiler(horizontalCRS, "EPSG:4326", [latitude, longitude]);
+        }
+        
         if (maptilerResult) {
-          console.log(`MapTiler transformed project coordinates from ${horizontalCRS} to EPSG:4326:`, {
+          console.log(`MapTiler transformed county coordinates from ${horizontalCRS} to EPSG:4326:`, {
             from: [longitude, latitude],
             to: [maptilerResult.longitude, maptilerResult.latitude]
           });
           
-          // Validate the transformed coordinates are reasonable
-          if (Math.abs(maptilerResult.latitude) <= 90 && Math.abs(maptilerResult.longitude) <= 180) {
+          // Validate the transformed coordinates are reasonable for Indiana
+          if (Math.abs(maptilerResult.latitude) <= 90 && Math.abs(maptilerResult.longitude) <= 180 &&
+              maptilerResult.latitude > 35 && maptilerResult.latitude < 45 &&
+              maptilerResult.longitude > -90 && maptilerResult.longitude < -80) {
             return maptilerResult;
           } else {
-            console.warn("MapTiler returned invalid coordinates:", maptilerResult);
+            console.warn("MapTiler returned coordinates outside Indiana bounds:", maptilerResult);
           }
         }
       } catch (error) {
         console.error("MapTiler transformation failed:", error);
+      }
+    } else {
+      // Check if coordinates are already in a reasonable geographic range
+      if (Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180 &&
+          Math.abs(latitude) > 0.01 && Math.abs(longitude) > 0.01) {
+        console.log(`Project coordinates already in geographic range: [${latitude}, ${longitude}]`);
+        return { latitude, longitude };
       }
     }
     
