@@ -55,6 +55,9 @@ interface PotreeCloudJs {
   coordinateSystem?: string;
 }
 
+// Backend URL for point cloud data
+const BACKEND_URL = "http://localhost:5000";
+
 export const potreeLocationService = {
   /**
    * Extract location data from world file
@@ -67,7 +70,7 @@ export const potreeLocationService = {
       
       for (const ext of worldFileExtensions) {
         try {
-          const response = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}${ext}`);
+          const response = await fetch(`${BACKEND_URL}/pointclouds/${jobNumber}/${jobNumber}${ext}`);
           if (response.ok) {
             const content = await response.text();
             worldFileData = worldFileService.parseWorldFile(content);
@@ -170,8 +173,6 @@ export const potreeLocationService = {
    */
   async extractLocationFromPotree(jobNumber: string): Promise<Partial<Project> | null> {
     try {
-      const baseUrl = "http://localhost:4400/pointclouds/";
-      
       // Try to fetch world file first (highest priority)
       try {
         const worldFileData = await this.extractLocationFromWorldFile(jobNumber);
@@ -196,7 +197,7 @@ export const potreeLocationService = {
       
       // Try to fetch sources.json next (prioritize this for county coordinates)
       try {
-        const sourcesResponse = await fetch(`${baseUrl}${jobNumber}/sources.json`);
+        const sourcesResponse = await fetch(`${BACKEND_URL}/pointclouds/${jobNumber}/sources.json`);
         if (sourcesResponse.ok) {
           console.log("Found sources.json, extracting data...");
           const sourcesData = await sourcesResponse.json();
@@ -225,7 +226,7 @@ export const potreeLocationService = {
       // Try to fetch metadata.json next
       let metadata: PotreeMetadata | null = null;
       try {
-        const metadataResponse = await fetch(`${baseUrl}${jobNumber}/metadata.json`);
+        const metadataResponse = await fetch(`${BACKEND_URL}/pointclouds/${jobNumber}/metadata.json`);
         if (metadataResponse.ok) {
           metadata = await metadataResponse.json();
           console.log("Found Potree metadata.json:", metadata);
@@ -239,7 +240,7 @@ export const potreeLocationService = {
       // If no metadata.json, try cloud.js
       if (!metadata) {
         try {
-          const cloudJsResponse = await fetch(`${baseUrl}${jobNumber}/cloud.js`);
+          const cloudJsResponse = await fetch(`${BACKEND_URL}/pointclouds/${jobNumber}/cloud.js`);
           if (cloudJsResponse.ok) {
             const cloudJsText = await cloudJsResponse.text();
             // Parse cloud.js content (it's usually a JavaScript assignment)
