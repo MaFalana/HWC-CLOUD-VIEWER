@@ -307,6 +307,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     console.log("Options to show:", optionsToShow.length);
     console.log("Horizontal search:", horizontalSearch);
     console.log("Horizontal open:", horizontalOpen);
+    console.log("Indiana CRS options available:", indianaCRSOptions.length);
     
     const selectedOption = indianaCRSOptions.find(opt => opt.code === formData.crs?.horizontal);
 
