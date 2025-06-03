@@ -56,7 +56,7 @@ export default function Dashboard() {
               address: "Washington & Lawndale, Indianapolis, IN"
             },
             crs: {
-              horizontal: "EPSG:3613",
+              horizontal: "EPSG:7328",
               vertical: "EPSG:6360",
               geoidModel: "GEOID18"
             },
@@ -78,7 +78,7 @@ export default function Dashboard() {
               address: "Downtown Indianapolis, IN"
             },
             crs: {
-              horizontal: "EPSG:2965",
+              horizontal: "EPSG:7328",
               vertical: "EPSG:6360",
               geoidModel: "GEOID18"
             },
@@ -100,7 +100,7 @@ export default function Dashboard() {
               address: "Peabody West, Indianapolis, IN"
             },
             crs: {
-              horizontal: "EPSG:3580",
+              horizontal: "EPSG:7328",
               vertical: "EPSG:6360",
               geoidModel: "GEOID18"
             },
@@ -122,7 +122,7 @@ export default function Dashboard() {
               address: "I-465 & US-31, Indianapolis, IN"
             },
             crs: {
-              horizontal: "EPSG:2966",
+              horizontal: "EPSG:7328",
               vertical: "EPSG:6360",
               geoidModel: "GEOID18"
             },
@@ -144,7 +144,7 @@ export default function Dashboard() {
               address: "Downtown Evansville, IN"
             },
             crs: {
-              horizontal: "EPSG:3613",
+              horizontal: "EPSG:7366",
               vertical: "EPSG:6360",
               geoidModel: "GEOID18"
             },
@@ -161,12 +161,12 @@ export default function Dashboard() {
             updatedAt: new Date("2024-11-05"),
             projectType: "mapping",
             location: {
-              latitude: 41.0793,
-              longitude: -85.1394,
+              latitude: 1234567.89,
+              longitude: 987654.32,
               address: "Fort Wayne, IN"
             },
             crs: {
-              horizontal: "EPSG:3533",
+              horizontal: "EPSG:7366",
               vertical: "EPSG:6360",
               geoidModel: "GEOID18"
             },
@@ -188,7 +188,7 @@ export default function Dashboard() {
               address: "Notre Dame, South Bend, IN"
             },
             crs: {
-              horizontal: "EPSG:3607",
+              horizontal: "EPSG:7300",
               vertical: "EPSG:6360",
               geoidModel: "GEOID18"
             },
@@ -210,7 +210,7 @@ export default function Dashboard() {
               address: "Downtown Bloomington, IN"
             },
             crs: {
-              horizontal: "EPSG:3584",
+              horizontal: "EPSG:7338",
               vertical: "EPSG:6360",
               geoidModel: "GEOID18"
             },
