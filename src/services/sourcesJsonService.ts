@@ -15,17 +15,18 @@ interface SourcesFile {
   }[];
 }
 
+// Backend URL for point cloud data
+const BACKEND_URL = "http://localhost:5000";
+
 export const sourcesJsonService = {
   /**
    * Extract location data from sources.json file
    */
   async extractLocationFromSourcesJson(jobNumber: string): Promise<Partial<Project> | null> {
     try {
-      const baseUrl = "http://localhost:4400/pointclouds/";
-      
       // Try to fetch sources.json
       try {
-        const sourcesResponse = await fetch(`${baseUrl}${jobNumber}/sources.json`);
+        const sourcesResponse = await fetch(`${BACKEND_URL}/pointclouds/${jobNumber}/sources.json`);
         if (sourcesResponse.ok) {
           const sourcesData: SourcesFile = await sourcesResponse.json();
           console.log("Found sources.json:", sourcesData);
