@@ -65,11 +65,11 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   });
 
   // Convert Indiana.json data to CRSOption format
-  const indianaCRSOptions: CRSOption[] = indianaData.results.map(item => ({
+  const indianaCRSOptions: CRSOption[] = (indianaData?.results || []).map(item => ({
     code: `${item.id.authority}:${item.id.code}`,
     name: item.name,
     type: "horizontal", // All Indiana CRS options are horizontal
-    description: item.area || "",
+    description: "",
     recommended: false,
     bbox: item.bbox as [number, number, number, number]
   }));
