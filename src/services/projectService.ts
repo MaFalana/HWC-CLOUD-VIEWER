@@ -39,7 +39,12 @@ interface RawProjectData {
 
 export const projectService = {
   async getAllProjects(): Promise<Project[]> {
-    const response = await fetch(`${API_BASE_URL}/view`);
+    const response = await fetch(`${API_BASE_URL}/view`, {
+  method: 'GET',
+  credentials: 'include' // or 'same-origin' if using cookies
+});
+
+    
     if (!response.ok) {
       throw new Error("Failed to fetch projects");
     }
