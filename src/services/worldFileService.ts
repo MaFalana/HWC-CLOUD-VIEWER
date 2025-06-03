@@ -49,7 +49,7 @@ export const worldFileService = {
    */
   async fetchWorldFile(jobNumber: string): Promise<WorldFileData | null> {
     try {
-      const response = await fetch(`http://localhost:5000/pointclouds/${jobNumber}/${jobNumber}.tfw`);
+      const response = await fetch(`https://hwc-backend-server.vercel.app/pointclouds/${jobNumber}/${jobNumber}.tfw`);
       if (!response.ok) {
         console.log(`No .tfw file found for job ${jobNumber}`);
         return null;
