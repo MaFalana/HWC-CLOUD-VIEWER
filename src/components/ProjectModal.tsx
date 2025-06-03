@@ -66,9 +66,9 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   // Convert Indiana.json data to CRSOption format - memoized to prevent recreation
   const indianaCRSOptions: CRSOption[] = useMemo(() => {
     console.log("Indiana data:", indianaData);
-    console.log("Indiana results:", indianaData?.results?.length);
+    console.log("Indiana data length:", indianaData?.length);
     
-    const options = (indianaData?.results || []).map(item => ({
+    const options = indianaData.map(item => ({
       code: `${item.id.authority}:${item.id.code}`,
       name: item.name,
       type: "horizontal" as const,
@@ -621,6 +621,28 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
       </div>
     );
   };
+
+  const loadIndianaOptions = useCallback(async () => {
+    try {
+      console.log("Loading Indiana options from local data...");
+      console.log("Raw Indiana data:", indianaData);
+      
+      const formattedOptions = indianaData.map((item: any) => ({
+        value: `EPSG:${item.id.code}`,
+        label: `${item.name} (EPSG:${item.id.code})`,
+        name: item.name,
+        code: item.id.code
+      }));
+      
+      console.log("Formatted Indiana options:", formattedOptions);
+      console.log("Number of Indiana options:", formattedOptions.length);
+      
+      setIndianaOptions(formattedOptions);
+    } catch (error) {
+      console.error("Error loading Indiana options:", error);
+      setIndianaOptions([]);
+    }
+  }, []);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
