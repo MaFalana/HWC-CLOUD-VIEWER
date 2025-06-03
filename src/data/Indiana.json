@@ -11,6 +11,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6461
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -25,6 +29,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6459
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -39,6 +47,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7258
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -53,6 +65,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7260
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -67,6 +83,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7262
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -81,6 +101,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7264
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -95,6 +119,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7270
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -109,6 +137,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7272
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -123,6 +155,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7274
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -137,6 +173,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7278
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -151,6 +191,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7280
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -165,6 +209,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7290
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -179,6 +227,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7302
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -193,6 +245,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7304
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -207,6 +263,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7312
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -221,6 +281,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7318
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -235,6 +299,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7322
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -249,6 +317,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7324
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -263,6 +335,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7326
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -277,6 +353,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7330
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -291,6 +371,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7342
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -305,6 +389,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7346
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -319,6 +407,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7350
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -333,6 +425,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7354
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -347,6 +443,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7356
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -361,6 +461,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7358
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -375,6 +479,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7360
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -389,6 +497,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7362
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -403,6 +515,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7366
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -417,6 +533,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7368
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -431,6 +551,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7370
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -445,6 +569,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7266
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -459,6 +587,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7268
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -473,6 +605,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7284
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -487,6 +623,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7288
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -501,6 +641,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7292
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -515,6 +659,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7298
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -529,6 +677,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7306
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -543,6 +695,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7308
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -557,6 +713,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7310
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -571,6 +731,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7314
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -585,6 +749,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7316
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -599,6 +767,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7320
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -613,6 +785,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7328
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -627,6 +803,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7332
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -641,6 +821,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7334
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -655,6 +839,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7338
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -669,6 +857,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7340
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -683,6 +875,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7344
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -697,6 +893,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7348
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -711,6 +911,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7352
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -725,6 +929,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7364
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -739,6 +947,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7276
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -753,6 +965,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7282
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -767,6 +983,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7286
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -781,6 +1001,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7294
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -795,6 +1019,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7296
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -809,6 +1037,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7336
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -823,6 +1055,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7300
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -837,6 +1073,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6565
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -851,6 +1091,10 @@
     "id": {
       "authority": "EPSG",
       "code": 9748
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -865,6 +1109,10 @@
     "id": {
       "authority": "EPSG",
       "code": 9749
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -879,6 +1127,10 @@
     "id": {
       "authority": "EPSG",
       "code": 10516
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -893,6 +1145,10 @@
     "id": {
       "authority": "EPSG",
       "code": 10622
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -907,6 +1163,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6411
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -921,6 +1181,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6413
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -935,6 +1199,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6416
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -949,6 +1217,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6418
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -963,6 +1235,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6420
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -977,6 +1253,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6422
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -991,6 +1271,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6424
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1005,6 +1289,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6426
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1019,6 +1307,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6428
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1033,6 +1325,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6430
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1047,6 +1343,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6432
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1061,6 +1361,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6434
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1075,6 +1379,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6436
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1089,6 +1397,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6438
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1103,6 +1415,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6441
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1117,6 +1433,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6443
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1131,6 +1451,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6445
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1145,6 +1469,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6447
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1159,6 +1487,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6449
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1173,6 +1505,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6451
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1187,6 +1523,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6453
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1201,6 +1541,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6455
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1215,6 +1559,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6457
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1229,6 +1577,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6463
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1243,6 +1595,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6465
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1257,6 +1613,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6467
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1271,6 +1631,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6469
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1285,6 +1649,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6471
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1299,6 +1667,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6473
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1313,6 +1685,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6475
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1327,6 +1703,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6477
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1341,6 +1721,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6479
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1355,6 +1739,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6484
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1369,6 +1757,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6486
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1383,6 +1775,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6488
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1397,6 +1793,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6490
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1411,6 +1811,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6492
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1425,6 +1829,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6501
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1439,6 +1847,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6503
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1453,6 +1865,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6505
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1467,6 +1883,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6507
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1481,6 +1901,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6510
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1495,6 +1919,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6519
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1509,6 +1937,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6521
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1523,6 +1955,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6523
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1537,6 +1973,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6525
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1551,6 +1991,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6527
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1565,6 +2009,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6529
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1579,6 +2027,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6531
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1593,6 +2045,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6533
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1607,6 +2063,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6535
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1621,6 +2081,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6537
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1635,6 +2099,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6539
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1649,6 +2117,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6541
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1663,6 +2135,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6543
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1677,6 +2153,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6549
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1691,6 +2171,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6551
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1705,6 +2189,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6553
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1719,6 +2207,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6555
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1733,6 +2225,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6563
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1747,6 +2243,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6568
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1761,6 +2261,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6572
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1775,6 +2279,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6574
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1789,6 +2297,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6576
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1803,6 +2315,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6578
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1817,6 +2333,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6582
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1831,6 +2351,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6584
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1845,6 +2369,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6586
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1859,6 +2387,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6588
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1873,6 +2405,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6590
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1887,6 +2423,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6593
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1901,6 +2441,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6595
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1915,6 +2459,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6597
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1929,6 +2477,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6599
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1943,6 +2495,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6601
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1957,6 +2513,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6603
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1971,6 +2531,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6605
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1985,6 +2549,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6607
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -1999,6 +2567,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6609
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2013,6 +2585,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6612
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2027,6 +2603,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6614
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2041,6 +2621,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6616
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2055,6 +2639,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6618
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2069,6 +2657,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6625
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2083,6 +2675,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6626
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2097,6 +2693,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6627
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2111,6 +2711,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6880
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2125,6 +2729,10 @@
     "id": {
       "authority": "EPSG",
       "code": 6925
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2139,6 +2747,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7057
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2153,6 +2765,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7058
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2167,6 +2783,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7059
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2181,6 +2801,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7060
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2195,6 +2819,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7061
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2209,6 +2837,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7062
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2223,6 +2855,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7063
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2237,6 +2873,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7064
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2251,6 +2891,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7065
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2265,6 +2909,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7066
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2279,6 +2927,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7067
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2293,6 +2945,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7068
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2307,6 +2963,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7069
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2321,6 +2981,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7070
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2335,6 +2999,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7128
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2349,6 +3017,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7132
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2363,6 +3035,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7587
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2377,6 +3053,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7588
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2391,6 +3071,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7589
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2405,6 +3089,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7590
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2419,6 +3107,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7591
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2433,6 +3125,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7592
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2447,6 +3143,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7593
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2461,6 +3161,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7594
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2475,6 +3179,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7595
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2489,6 +3197,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7596
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2503,6 +3215,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7597
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2517,6 +3233,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7598
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2531,6 +3251,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7599
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2545,6 +3269,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7600
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2559,6 +3287,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7601
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2573,6 +3305,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7602
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2587,6 +3323,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7603
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2601,6 +3341,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7604
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2615,6 +3359,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7605
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2629,6 +3377,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7606
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2643,6 +3395,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7607
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2657,6 +3413,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7608
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2671,6 +3431,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7609
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2685,6 +3449,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7610
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2699,6 +3467,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7611
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2713,6 +3485,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7612
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2727,6 +3503,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7613
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2741,6 +3521,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7614
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2755,6 +3539,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7615
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2769,6 +3557,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7616
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2783,6 +3575,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7617
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2797,6 +3593,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7618
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2811,6 +3611,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7619
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2825,6 +3629,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7620
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2839,6 +3647,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7621
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2853,6 +3665,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7622
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2867,6 +3683,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7623
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2881,6 +3701,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7624
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2895,6 +3719,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7625
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2909,6 +3737,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7626
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2923,6 +3755,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7627
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2937,6 +3773,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7628
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2951,6 +3791,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7629
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2965,6 +3809,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7630
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2979,6 +3827,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7631
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -2993,6 +3845,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7632
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3007,6 +3863,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7633
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3021,6 +3881,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7634
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3035,6 +3899,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7635
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3049,6 +3917,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7636
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3063,6 +3935,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7637
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3077,6 +3953,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7638
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3091,6 +3971,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7639
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3105,6 +3989,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7640
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3119,6 +4007,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7641
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3133,6 +4025,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7642
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3147,6 +4043,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7643
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3161,6 +4061,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7644
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3175,6 +4079,10 @@
     "id": {
       "authority": "EPSG",
       "code": 7645
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3189,6 +4097,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8384
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3203,6 +4115,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8387
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3217,6 +4133,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8518
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3231,6 +4151,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8519
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3245,6 +4169,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8520
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3259,6 +4187,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8521
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3273,6 +4205,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8522
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3287,6 +4223,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8523
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3301,6 +4241,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8524
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3315,6 +4259,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8525
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3329,6 +4277,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8526
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3343,6 +4295,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8527
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3357,6 +4313,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8528
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3371,6 +4331,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8529
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3385,6 +4349,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8531
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3399,6 +4367,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8533
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3413,6 +4385,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8534
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3427,6 +4403,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8535
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3441,6 +4421,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8536
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3455,6 +4439,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8538
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3469,6 +4457,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8539
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3483,6 +4475,10 @@
     "id": {
       "authority": "EPSG",
       "code": 8540
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3497,6 +4493,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23301
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3511,6 +4511,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23302
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3525,6 +4529,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23303
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3539,6 +4547,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23304
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3553,6 +4565,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23305
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3567,6 +4583,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23306
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3581,6 +4601,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23307
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3595,6 +4619,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23308
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3609,6 +4637,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23309
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3623,6 +4655,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23310
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3637,6 +4673,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23311
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3651,6 +4691,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23312
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3665,6 +4709,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23313
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3679,6 +4727,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23314
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3693,6 +4745,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23315
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3707,6 +4763,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23316
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3721,6 +4781,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23317
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3735,6 +4799,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23318
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3749,6 +4817,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23319
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3763,6 +4835,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23320
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3777,6 +4853,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23321
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3791,6 +4871,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23322
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3805,6 +4889,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23323
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3819,6 +4907,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23324
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3833,6 +4925,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23325
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3847,6 +4943,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23326
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3861,6 +4961,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23327
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3875,6 +4979,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23328
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3889,6 +4997,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23329
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3903,6 +5015,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23330
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3917,6 +5033,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23331
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3931,6 +5051,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23332
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   },
   {
@@ -3945,6 +5069,10 @@
     "id": {
       "authority": "EPSG",
       "code": 23333
+    },
+    "default_transformation": {
+      "authority": "EPSG",
+      "code": 9774
     }
   }
 ]

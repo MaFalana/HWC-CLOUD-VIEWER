@@ -103,13 +103,16 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   // Initialize horizontal search results when Indiana options are available
   useEffect(() => {
-    if (indianaCRSOptions.length > 0 && horizontalSearchResults.length === 0) {
+    if (indianaCRSOptions.length > 0) {
+      // Always initialize with first 50 options when modal opens
       setHorizontalSearchResults(indianaCRSOptions.slice(0, 50));
     }
-  }, [indianaCRSOptions, horizontalSearchResults.length]);
+  }, [indianaCRSOptions, isOpen]);
 
   // Handle horizontal search input changes
   useEffect(() => {
+    if (!isOpen) return; // Don't run if modal is closed
+    
     // Always set initial results when component mounts or search changes
     if (!horizontalSearch.trim()) {
       // When search is empty, show first 50 options
@@ -128,7 +131,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
       return () => clearTimeout(timeoutId);
     }
-  }, [horizontalSearch, filterIndianaOptions, indianaCRSOptions]);
+  }, [horizontalSearch, filterIndianaOptions, indianaCRSOptions, isOpen]);
 
   // Load initial CRS options when modal opens
   const loadCRSOptions = useCallback(async () => {

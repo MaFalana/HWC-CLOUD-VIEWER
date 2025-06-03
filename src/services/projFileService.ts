@@ -1,7 +1,8 @@
-// Service for parsing .proj files and extracting CRS information
-import { arcgisService } from "./arcgisService";
 
-export interface ProjFileData {
+// Service for parsing .proj files and extracting CRS information
+import { worldFileService } from "./worldFileService";
+
+interface ProjFileData {
   projcs: string;
   geogcs: string;
   datum: string;

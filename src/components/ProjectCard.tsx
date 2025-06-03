@@ -1,9 +1,9 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Edit, Trash2, MapPin, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Eye, Edit, Trash2, Calendar, MapPin } from "lucide-react";
 import { Project } from "@/types/project";
 import { useRouter } from "next/router";
 import Image from "next/image";
@@ -17,8 +17,7 @@ interface ProjectCardProps {
 export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
-  const [thumbnailError, setThumbnailError] = useState(false);
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
 
   const handleOpen = () => {
     router.push(`/view/${project.jobNumber}`);
@@ -46,13 +45,10 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {thumbnailUrl ? (
-          <Image
-            src={thumbnailUrl}
-            alt={project.projectName}
-            fill
-            className={`object-cover transition-transform duration-300 ${isHovered ? 'scale-110' : 'scale-100'}`}
-          />
+        {!imageError ? (
+          <div className="flex items-center justify-center h-full bg-hwc-light/30">
+            <div className="text-hwc-dark/50 text-lg font-semibold">No Image</div>
+          </div>
         ) : (
           <div className="flex items-center justify-center h-full bg-hwc-light/30">
             <div className="text-hwc-dark/50 text-lg font-semibold">No Image</div>
