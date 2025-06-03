@@ -342,7 +342,7 @@ export const transformProjectLocation = async (project: {
       
       try {
         // For projected coordinates, the order is typically easting (x), northing (y)
-        // But we need to check which coordinate is which based on the CRS
+        // In our case, longitude is easting and latitude is northing
         const maptilerResult = await transformWithMapTiler(horizontalCRS, "EPSG:4326", [longitude, latitude]);
         if (maptilerResult) {
           console.log(`MapTiler transformed project coordinates from ${horizontalCRS} to EPSG:4326:`, {
