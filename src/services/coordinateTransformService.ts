@@ -1,3 +1,4 @@
+
 // Coordinate transformation service for converting between different CRS
 // Primarily for converting InGCS county coordinates to WGS84 for web mapping
 
@@ -17,9 +18,6 @@ interface TransformedCoordinates {
   fromCRS: string;
   toCRS: string;
 }
-
-// MapTiler API for coordinate transformations
-const MAPTILER_API_URL = "https://api.maptiler.com/coordinates/transform";
 
 // Indiana State Plane coordinate system transformations
 // These are approximate transformations for common Indiana county systems
@@ -192,10 +190,9 @@ const transformWithMapTiler = async (
     
     const [x, y] = coordinates;
     
-    // For projected coordinates, we need to use the correct order
-    // MapTiler expects [lon, lat] for geographic coordinates or [x, y] for projected coordinates
-    // For Indiana State Plane, x is easting and y is northing
-    const url = `${MAPTILER_API_URL}/${x},${y}.json?s_srs=${sourceCRS}&t_srs=${targetCRS}`;
+    // Use the MapTiler API format with API key
+    const apiKey = "3zy0Sl3tcfZaOQFhQD8J";
+    const url = `https://api.maptiler.com/coordinates/transform/${x},${y}.json?s_srs=${sourceCRS}&t_srs=${targetCRS}&key=${apiKey}`;
     
     console.log(`Calling MapTiler API: ${url}`);
     

@@ -65,20 +65,29 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   // Convert Indiana.json data to CRSOption format - memoized to prevent recreation
   const indianaCRSOptions: CRSOption[] = useMemo(() => {
-    console.log("Indiana data:", indianaData);
-    console.log("Indiana data length:", indianaData?.length);
+    if (!indianaData || !Array.isArray(indianaData) || indianaData.length === 0) {
+      console.error("Indiana data is not available or not in expected format");
+      return [];
+    }
     
-    const options = indianaData.map(item => ({
-      code: `${item.id.authority}:${item.id.code}`,
-      name: item.name,
-      type: "horizontal" as const,
-      description: "",
-      recommended: false,
-      bbox: item.bbox as [number, number, number, number]
-    }));
+    console.log("Processing Indiana data:", indianaData.length, "items");
     
-    console.log("Processed Indiana CRS options:", options.length);
-    return options;
+    try {
+      const options = indianaData.map(item => ({
+        code: `${item.id.authority}:${item.id.code}`,
+        name: item.name,
+        type: "horizontal" as const,
+        description: `${item.unit} - ${item.bbox ? `Covers: [${item.bbox.join(', ')}]` : ''}`,
+        recommended: item.id.code === 7366, // Recommend Vanderburgh County by default
+        bbox: item.bbox as [number, number, number, number]
+      }));
+      
+      console.log("Processed Indiana CRS options:", options.length);
+      return options;
+    } catch (error) {
+      console.error("Error processing Indiana data:", error);
+      return [];
+    }
   }, []);
 
   // Search results for horizontal CRS (filtered from Indiana data)
@@ -90,22 +99,36 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   // Filter Indiana CRS options based on search - memoized
   const filterIndianaOptions = useCallback((query: string): CRSOption[] => {
-    if (!query.trim()) return indianaCRSOptions.slice(0, 50); // Limit to first 50 when no search
+    if (!indianaCRSOptions || indianaCRSOptions.length === 0) {
+      console.error("No Indiana CRS options available to filter");
+      return [];
+    }
+    
+    if (!query.trim()) {
+      console.log("Empty search, returning first 50 options");
+      return indianaCRSOptions.slice(0, 50); // Limit to first 50 when no search
+    }
     
     const searchLower = query.toLowerCase();
+    console.log(`Filtering Indiana options with search: "${searchLower}"`);
+    
     const filtered = indianaCRSOptions.filter(option => 
       option.code.toLowerCase().includes(searchLower) ||
       option.name.toLowerCase().includes(searchLower)
     );
     
+    console.log(`Found ${filtered.length} matching options`);
     return filtered.slice(0, 100); // Limit results to 100 for performance
   }, [indianaCRSOptions]);
 
   // Initialize horizontal search results when Indiana options are available
   useEffect(() => {
-    if (indianaCRSOptions.length > 0) {
+    if (indianaCRSOptions && indianaCRSOptions.length > 0) {
+      console.log(`Setting initial horizontal search results with ${indianaCRSOptions.length} options`);
       // Always initialize with first 50 options when modal opens
       setHorizontalSearchResults(indianaCRSOptions.slice(0, 50));
+    } else {
+      console.error("No Indiana CRS options available to initialize search results");
     }
   }, [indianaCRSOptions, isOpen]);
 
