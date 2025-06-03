@@ -38,6 +38,46 @@
       box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4);
     }
     
+    /* Loading indicator */
+    #loading-indicator {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #292C30;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    
+    #loading-logo {
+      margin-bottom: 2rem;
+    }
+    
+    #loading-progress-container {
+      width: 300px;
+      height: 4px;
+      background: rgba(221, 212, 204, 0.2);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    
+    #loading-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    #loading-text {
+      color: rgba(221, 212, 204, 0.9);
+      font-size: 14px;
+    }
+    
     /* Custom scrollbar with HWC colors */
     #potree_sidebar_container::-webkit-scrollbar {
       width: 6px;
@@ -59,33 +99,33 @@
     
     /* Modern accordion headers with HWC red */
     .ui-accordion-header {
-      background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7));
-      color: white;
-      border: none;
-      border-radius: 8px;
-      margin-bottom: 4px;
-      padding: 12px 16px;
-      font-weight: 600;
-      font-size: 14px;
-      z-index: 31;
-      transition: all 0.2s ease;
-      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7)) !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 8px !important;
+      margin-bottom: 4px !important;
+      padding: 12px 16px !important;
+      font-weight: 600 !important;
+      font-size: 14px !important;
+      z-index: 31 !important;
+      transition: all 0.2s ease !important;
+      letter-spacing: -0.025em !important;
     }
     
     .ui-accordion-header:hover {
-      background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8));
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(238, 47, 39, 0.4);
+      background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(238, 47, 39, 0.4) !important;
     }
     
     .ui-accordion-content {
-      background: rgba(41, 44, 48, 0.95);
-      color: rgba(221, 212, 204, 1);
-      border: none;
-      border-radius: 8px;
-      z-index: 31;
-      overflow-y: auto;
-      max-height: 400px;
+      background: rgba(41, 44, 48, 0.95) !important;
+      color: rgba(221, 212, 204, 1) !important;
+      border: none !important;
+      border-radius: 8px !important;
+      z-index: 31 !important;
+      overflow-y: auto !important;
+      max-height: 400px !important;
     }
     
     /* Tools grid layout - CRITICAL FIX for proper grid display */
@@ -94,15 +134,15 @@
     .pv-menu-tools,
     div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube),
     div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      padding: 16px;
-      background: rgba(221, 212, 204, 0.08);
-      border-radius: 12px;
-      margin: 8px 0;
-      width: 100%;
-      box-sizing: border-box;
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr) !important;
+      gap: 8px !important;
+      padding: 16px !important;
+      background: rgba(221, 212, 204, 0.08) !important;
+      border-radius: 12px !important;
+      margin: 8px 0 !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
     }
     
     /* Tool buttons with HWC styling */
@@ -116,22 +156,22 @@
     div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button,
     div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button,
     div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button {
-      width: 100%;
-      height: 44px;
-      margin: 0;
-      padding: 8px;
-      background: rgba(221, 212, 204, 0.12);
-      border: 1px solid rgba(238, 47, 39, 0.25);
-      border-radius: 8px;
-      color: rgba(221, 212, 204, 1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      box-sizing: border-box;
+      width: 100% !important;
+      height: 44px !important;
+      margin: 0 !important;
+      padding: 8px !important;
+      background: rgba(221, 212, 204, 0.12) !important;
+      border: 1px solid rgba(238, 47, 39, 0.25) !important;
+      border-radius: 8px !important;
+      color: rgba(221, 212, 204, 1) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      transition: all 0.2s ease !important;
+      font-size: 12px !important;
+      font-weight: 500 !important;
+      cursor: pointer !important;
+      box-sizing: border-box !important;
     }
     
     /* Tool button hover effects */
@@ -145,11 +185,11 @@
     div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button:hover,
     div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button:hover,
     div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button:hover {
-      background: rgba(238, 47, 39, 0.2);
-      border-color: rgba(238, 47, 39, 0.6);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(238, 47, 39, 0.25);
-      color: white;
+      background: rgba(238, 47, 39, 0.2) !important;
+      border-color: rgba(238, 47, 39, 0.6) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 12px rgba(238, 47, 39, 0.25) !important;
+      color: white !important;
     }
     
     /* Active tool button styling with HWC red */
@@ -173,11 +213,11 @@
     div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button.selected,
     div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.selected,
     div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.selected {
-      background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7));
-      border: 2px solid rgba(238, 47, 39, 1);
-      box-shadow: 0 0 16px rgba(238, 47, 39, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      color: white;
-      transform: translateY(-1px);
+      background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7)) !important;
+      border: 2px solid rgba(238, 47, 39, 1) !important;
+      box-shadow: 0 0 16px rgba(238, 47, 39, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+      color: white !important;
+      transform: translateY(-1px) !important;
     }
     
     /* Tool icons styling */
@@ -191,112 +231,112 @@
     div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) img,
     div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button img,
     div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button img {
-      width: 18px;
-      height: 18px;
-      filter: brightness(0) invert(1);
+      width: 18px !important;
+      height: 18px !important;
+      filter: brightness(0) invert(1) !important;
     }
     
     /* Compass and navigation controls - FIXED positioning in bottom right */
     .potree_compass {
-      z-index: 35;
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      left: auto;
-      top: auto;
-      background: rgba(41, 44, 48, 0.95);
-      border: 2px solid rgba(238, 47, 39, 0.7);
-      border-radius: 50%;
-      padding: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3);
-      pointer-events: auto;
-      width: 64px;
-      height: 64px;
-      backdrop-filter: blur(20px);
+      z-index: 35 !important;
+      position: fixed !important;
+      bottom: 24px !important;
+      right: 24px !important;
+      left: auto !important;
+      top: auto !important;
+      background: rgba(41, 44, 48, 0.95) !important;
+      border: 2px solid rgba(238, 47, 39, 0.7) !important;
+      border-radius: 50% !important;
+      padding: 12px !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3) !important;
+      pointer-events: auto !important;
+      width: 64px !important;
+      height: 64px !important;
+      backdrop-filter: blur(20px) !important;
     }
     
     .potree_navigation_cube {
-      z-index: 35;
-      position: fixed;
-      bottom: 24px;
-      right: 104px;
-      left: auto;
-      top: auto;
-      background: rgba(41, 44, 48, 0.95);
-      border: 2px solid rgba(238, 47, 39, 0.7);
-      border-radius: 12px;
-      padding: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3);
-      pointer-events: auto;
-      backdrop-filter: blur(20px);
+      z-index: 35 !important;
+      position: fixed !important;
+      bottom: 24px !important;
+      right: 104px !important;
+      left: auto !important;
+      top: auto !important;
+      background: rgba(41, 44, 48, 0.95) !important;
+      border: 2px solid rgba(238, 47, 39, 0.7) !important;
+      border-radius: 12px !important;
+      padding: 12px !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3) !important;
+      pointer-events: auto !important;
+      backdrop-filter: blur(20px) !important;
     }
     
     /* Form elements with HWC styling */
     #potree_sidebar_container input[type="text"],
     #potree_sidebar_container input[type="number"],
     #potree_sidebar_container select {
-      background: rgba(221, 212, 204, 0.1);
-      color: rgba(221, 212, 204, 1);
-      border: 1px solid rgba(238, 47, 39, 0.3);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 13px;
-      transition: all 0.2s ease;
+      background: rgba(221, 212, 204, 0.1) !important;
+      color: rgba(221, 212, 204, 1) !important;
+      border: 1px solid rgba(238, 47, 39, 0.3) !important;
+      border-radius: 6px !important;
+      padding: 8px 12px !important;
+      font-size: 13px !important;
+      transition: all 0.2s ease !important;
     }
     
     #potree_sidebar_container input[type="text"]:focus,
     #potree_sidebar_container input[type="number"]:focus,
     #potree_sidebar_container select:focus {
-      border-color: rgba(238, 47, 39, 0.8);
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(238, 47, 39, 0.15);
+      border-color: rgba(238, 47, 39, 0.8) !important;
+      outline: none !important;
+      box-shadow: 0 0 0 3px rgba(238, 47, 39, 0.15) !important;
     }
     
     /* Labels with HWC light color */
     #potree_sidebar_container label,
     #potree_sidebar_container .potree_label {
-      color: rgba(221, 212, 204, 0.9);
-      font-weight: 500;
-      font-size: 13px;
+      color: rgba(221, 212, 204, 0.9) !important;
+      font-weight: 500 !important;
+      font-size: 13px !important;
     }
     
     /* Range inputs with HWC red */
     input[type="range"] {
-      -webkit-appearance: none;
-      background: rgba(221, 212, 204, 0.2);
-      height: 6px;
-      border-radius: 3px;
+      -webkit-appearance: none !important;
+      background: rgba(221, 212, 204, 0.2) !important;
+      height: 6px !important;
+      border-radius: 3px !important;
     }
     
     input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8));
-      border-radius: 50%;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(238, 47, 39, 0.4);
+      -webkit-appearance: none !important;
+      width: 18px !important;
+      height: 18px !important;
+      background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important;
+      border-radius: 50% !important;
+      cursor: pointer !important;
+      box-shadow: 0 2px 8px rgba(238, 47, 39, 0.4) !important;
     }
     
     /* Checkbox and radio with HWC red */
     input[type="checkbox"],
     input[type="radio"] {
-      accent-color: rgba(238, 47, 39, 1);
+      accent-color: rgba(238, 47, 39, 1) !important;
     }
     
     /* Progress bars with HWC red */
     .potree_progress,
     .progress {
-      background: rgba(221, 212, 204, 0.2);
-      border-radius: 6px;
-      overflow: hidden;
-      height: 6px;
+      background: rgba(221, 212, 204, 0.2) !important;
+      border-radius: 6px !important;
+      overflow: hidden !important;
+      height: 6px !important;
     }
     
     .potree_progress .progress-bar,
     .progress .progress-bar {
-      background: linear-gradient(90deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8));
-      border-radius: 6px;
+      background: linear-gradient(90deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important;
+      border-radius: 6px !important;
     }
   </style>
   
@@ -310,9 +350,18 @@
   <link rel="stylesheet" type="text/css" href="/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css">
 </head>
 <body>
-  <div id="potree_render_area" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0;">
-    <div id="sidebar_logo"></div>
+  <!-- Loading indicator -->
+  <div id="loading-indicator">
+    <div id="loading-logo">
+      <img src="/hwc-logo-4c-mbe1obbx.png" alt="HWC Engineering" width="200" height="67" style="width: auto; height: auto;">
+    </div>
+    <div id="loading-progress-container">
+      <div id="loading-progress-bar"></div>
+    </div>
+    <div id="loading-text">Loading Potree Viewer... 0%</div>
   </div>
+
+  <div id="potree_render_area"></div>
   <div id="potree_sidebar_container"></div>
   
   <!-- Potree Scripts -->
@@ -370,10 +419,13 @@
       }
     };
     
+    // Initialize with 10% progress
+    updateLoadingProgress(10);
+    
     // Initialize Potree viewer
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log("DOM fully loaded, initializing Potree...");
-      updateLoadingProgress(10);
+    window.addEventListener('load', function() {
+      console.log("Window loaded, initializing Potree...");
+      updateLoadingProgress(20);
       
       // Make sure the render area has dimensions
       const renderArea = document.getElementById('potree_render_area');
@@ -382,7 +434,7 @@
       
       // Initialize Potree viewer
       try {
-        updateLoadingProgress(20);
+        updateLoadingProgress(30);
         const viewer = new Potree.Viewer(renderArea);
         window.viewer = viewer; // Store viewer in global scope for debugging
         
@@ -391,7 +443,7 @@
         viewer.setPointBudget(3_000_000); // Increased point budget for better visualization
         viewer.setDescription(projectName);
         
-        updateLoadingProgress(30);
+        updateLoadingProgress(40);
         
         viewer.loadGUI(() => {
           viewer.setLanguage("en");
@@ -453,107 +505,7 @@
           const loadPointCloud = () => {
             updateLoadingProgress(70);
             
-            // Try to load job-specific cloud.js first
-            const cloudJsPath = `/pointclouds/${jobNumber}/cloud.js`;
-            console.log(`Trying job-specific cloud.js: ${cloudJsPath}`);
-            
-            // Check if cloud.js exists
-            fetch(cloudJsPath)
-              .then(response => {
-                if (response.ok) {
-                  console.log(`Found cloud.js for ${jobNumber}, loading...`);
-                  
-                  // Load the point cloud from cloud.js
-                  Potree.loadPointCloud(cloudJsPath, jobNumber, e => {
-                    if (e.pointcloud) {
-                      console.log("Job-specific point cloud loaded successfully");
-                      viewer.scene.addPointCloud(e.pointcloud);
-                      
-                      // Set point cloud material properties
-                      e.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-                      e.pointcloud.material.size = 1.0;
-                      e.pointcloud.material.pointColorType = Potree.PointColorType.RGB;
-                      
-                      // Fit the point cloud to the screen
-                      viewer.fitToScreen();
-                      
-                      // Position the map view
-                      try {
-                        const mapView = viewer.mapView;
-                        if (mapView && typeof mapView.setCenter === "function") {
-                          mapView.setCenter([longitude, latitude]);
-                          if (typeof mapView.setZoom === "function") {
-                            mapView.setZoom(15);
-                          }
-                          if (typeof mapView.setMapType === "function" && mapType !== "default") {
-                            mapView.setMapType(mapType);
-                          }
-                          console.log(`Map positioned at: ${latitude}, ${longitude}`);
-                        }
-                      } catch (mapError) {
-                        console.log("Failed to set map location:", mapError);
-                      }
-                      
-                      updateLoadingProgress(100);
-                    } else {
-                      console.error("Failed to load job-specific point cloud, trying metadata.json");
-                      tryMetadataJson();
-                    }
-                  });
-                } else {
-                  console.log(`No cloud.js found for ${jobNumber}, trying metadata.json`);
-                  tryMetadataJson();
-                }
-              })
-              .catch(error => {
-                console.error("Error checking cloud.js:", error);
-                tryMetadataJson();
-              });
-          };
-          
-          // Try to load from metadata.json
-          const tryMetadataJson = () => {
-            const metadataPath = `/pointclouds/${jobNumber}/metadata.json`;
-            console.log(`Trying metadata.json: ${metadataPath}`);
-            
-            fetch(metadataPath)
-              .then(response => {
-                if (response.ok) {
-                  console.log(`Found metadata.json for ${jobNumber}, loading...`);
-                  
-                  // Load the point cloud from metadata.json
-                  Potree.loadPointCloud(metadataPath, jobNumber, e => {
-                    if (e.pointcloud) {
-                      console.log("Point cloud loaded successfully from metadata.json");
-                      viewer.scene.addPointCloud(e.pointcloud);
-                      
-                      // Set point cloud material properties
-                      e.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-                      e.pointcloud.material.size = 1.0;
-                      e.pointcloud.material.pointColorType = Potree.PointColorType.RGB;
-                      
-                      // Fit the point cloud to the screen
-                      viewer.fitToScreen();
-                      
-                      updateLoadingProgress(100);
-                    } else {
-                      console.error("Failed to load point cloud from metadata.json, trying example");
-                      tryExamplePointCloud();
-                    }
-                  });
-                } else {
-                  console.log(`No metadata.json found for ${jobNumber}, trying example`);
-                  tryExamplePointCloud();
-                }
-              })
-              .catch(error => {
-                console.error("Error checking metadata.json:", error);
-                tryExamplePointCloud();
-              });
-          };
-          
-          // Try to load from example directory
-          const tryExamplePointCloud = () => {
+            // Try to load from example directory
             const exampleMetadataPath = "/pointclouds/example/metadata.json";
             console.log(`Loading point cloud from example: ${exampleMetadataPath}`);
             
@@ -570,6 +522,23 @@
                 
                 // Fit the point cloud to the screen
                 viewer.fitToScreen();
+                
+                // Position the map view
+                try {
+                  const mapView = viewer.mapView;
+                  if (mapView && typeof mapView.setCenter === "function") {
+                    mapView.setCenter([longitude, latitude]);
+                    if (typeof mapView.setZoom === "function") {
+                      mapView.setZoom(15);
+                    }
+                    if (typeof mapView.setMapType === "function" && mapType !== "default") {
+                      mapView.setMapType(mapType);
+                    }
+                    console.log(`Map positioned at: ${latitude}, ${longitude}`);
+                  }
+                } catch (mapError) {
+                  console.log("Failed to set map location:", mapError);
+                }
                 
                 updateLoadingProgress(100);
               } else {
