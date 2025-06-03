@@ -84,7 +84,7 @@ export const projFileService = {
    */
   async fetchProjFile(jobNumber: string): Promise<ProjFileData | null> {
     try {
-      const response = await fetch(`http://localhost:4400/pointclouds/${jobNumber}/${jobNumber}.prj`);
+      const response = await fetch(`http://localhost:5000/pointclouds/${jobNumber}/${jobNumber}.prj`);
       if (!response.ok) {
         console.log(`No .prj file found for job ${jobNumber}`);
         return null;
