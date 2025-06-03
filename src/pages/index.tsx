@@ -173,6 +173,50 @@ export default function Dashboard() {
             tags: ["industrial", "mapping", "fort-wayne"]
           },
           {
+            jobNumber: "2024-412-S",
+            projectName: "Vanderburgh County Survey",
+            clientName: "County Engineering",
+            acquistionDate: "2024-09-15T11:30:00.000Z",
+            description: "County coordinate system survey project",
+            status: "processing" as const,
+            createdAt: new Date("2024-09-15"),
+            updatedAt: new Date("2024-09-15"),
+            projectType: "survey",
+            location: {
+              latitude: 1456789.12,
+              longitude: 876543.21,
+              address: "Evansville, IN"
+            },
+            crs: {
+              horizontal: "EPSG:7366",
+              vertical: "EPSG:6360",
+              geoidModel: "GEOID18"
+            },
+            tags: ["county", "survey", "vanderburgh"]
+          },
+          {
+            jobNumber: "2024-413-S",
+            projectName: "Grant County Infrastructure",
+            clientName: "City of Marion",
+            acquistionDate: "2024-07-22T14:15:00.000Z",
+            description: "Infrastructure mapping in Grant County coordinates",
+            status: "active" as const,
+            createdAt: new Date("2024-07-22"),
+            updatedAt: new Date("2024-07-22"),
+            projectType: "mapping",
+            location: {
+              latitude: 2345678.90,
+              longitude: 765432.10,
+              address: "Marion, IN"
+            },
+            crs: {
+              horizontal: "EPSG:7304",
+              vertical: "EPSG:6360",
+              geoidModel: "GEOID18"
+            },
+            tags: ["grant", "infrastructure", "marion"]
+          },
+          {
             jobNumber: "2022-094-B",
             projectName: "South Bend University Campus",
             clientName: "Notre Dame University",
