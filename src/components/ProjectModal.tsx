@@ -103,7 +103,12 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   // Handle horizontal search input changes
   useEffect(() => {
-    if (horizontalSearch.trim()) {
+    // Always set initial results when component mounts or search changes
+    if (!horizontalSearch.trim()) {
+      // When search is empty, show first 50 options
+      setHorizontalSearchResults(indianaCRSOptions.slice(0, 50));
+      setHorizontalSearchLoading(false);
+    } else {
       setHorizontalOpen(true);
       setHorizontalSearchLoading(true);
       
@@ -115,12 +120,8 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
       }, 300);
 
       return () => clearTimeout(timeoutId);
-    } else {
-      // When search is empty, show limited options
-      setHorizontalSearchResults([]);
-      setHorizontalSearchLoading(false);
     }
-  }, [horizontalSearch, filterIndianaOptions]);
+  }, [horizontalSearch, filterIndianaOptions, indianaCRSOptions]);
 
   // Load initial CRS options when modal opens
   const loadCRSOptions = useCallback(async () => {
@@ -622,27 +623,8 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     );
   };
 
-  const loadIndianaOptions = useCallback(async () => {
-    try {
-      console.log("Loading Indiana options from local data...");
-      console.log("Raw Indiana data:", indianaData);
-      
-      const formattedOptions = indianaData.map((item: any) => ({
-        value: `EPSG:${item.id.code}`,
-        label: `${item.name} (EPSG:${item.id.code})`,
-        name: item.name,
-        code: item.id.code
-      }));
-      
-      console.log("Formatted Indiana options:", formattedOptions);
-      console.log("Number of Indiana options:", formattedOptions.length);
-      
-      setIndianaOptions(formattedOptions);
-    } catch (error) {
-      console.error("Error loading Indiana options:", error);
-      setIndianaOptions([]);
-    }
-  }, []);
+  // Remove the problematic loadIndianaOptions function that uses setIndianaOptions
+  // const loadIndianaOptions = useCallback(async () => { ... });
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

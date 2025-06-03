@@ -1,4 +1,3 @@
-
 // Coordinate transformation service for converting between different CRS
 // Primarily for converting InGCS county coordinates to WGS84 for web mapping
 
@@ -103,7 +102,8 @@ const inverseTransverseMercator = (
   
   // Earth radius in meters
   const a = 6378137.0; // WGS84 semi-major axis
-  const e2 = 0.00669437999014; // WGS84 first eccentricity squared
+  // WGS84 first eccentricity squared - used in more precise calculations
+  // const e2 = 0.00669437999014;
   
   // Central meridian and latitude of origin in radians
   const lon0 = toRadians(params.centralMeridian);
@@ -217,7 +217,10 @@ export const transformProjectLocation = async (project: {
   }
 };
 
-export default {
+// Create a named export object to fix the linting error
+const coordinateTransformService = {
   transformCoordinates,
   transformProjectLocation
 };
+
+export default coordinateTransformService;
