@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,15 +63,17 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     geoid: []
   });
 
-  // Convert Indiana.json data to CRSOption format
-  const indianaCRSOptions: CRSOption[] = (indianaData?.results || []).map(item => ({
-    code: `${item.id.authority}:${item.id.code}`,
-    name: item.name,
-    type: "horizontal", // All Indiana CRS options are horizontal
-    description: "",
-    recommended: false,
-    bbox: item.bbox as [number, number, number, number]
-  }));
+  // Convert Indiana.json data to CRSOption format - memoized to prevent recreation
+  const indianaCRSOptions: CRSOption[] = useMemo(() => {
+    return (indianaData?.results || []).map(item => ({
+      code: `${item.id.authority}:${item.id.code}`,
+      name: item.name,
+      type: "horizontal" as const,
+      description: "",
+      recommended: false,
+      bbox: item.bbox as [number, number, number, number]
+    }));
+  }, []);
 
   // Search results for horizontal CRS (filtered from Indiana data)
   const [horizontalSearchResults, setHorizontalSearchResults] = useState<CRSOption[]>([]);
@@ -81,16 +82,17 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   const [crsLoading, setCrsLoading] = useState(false);
   const [crsError, setCrsError] = useState<string | null>(null);
 
-  // Filter Indiana CRS options based on search
+  // Filter Indiana CRS options based on search - memoized
   const filterIndianaOptions = useCallback((query: string): CRSOption[] => {
-    if (!query.trim()) return indianaCRSOptions;
+    if (!query.trim()) return indianaCRSOptions.slice(0, 50); // Limit to first 50 when no search
     
     const searchLower = query.toLowerCase();
-    return indianaCRSOptions.filter(option => 
+    const filtered = indianaCRSOptions.filter(option => 
       option.code.toLowerCase().includes(searchLower) ||
-      option.name.toLowerCase().includes(searchLower) ||
-      (option.description && option.description.toLowerCase().includes(searchLower))
+      option.name.toLowerCase().includes(searchLower)
     );
+    
+    return filtered.slice(0, 100); // Limit results to 100 for performance
   }, [indianaCRSOptions]);
 
   // Handle horizontal search input changes
@@ -99,44 +101,23 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
       setHorizontalOpen(true);
       setHorizontalSearchLoading(true);
       
-      // Filter local Indiana data instead of API call
-      const filteredResults = filterIndianaOptions(horizontalSearch);
-      setHorizontalSearchResults(filteredResults);
-      setHorizontalSearchLoading(false);
+      // Use setTimeout to debounce the search
+      const timeoutId = setTimeout(() => {
+        const filteredResults = filterIndianaOptions(horizontalSearch);
+        setHorizontalSearchResults(filteredResults);
+        setHorizontalSearchLoading(false);
+      }, 300);
+
+      return () => clearTimeout(timeoutId);
     } else {
-      // When search is empty, show all Indiana options
+      // When search is empty, show limited options
       setHorizontalSearchResults([]);
       setHorizontalSearchLoading(false);
     }
   }, [horizontalSearch, filterIndianaOptions]);
 
   // Load initial CRS options when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      loadCRSOptions();
-    }
-  }, [isOpen]);
-
-  // Set default CRS values for new projects
-  useEffect(() => {
-    if (mode === "create" && crsOptions.horizontal.length > 0 && !formData.crs?.horizontal) {
-      // Set recommended defaults: Indiana East (ftUS) + NAVD88 (ftUS) + GEOID18
-      const defaultHorizontal = crsOptions.horizontal.find(opt => opt.recommended)?.code || crsOptions.horizontal[0]?.code;
-      const defaultVertical = crsOptions.vertical.find(opt => opt.recommended)?.code || crsOptions.vertical[0]?.code;
-      const defaultGeoid = crsOptions.geoid.find(opt => opt.recommended)?.code || crsOptions.geoid[0]?.code;
-
-      setFormData(prev => ({
-        ...prev,
-        crs: {
-          horizontal: defaultHorizontal || "",
-          vertical: defaultVertical || "",
-          geoidModel: defaultGeoid || ""
-        }
-      }));
-    }
-  }, [mode, crsOptions, formData.crs?.horizontal]);
-
-  const loadCRSOptions = async () => {
+  const loadCRSOptions = useCallback(async () => {
     setCrsLoading(true);
     setCrsError(null);
     
@@ -163,7 +144,32 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     } finally {
       setCrsLoading(false);
     }
-  };
+  }, [indianaCRSOptions]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadCRSOptions();
+    }
+  }, [isOpen, loadCRSOptions]);
+
+  // Set default CRS values for new projects
+  useEffect(() => {
+    if (mode === "create" && crsOptions.horizontal.length > 0 && !formData.crs?.horizontal) {
+      // Set recommended defaults: Indiana East (ftUS) + NAVD88 (ftUS) + GEOID18
+      const defaultHorizontal = crsOptions.horizontal.find(opt => opt.recommended)?.code || crsOptions.horizontal[0]?.code;
+      const defaultVertical = crsOptions.vertical.find(opt => opt.recommended)?.code || crsOptions.vertical[0]?.code;
+      const defaultGeoid = crsOptions.geoid.find(opt => opt.recommended)?.code || crsOptions.geoid[0]?.code;
+
+      setFormData(prev => ({
+        ...prev,
+        crs: {
+          horizontal: defaultHorizontal || "",
+          vertical: defaultVertical || "",
+          geoidModel: defaultGeoid || ""
+        }
+      }));
+    }
+  }, [mode, crsOptions, formData.crs?.horizontal]);
 
   useEffect(() => {
     if (isOpen && project && mode === "edit") {
