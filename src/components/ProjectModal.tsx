@@ -101,6 +101,13 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     return filtered.slice(0, 100); // Limit results to 100 for performance
   }, [indianaCRSOptions]);
 
+  // Initialize horizontal search results when Indiana options are available
+  useEffect(() => {
+    if (indianaCRSOptions.length > 0 && horizontalSearchResults.length === 0) {
+      setHorizontalSearchResults(indianaCRSOptions.slice(0, 50));
+    }
+  }, [indianaCRSOptions, horizontalSearchResults.length]);
+
   // Handle horizontal search input changes
   useEffect(() => {
     // Always set initial results when component mounts or search changes
