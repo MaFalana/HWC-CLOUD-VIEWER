@@ -19,7 +19,16 @@ export default function PotreeViewer() {
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showProjectInfo, setShowProjectInfo] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  
+  // Backend URL for point cloud data
+  const BACKEND_URL = "http://localhost:4400";
+  
+  useEffect(() => {
+    // Print the backend URL in the console log
+    console.log("Backend URL for point cloud data:", BACKEND_URL);
+  }, []);
 
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;

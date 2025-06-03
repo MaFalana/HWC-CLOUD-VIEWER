@@ -338,15 +338,42 @@
   <script>
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const jobNumber = urlParams.get('jobNumber');
+    const jobNumber = urlParams.get('jobNumber') || 'example';
     const mapType = urlParams.get('mapType') || 'default';
     const latitude = parseFloat(urlParams.get('latitude') || '39.7684');
     const longitude = parseFloat(urlParams.get('longitude') || '-86.1581');
     const projectName = urlParams.get('projectName') || `Project ${jobNumber}`;
     
+    // Loading progress
+    let loadingProgress = 0;
+    const updateLoadingProgress = (progress) => {
+      loadingProgress = progress;
+      document.getElementById('loading-progress-bar').style.width = `${progress}%`;
+      document.getElementById('loading-text').textContent = `Loading Potree Viewer... ${Math.round(progress)}%`;
+      
+      // Send progress to parent window
+      try {
+        window.parent.postMessage({ type: 'loadingProgress', progress }, '*');
+      } catch (e) {
+        console.error("Error sending message to parent:", e);
+      }
+      
+      if (progress >= 100) {
+        setTimeout(() => {
+          document.getElementById('loading-indicator').style.display = 'none';
+          try {
+            window.parent.postMessage({ type: 'loadingComplete' }, '*');
+          } catch (e) {
+            console.error("Error sending completion message to parent:", e);
+          }
+        }, 500);
+      }
+    };
+    
     // Initialize Potree viewer
     document.addEventListener('DOMContentLoaded', function() {
       console.log("DOM fully loaded, initializing Potree...");
+      updateLoadingProgress(10);
       
       // Make sure the render area has dimensions
       const renderArea = document.getElementById('potree_render_area');
@@ -354,166 +381,267 @@
       renderArea.style.height = '100%';
       
       // Initialize Potree viewer
-      const viewer = new Potree.Viewer(renderArea);
-      
-      viewer.setEDLEnabled(true);
-      viewer.setFOV(60);
-      viewer.setPointBudget(1_000_000);
-      viewer.setDescription(projectName);
-      
-      viewer.loadGUI(() => {
-        viewer.setLanguage("en");
-        console.log("Potree GUI loaded");
+      try {
+        updateLoadingProgress(20);
+        const viewer = new Potree.Viewer(renderArea);
+        window.viewer = viewer; // Store viewer in global scope for debugging
         
-        // Apply custom styling after GUI is loaded
-        setTimeout(() => {
-          // Force grid layout for tools
-          $('.potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube)').css({
-            'display': 'grid',
-            'grid-template-columns': 'repeat(4, 1fr)',
-            'gap': '8px',
-            'width': '100%'
-          });
-          
-          // Move compass to bottom right
-          $('.potree_compass').css({
-            'position': 'fixed',
-            'bottom': '24px',
-            'right': '24px',
-            'left': 'auto',
-            'top': 'auto',
-            'z-index': '35'
-          });
-          
-          // Move navigation cube to bottom right
-          $('.potree_navigation_cube').css({
-            'position': 'fixed',
-            'bottom': '24px',
-            'right': '104px',
-            'left': 'auto',
-            'top': 'auto',
-            'z-index': '35'
-          });
-          
-          // Add active state styling to buttons
-          $('.potree_toolbar button, .potree_menu_tools button, .pv-menu-tools button').on('click', function() {
-            $(this).toggleClass('active');
-          });
-          
-          // Apply perfect scrollbar to sidebar
-          try {
-            $('#potree_sidebar_container').perfectScrollbar();
-          } catch (e) {
-            console.log("Error applying perfect scrollbar:", e);
-          }
-          
-          // Notify parent that styling is complete
-          window.parent.postMessage({ type: 'stylingComplete' }, '*');
-        }, 500);
-      });
-      
-      // Determine which file to load
-      const base = "http://localhost:4400/pointclouds/";
-      
-      // Function to check if a file exists
-      const checkFileExists = async (url) => {
-        try {
-          const response = await fetch(url, { method: 'HEAD' });
-          return response.ok;
-        } catch (error) {
-          return false;
-        }
-      };
-      
-      // Load point cloud
-      const loadPointCloud = async () => {
-        let pathToLoad = null;
+        viewer.setEDLEnabled(true);
+        viewer.setFOV(60);
+        viewer.setPointBudget(3_000_000); // Increased point budget for better visualization
+        viewer.setDescription(projectName);
         
-        // Check for cloud.js
-        if (await checkFileExists(`${base}${jobNumber}/cloud.js`)) {
-          pathToLoad = `${base}${jobNumber}/cloud.js`;
-          console.log("Using cloud.js for point cloud loading");
-        } 
-        // Check for metadata.json
-        else if (await checkFileExists(`${base}${jobNumber}/metadata.json`)) {
-          pathToLoad = `${base}${jobNumber}/metadata.json`;
-          console.log("Using metadata.json for point cloud loading");
-        }
-        // Check for sources.json
-        else if (await checkFileExists(`${base}${jobNumber}/sources.json`)) {
-          // For sources.json, use example metadata.json as fallback
-          pathToLoad = "/pointclouds/example/metadata.json";
-          console.log("Using example metadata.json for point cloud loading (sources.json found)");
-        }
-        // Use example metadata.json as fallback
-        else {
-          pathToLoad = "/pointclouds/example/metadata.json";
-          console.log("Using example metadata.json for point cloud loading (no files found)");
-        }
+        updateLoadingProgress(30);
         
-        // Load the point cloud
-        const loadCallback = (e) => {
-          if (e.pointcloud) {
-            console.log("Point cloud loaded successfully");
-            viewer.scene.addPointCloud(e.pointcloud);
-            e.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-            viewer.fitToScreen(0.5);
+        viewer.loadGUI(() => {
+          viewer.setLanguage("en");
+          console.log("Potree GUI loaded");
+          updateLoadingProgress(50);
+          
+          // Apply custom styling after GUI is loaded
+          setTimeout(() => {
+            // Force grid layout for tools
+            $('.potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube)').css({
+              'display': 'grid',
+              'grid-template-columns': 'repeat(4, 1fr)',
+              'gap': '8px',
+              'width': '100%'
+            });
             
-            // Position the map view
+            // Move compass to bottom right
+            $('.potree_compass').css({
+              'position': 'fixed',
+              'bottom': '24px',
+              'right': '24px',
+              'left': 'auto',
+              'top': 'auto',
+              'z-index': '35'
+            });
+            
+            // Move navigation cube to bottom right
+            $('.potree_navigation_cube').css({
+              'position': 'fixed',
+              'bottom': '24px',
+              'right': '104px',
+              'left': 'auto',
+              'top': 'auto',
+              'z-index': '35'
+            });
+            
+            // Add active state styling to buttons
+            $('.potree_toolbar button, .potree_menu_tools button, .pv-menu-tools button').on('click', function() {
+              $(this).toggleClass('active');
+            });
+            
+            // Apply perfect scrollbar to sidebar
+            try {
+              $('#potree_sidebar_container').perfectScrollbar();
+            } catch (e) {
+              console.log("Error applying perfect scrollbar:", e);
+            }
+            
+            // Notify parent that styling is complete
+            try {
+              window.parent.postMessage({ type: 'stylingComplete' }, '*');
+            } catch (e) {
+              console.error("Error sending styling message to parent:", e);
+            }
+            updateLoadingProgress(60);
+          }, 500);
+          
+          // Load point cloud - Try multiple approaches
+          const loadPointCloud = () => {
+            updateLoadingProgress(70);
+            
+            // Try to load job-specific cloud.js first
+            const cloudJsPath = `/pointclouds/${jobNumber}/cloud.js`;
+            console.log(`Trying job-specific cloud.js: ${cloudJsPath}`);
+            
+            // Check if cloud.js exists
+            fetch(cloudJsPath)
+              .then(response => {
+                if (response.ok) {
+                  console.log(`Found cloud.js for ${jobNumber}, loading...`);
+                  
+                  // Load the point cloud from cloud.js
+                  Potree.loadPointCloud(cloudJsPath, jobNumber, e => {
+                    if (e.pointcloud) {
+                      console.log("Job-specific point cloud loaded successfully");
+                      viewer.scene.addPointCloud(e.pointcloud);
+                      
+                      // Set point cloud material properties
+                      e.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                      e.pointcloud.material.size = 1.0;
+                      e.pointcloud.material.pointColorType = Potree.PointColorType.RGB;
+                      
+                      // Fit the point cloud to the screen
+                      viewer.fitToScreen();
+                      
+                      // Position the map view
+                      try {
+                        const mapView = viewer.mapView;
+                        if (mapView && typeof mapView.setCenter === "function") {
+                          mapView.setCenter([longitude, latitude]);
+                          if (typeof mapView.setZoom === "function") {
+                            mapView.setZoom(15);
+                          }
+                          if (typeof mapView.setMapType === "function" && mapType !== "default") {
+                            mapView.setMapType(mapType);
+                          }
+                          console.log(`Map positioned at: ${latitude}, ${longitude}`);
+                        }
+                      } catch (mapError) {
+                        console.log("Failed to set map location:", mapError);
+                      }
+                      
+                      updateLoadingProgress(100);
+                    } else {
+                      console.error("Failed to load job-specific point cloud, trying metadata.json");
+                      tryMetadataJson();
+                    }
+                  });
+                } else {
+                  console.log(`No cloud.js found for ${jobNumber}, trying metadata.json`);
+                  tryMetadataJson();
+                }
+              })
+              .catch(error => {
+                console.error("Error checking cloud.js:", error);
+                tryMetadataJson();
+              });
+          };
+          
+          // Try to load from metadata.json
+          const tryMetadataJson = () => {
+            const metadataPath = `/pointclouds/${jobNumber}/metadata.json`;
+            console.log(`Trying metadata.json: ${metadataPath}`);
+            
+            fetch(metadataPath)
+              .then(response => {
+                if (response.ok) {
+                  console.log(`Found metadata.json for ${jobNumber}, loading...`);
+                  
+                  // Load the point cloud from metadata.json
+                  Potree.loadPointCloud(metadataPath, jobNumber, e => {
+                    if (e.pointcloud) {
+                      console.log("Point cloud loaded successfully from metadata.json");
+                      viewer.scene.addPointCloud(e.pointcloud);
+                      
+                      // Set point cloud material properties
+                      e.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                      e.pointcloud.material.size = 1.0;
+                      e.pointcloud.material.pointColorType = Potree.PointColorType.RGB;
+                      
+                      // Fit the point cloud to the screen
+                      viewer.fitToScreen();
+                      
+                      updateLoadingProgress(100);
+                    } else {
+                      console.error("Failed to load point cloud from metadata.json, trying example");
+                      tryExamplePointCloud();
+                    }
+                  });
+                } else {
+                  console.log(`No metadata.json found for ${jobNumber}, trying example`);
+                  tryExamplePointCloud();
+                }
+              })
+              .catch(error => {
+                console.error("Error checking metadata.json:", error);
+                tryExamplePointCloud();
+              });
+          };
+          
+          // Try to load from example directory
+          const tryExamplePointCloud = () => {
+            const exampleMetadataPath = "/pointclouds/example/metadata.json";
+            console.log(`Loading point cloud from example: ${exampleMetadataPath}`);
+            
+            // Load the point cloud from example
+            Potree.loadPointCloud(exampleMetadataPath, "example", e => {
+              if (e.pointcloud) {
+                console.log("Example point cloud loaded successfully");
+                viewer.scene.addPointCloud(e.pointcloud);
+                
+                // Set point cloud material properties
+                e.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                e.pointcloud.material.size = 1.0;
+                e.pointcloud.material.pointColorType = Potree.PointColorType.RGB;
+                
+                // Fit the point cloud to the screen
+                viewer.fitToScreen();
+                
+                updateLoadingProgress(100);
+              } else {
+                console.error("Failed to load example point cloud, trying Potree example");
+                tryPotreeExample();
+              }
+            });
+          };
+          
+          // Try to load from Potree example as last resort
+          const tryPotreeExample = () => {
+            console.log("Trying Potree example as last resort");
+            
+            Potree.loadPointCloud("/potree/pointclouds/lion_takanawa/cloud.js", "lion", e => {
+              if (e.pointcloud) {
+                console.log("Lion point cloud loaded successfully");
+                viewer.scene.addPointCloud(e.pointcloud);
+                
+                // Set point cloud material properties
+                e.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                e.pointcloud.material.size = 1.0;
+                e.pointcloud.material.pointColorType = Potree.PointColorType.RGB;
+                
+                // Fit the point cloud to the screen
+                viewer.fitToScreen();
+              } else {
+                console.error("Failed to load any point cloud");
+              }
+              updateLoadingProgress(100);
+            });
+          };
+          
+          // Start loading the point cloud
+          loadPointCloud();
+        });
+        
+        // Listen for messages from parent window
+        window.addEventListener('message', function(event) {
+          if (event.data.type === 'setMapType') {
             try {
               const mapView = viewer.mapView;
-              if (mapView && typeof mapView.setCenter === "function") {
-                mapView.setCenter([longitude, latitude]);
-                if (typeof mapView.setZoom === "function") {
-                  mapView.setZoom(15);
-                }
-                if (typeof mapView.setMapType === "function" && mapType !== "default") {
-                  mapView.setMapType(mapType);
-                }
-                console.log(`Map positioned at: ${latitude}, ${longitude}`);
+              if (mapView && typeof mapView.setMapType === "function") {
+                mapView.setMapType(event.data.mapType);
               }
-            } catch (mapError) {
-              console.log("Failed to set map location:", mapError);
+            } catch (error) {
+              console.log("Error updating map type:", error);
             }
-            
-            // Notify parent that loading is complete
-            window.parent.postMessage({ type: 'loadingComplete' }, '*');
-          } else {
-            console.error("Failed to load point cloud");
-            window.parent.postMessage({ type: 'loadingError', error: 'Failed to load point cloud' }, '*');
-          }
-        };
-        
-        if (pathToLoad.endsWith("cloud.js")) {
-          Potree.loadPointCloud(pathToLoad, "PointCloud", loadCallback);
-        } else {
-          Potree.loadPointCloud(pathToLoad, jobNumber, loadCallback);
-        }
-      };
-      
-      // Start loading the point cloud
-      loadPointCloud();
-      
-      // Listen for messages from parent window
-      window.addEventListener('message', function(event) {
-        if (event.data.type === 'setMapType') {
-          try {
-            const mapView = viewer.mapView;
-            if (mapView && typeof mapView.setMapType === "function") {
-              mapView.setMapType(event.data.mapType);
+          } else if (event.data.type === 'toggleSidebar') {
+            try {
+              viewer.toggleSidebar();
+            } catch (error) {
+              console.log("Error toggling sidebar:", error);
             }
-          } catch (error) {
-            console.log("Error updating map type:", error);
           }
-        } else if (event.data.type === 'toggleSidebar') {
-          try {
-            viewer.toggleSidebar();
-          } catch (error) {
-            console.log("Error toggling sidebar:", error);
-          }
+        });
+      } catch (error) {
+        console.error("Error initializing Potree viewer:", error);
+        try {
+          window.parent.postMessage({ type: 'loadingError', error: 'Failed to initialize Potree viewer: ' + error.message }, '*');
+        } catch (e) {
+          console.error("Error sending error message to parent:", e);
         }
-      });
+        updateLoadingProgress(100); // Force loading to complete even on error
+      }
     });
+    
+    // Send initial loading message to parent
+    try {
+      window.parent.postMessage({ type: 'iframeLoaded' }, '*');
+    } catch (e) {
+      console.error("Error sending initial message to parent:", e);
+    }
   </script>
 </body>
 </html>
