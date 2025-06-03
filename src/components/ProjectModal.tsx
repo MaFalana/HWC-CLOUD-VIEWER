@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { X, Loader2, Check, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Project, CreateProjectData, CRSOption } from "@/types/project";
 import { crsService } from "@/services/crsService";
+import indianaData from "@/data/Indiana.json";
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -52,7 +52,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   const [verticalSearch, setVerticalSearch] = useState("");
   const [geoidSearch, setGeoidSearch] = useState("");
 
-  // CRS options from API
+  // CRS options from API and local data
   const [crsOptions, setCrsOptions] = useState<{
     horizontal: CRSOption[];
     vertical: CRSOption[];
@@ -63,12 +63,32 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     geoid: []
   });
 
-  // Search results for horizontal CRS
+  // Convert Indiana.json data to CRSOption format
+  const indianaCRSOptions: CRSOption[] = indianaData.results.map(item => ({
+    code: `${item.id.authority}:${item.id.code}`,
+    name: item.name,
+    description: item.area || "",
+    recommended: false
+  }));
+
+  // Search results for horizontal CRS (filtered from Indiana data)
   const [horizontalSearchResults, setHorizontalSearchResults] = useState<CRSOption[]>([]);
   const [horizontalSearchLoading, setHorizontalSearchLoading] = useState(false);
 
   const [crsLoading, setCrsLoading] = useState(false);
   const [crsError, setCrsError] = useState<string | null>(null);
+
+  // Filter Indiana CRS options based on search
+  const filterIndianaOptions = useCallback((query: string): CRSOption[] => {
+    if (!query.trim()) return indianaCRSOptions;
+    
+    const searchLower = query.toLowerCase();
+    return indianaCRSOptions.filter(option => 
+      option.code.toLowerCase().includes(searchLower) ||
+      option.name.toLowerCase().includes(searchLower) ||
+      (option.description && option.description.toLowerCase().includes(searchLower))
+    );
+  }, []);
 
   // Debounce function for API calls with proper TypeScript typing
   const debounce = useCallback((fn: (...args: string[]) => Promise<void>, delay: number) => {
@@ -106,17 +126,20 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   // Handle horizontal search input changes
   useEffect(() => {
-    // Always open the dropdown when typing
     if (horizontalSearch.trim()) {
       setHorizontalOpen(true);
       setHorizontalSearchLoading(true);
-      debouncedHorizontalSearch(horizontalSearch);
+      
+      // Filter local Indiana data instead of API call
+      const filteredResults = filterIndianaOptions(horizontalSearch);
+      setHorizontalSearchResults(filteredResults);
+      setHorizontalSearchLoading(false);
     } else {
-      // When search is empty, show all options
+      // When search is empty, show all Indiana options
       setHorizontalSearchResults([]);
       setHorizontalSearchLoading(false);
     }
-  }, [horizontalSearch, debouncedHorizontalSearch]);
+  }, [horizontalSearch, filterIndianaOptions]);
 
   // Load initial CRS options when modal opens
   useEffect(() => {
@@ -150,14 +173,24 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
     
     try {
       const options = await crsService.getAllCRSOptions();
-      setCrsOptions(options);
+      
+      // Use Indiana data for horizontal CRS, API data for vertical and geoid
+      setCrsOptions({
+        horizontal: indianaCRSOptions,
+        vertical: options.vertical,
+        geoid: options.geoid
+      });
     } catch (error) {
       console.error("Failed to load CRS options:", error);
       setCrsError("Failed to load coordinate reference systems. Using fallback options.");
       
-      // Use fallback options
+      // Use fallback options with Indiana data for horizontal
       const fallback = crsService.getFallbackCRS();
-      setCrsOptions(fallback);
+      setCrsOptions({
+        horizontal: indianaCRSOptions,
+        vertical: fallback.vertical,
+        geoid: fallback.geoid
+      });
     } finally {
       setCrsLoading(false);
     }
@@ -223,12 +256,12 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   };
 
   const renderHorizontalCRSSelect = () => {
-    // Use search results if searching, otherwise use default options
+    // Use search results if searching, otherwise use Indiana options
     const optionsToShow = horizontalSearch.trim() 
       ? horizontalSearchResults 
-      : crsOptions.horizontal;
+      : indianaCRSOptions;
     
-    const selectedOption = [...crsOptions.horizontal, ...horizontalSearchResults]
+    const selectedOption = [...indianaCRSOptions, ...horizontalSearchResults]
       .find(opt => opt.code === formData.crs?.horizontal);
 
     return (
@@ -239,7 +272,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search horizontal CRS..."
+            placeholder="Search Indiana CRS options..."
             value={horizontalSearch}
             onChange={(e) => {
               setHorizontalSearch(e.target.value);
