@@ -64,8 +64,8 @@ export const potreeLocationService = {
    */
   async extractLocationFromWorldFile(jobNumber: string): Promise<Partial<Project> | null> {
     try {
-      // Try to fetch world file with different extensions
-      const worldFileExtensions = [".tfw", ".jgw", ".wld", ".tifw", ".pgw", ".gfw"];
+      // Try to fetch world file with different extensions - prioritize .tfw
+      const worldFileExtensions = [".tfw"];
       let worldFileData = null;
       
       for (const ext of worldFileExtensions) {
