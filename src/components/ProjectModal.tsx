@@ -65,7 +65,10 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   // Convert Indiana.json data to CRSOption format - memoized to prevent recreation
   const indianaCRSOptions: CRSOption[] = useMemo(() => {
-    return (indianaData?.results || []).map(item => ({
+    console.log("Indiana data:", indianaData);
+    console.log("Indiana results:", indianaData?.results?.length);
+    
+    const options = (indianaData?.results || []).map(item => ({
       code: `${item.id.authority}:${item.id.code}`,
       name: item.name,
       type: "horizontal" as const,
@@ -73,6 +76,9 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
       recommended: false,
       bbox: item.bbox as [number, number, number, number]
     }));
+    
+    console.log("Processed Indiana CRS options:", options.length);
+    return options;
   }, []);
 
   // Search results for horizontal CRS (filtered from Indiana data)
@@ -264,6 +270,10 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
       ? horizontalSearchResults 
       : indianaCRSOptions.slice(0, 50);
     
+    console.log("Options to show:", optionsToShow.length);
+    console.log("Horizontal search:", horizontalSearch);
+    console.log("Horizontal open:", horizontalOpen);
+    
     const selectedOption = indianaCRSOptions.find(opt => opt.code === formData.crs?.horizontal);
 
     return (
@@ -278,12 +288,18 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             value={horizontalSearch}
             onChange={(e) => {
               setHorizontalSearch(e.target.value);
+              if (!horizontalOpen) setHorizontalOpen(true);
+            }}
+            onFocus={() => {
+              console.log("Input focused, opening dropdown");
               setHorizontalOpen(true);
             }}
-            onFocus={() => setHorizontalOpen(true)}
             onBlur={() => {
               // Delay closing to allow for clicks
-              setTimeout(() => setHorizontalOpen(false), 200);
+              setTimeout(() => {
+                console.log("Input blurred, closing dropdown");
+                setHorizontalOpen(false);
+              }, 200);
             }}
             className="pl-10"
             autoComplete="off"
@@ -325,6 +341,9 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             ) : optionsToShow.length === 0 ? (
               <div className="p-4 text-center text-sm text-gray-500">
                 {horizontalSearch.trim() ? "No results found" : "No options available"}
+                <div className="text-xs mt-1">
+                  Debug: Indiana options: {indianaCRSOptions.length}, Search: "{horizontalSearch}"
+                </div>
               </div>
             ) : (
               optionsToShow.map((option) => (
@@ -335,6 +354,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
                   }`}
                   onMouseDown={(e) => {
                     e.preventDefault(); // Prevent blur from firing
+                    console.log("Selected option:", option.code);
                     setFormData(prev => ({
                       ...prev,
                       crs: { ...prev.crs!, horizontal: option.code }
