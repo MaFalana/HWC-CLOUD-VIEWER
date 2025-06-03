@@ -321,6 +321,8 @@ export const transformProjectLocation = async (project: {
   const { latitude, longitude } = project.location;
   const horizontalCRS = project.crs?.horizontal || "EPSG:4326";
   
+  console.log(`Transforming project location from ${horizontalCRS}:`, { latitude, longitude });
+  
   // If already in WGS84, return as-is
   if (horizontalCRS === "EPSG:4326") {
     return { latitude, longitude };
@@ -334,21 +336,30 @@ export const transformProjectLocation = async (project: {
       return { latitude, longitude };
     }
     
-    // Try MapTiler API first for accurate transformation
-    try {
-      // For Indiana State Plane coordinates, we need to use the correct order
-      // For projected coordinates, x is easting (longitude) and y is northing (latitude)
-      const maptilerResult = await transformWithMapTiler(horizontalCRS, "EPSG:4326", [longitude, latitude]);
-      if (maptilerResult) {
-        console.log(`MapTiler transformed project coordinates from ${horizontalCRS} to EPSG:4326:`, {
-          from: [longitude, latitude],
-          to: [maptilerResult.longitude, maptilerResult.latitude]
-        });
-        
-        return maptilerResult;
+    // For projected coordinates (large numbers), try MapTiler API transformation
+    if (Math.abs(latitude) > 1000 || Math.abs(longitude) > 1000) {
+      console.log(`Detected projected coordinates, attempting transformation via MapTiler API`);
+      
+      try {
+        // For projected coordinates, the order is typically easting (x), northing (y)
+        // But we need to check which coordinate is which based on the CRS
+        const maptilerResult = await transformWithMapTiler(horizontalCRS, "EPSG:4326", [longitude, latitude]);
+        if (maptilerResult) {
+          console.log(`MapTiler transformed project coordinates from ${horizontalCRS} to EPSG:4326:`, {
+            from: [longitude, latitude],
+            to: [maptilerResult.longitude, maptilerResult.latitude]
+          });
+          
+          // Validate the transformed coordinates are reasonable
+          if (Math.abs(maptilerResult.latitude) <= 90 && Math.abs(maptilerResult.longitude) <= 180) {
+            return maptilerResult;
+          } else {
+            console.warn("MapTiler returned invalid coordinates:", maptilerResult);
+          }
+        }
+      } catch (error) {
+        console.error("MapTiler transformation failed:", error);
       }
-    } catch (error) {
-      console.error("MapTiler transformation failed, falling back to bbox center:", error);
     }
     
     // If MapTiler API fails, use the center of the CRS bbox as a fallback
@@ -366,6 +377,7 @@ export const transformProjectLocation = async (project: {
     }
     
     // Last resort fallback to center of Indiana
+    console.log("Using Indiana center as final fallback");
     return { 
       latitude: 39.7684, 
       longitude: -86.1581 
