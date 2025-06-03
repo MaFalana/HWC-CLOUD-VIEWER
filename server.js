@@ -9,6 +9,9 @@ const PORT = process.env.PORT || 5000;
 // Enable CORS for all routes
 app.use(cors());
 
+// Parse JSON request body
+app.use(express.json());
+
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -43,6 +46,35 @@ app.get('/api/projects/:jobNumber', (req, res) => {
       res.status(500).json({ error: "Error parsing project info" });
     }
   });
+});
+
+// API endpoint to save project info (including CRS data)
+app.post('/api/projects/:jobNumber', (req, res) => {
+  const { jobNumber } = req.params;
+  const projectData = req.body;
+  
+  // Ensure the project directory exists
+  const projectDir = path.join(__dirname, `public/pointclouds/${jobNumber}`);
+  if (!fs.existsSync(projectDir)) {
+    fs.mkdirSync(projectDir, { recursive: true });
+  }
+  
+  // Save project info to file
+  const infoPath = path.join(projectDir, 'info.json');
+  
+  try {
+    // Add timestamp for update
+    projectData.updatedAt = new Date().toISOString();
+    
+    // Write project data to file
+    fs.writeFileSync(infoPath, JSON.stringify(projectData, null, 2));
+    
+    console.log(`Saved project info for ${jobNumber}:`, projectData);
+    res.json({ success: true, message: "Project info saved successfully", data: projectData });
+  } catch (error) {
+    console.error(`Error saving project info for ${jobNumber}:`, error);
+    res.status(500).json({ error: "Failed to save project info" });
+  }
 });
 
 // Health check endpoint
