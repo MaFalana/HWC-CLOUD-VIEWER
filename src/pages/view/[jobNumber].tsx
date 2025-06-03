@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -13,24 +14,14 @@ export default function PotreeViewer() {
   const router = useRouter();
   const { jobNumber } = router.query;
   const [project, setProject] = useState<Project | null>(null);
-  const [projectName, setProjectName] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showProjectInfo, setShowProjectInfo] = useState(false);
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   
-  // Backend URL for point cloud data
-  const BACKEND_URL = "https://hwc-backend-server.vercel.app";
-  
-  useEffect(() => {
-    // Print the backend URL in the console log
-    console.log("Backend URL for point cloud data:", BACKEND_URL);
-  }, []);
-
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
 
@@ -80,41 +71,20 @@ export default function PotreeViewer() {
         }
 
         setProject(projectData as Project);
-        setProjectName(projectData.projectName || "");
         setLoadingProgress(50);
 
-        // Set up message listener for iframe communication
-        const handleMessage = (event: MessageEvent) => {
-          if (event.data.type === "loadingComplete") {
+        // Load the example point cloud directly
+        if (iframeRef.current) {
+          // Use the example point cloud data
+          iframeRef.current.src = `/potree/examples/lion.html`;
+          
+          iframeRef.current.onload = () => {
             setLoadingProgress(100);
             setTimeout(() => {
               setLoading(false);
             }, 500);
-          } else if (event.data.type === "loadingError") {
-            setLoadingError(event.data.error || "Failed to load point cloud");
-            setLoading(false);
-          } else if (event.data.type === "stylingComplete") {
-            console.log("Potree styling complete");
-          }
-        };
-
-        window.addEventListener("message", handleMessage);
-
-        // Load the iframe with the Potree viewer
-        if (iframeRef.current) {
-          const latitude = projectData.location?.latitude || 39.7684;
-          const longitude = projectData.location?.longitude || -86.1581;
-          
-          iframeRef.current.src = `/potree-viewer.html?jobNumber=${jobNumber}&mapType=${mapType}&latitude=${latitude}&longitude=${longitude}&projectName=${encodeURIComponent(projectData.projectName || "")}`;
-          
-          iframeRef.current.onload = () => {
-            setLoadingProgress(70);
           };
         }
-
-        return () => {
-          window.removeEventListener("message", handleMessage);
-        };
       } catch (err) {
         console.error("Error loading project data:", err);
         setLoadingError(`Failed to load project data: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -124,13 +94,6 @@ export default function PotreeViewer() {
 
     fetchProjectData();
   }, [jobNumber]);
-
-  // Update map type when it changes
-  useEffect(() => {
-    if (!loading && iframeRef.current && iframeRef.current.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({ type: "setMapType", mapType }, "*");
-    }
-  }, [mapType, loading]);
 
   // Handle sidebar toggle
   const toggleSidebar = () => {
@@ -155,7 +118,7 @@ export default function PotreeViewer() {
               style={{ width: "auto", height: "auto" }}
             />
             <h1 className="text-2xl font-semibold mb-2">
-              {projectName || project?.projectName || `Project ${jobNumber}`}
+              {project?.projectName || `Project ${jobNumber}`}
             </h1>
           </div>
           
@@ -207,7 +170,7 @@ export default function PotreeViewer() {
   return (
     <>
       <Head>
-        <title>{projectName || project?.projectName || `Project ${jobNumber}`} - HWC Engineering Cloud Viewer</title>
+        <title>{project?.projectName || `Project ${jobNumber}`} - HWC Engineering Cloud Viewer</title>
         <meta name="description" content="Point cloud viewer" />
         <link rel="icon" href="/HWC-angle-logo-16px.png" />
       </Head>
@@ -227,7 +190,7 @@ export default function PotreeViewer() {
             </Button>
             <div className="h-6 w-px bg-hwc-gray/50"></div>
             <h1 className="text-xl font-semibold tracking-tight">
-              {projectName || project?.projectName || `Project ${jobNumber}`}
+              {project?.projectName || `Project ${jobNumber}`}
             </h1>
             {project?.location && (
               <div className="flex items-center gap-2 text-sm text-hwc-light/80">
@@ -381,7 +344,7 @@ export default function PotreeViewer() {
         </Card>
       </div>
 
-      {/* Potree Viewer Iframe */}
+      {/* Potree Viewer Iframe - Using a direct example from Potree */}
       <iframe
         ref={iframeRef}
         className="absolute inset-0 w-full h-full border-0 z-10"
