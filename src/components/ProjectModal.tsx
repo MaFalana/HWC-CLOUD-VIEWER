@@ -258,13 +258,12 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   };
 
   const renderHorizontalCRSSelect = () => {
-    // Use search results if searching, otherwise use Indiana options
+    // Use search results if searching, otherwise use first 50 Indiana options
     const optionsToShow = horizontalSearch.trim() 
       ? horizontalSearchResults 
-      : indianaCRSOptions;
+      : indianaCRSOptions.slice(0, 50);
     
-    const selectedOption = [...indianaCRSOptions, ...horizontalSearchResults]
-      .find(opt => opt.code === formData.crs?.horizontal);
+    const selectedOption = indianaCRSOptions.find(opt => opt.code === formData.crs?.horizontal);
 
     return (
       <div className="space-y-2">
@@ -278,10 +277,13 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
             value={horizontalSearch}
             onChange={(e) => {
               setHorizontalSearch(e.target.value);
-              // Always open dropdown when typing
               setHorizontalOpen(true);
             }}
             onFocus={() => setHorizontalOpen(true)}
+            onBlur={() => {
+              // Delay closing to allow for clicks
+              setTimeout(() => setHorizontalOpen(false), 200);
+            }}
             className="pl-10"
             autoComplete="off"
           />
@@ -313,7 +315,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
         {/* Options List */}
         {horizontalOpen && (
-          <div className="border rounded-md max-h-[300px] overflow-y-auto bg-white shadow-lg">
+          <div className="border rounded-md max-h-[300px] overflow-y-auto bg-white shadow-lg z-50">
             {horizontalSearchLoading ? (
               <div className="flex items-center justify-center p-4">
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -330,7 +332,8 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
                   className={`flex items-start gap-3 p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 ${
                     formData.crs?.horizontal === option.code ? "bg-blue-50" : ""
                   }`}
-                  onClick={() => {
+                  onMouseDown={(e) => {
+                    e.preventDefault(); // Prevent blur from firing
                     setFormData(prev => ({
                       ...prev,
                       crs: { ...prev.crs!, horizontal: option.code }
