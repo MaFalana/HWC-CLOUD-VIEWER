@@ -206,7 +206,18 @@ const transformWithMapTiler = async (
     const data = await response.json();
     console.log("MapTiler API response:", data);
     
-    // MapTiler returns [lon, lat] for geographic coordinates
+    // Handle the new MapTiler API response format with results array
+    if (data && data.results && Array.isArray(data.results) && data.results.length > 0) {
+      const result = data.results[0];
+      if (result && typeof result.x === 'number' && typeof result.y === 'number') {
+        return {
+          longitude: result.x,  // x is longitude
+          latitude: result.y    // y is latitude
+        };
+      }
+    }
+    
+    // Fallback: try the old format in case API returns different structure
     if (data && Array.isArray(data) && data.length >= 2) {
       return {
         latitude: data[1],  // lat is second in the response
