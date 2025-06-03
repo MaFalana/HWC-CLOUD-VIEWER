@@ -123,7 +123,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   // Initialize horizontal search results when Indiana options are available
   useEffect(() => {
-    if (indianaCRSOptions && indianaCRSOptions.length > 0) {
+    if (indianaCRSOptions && indianaCRSOptions.length > 0 && isOpen) {
       console.log(`Setting initial horizontal search results with ${indianaCRSOptions.length} options`);
       // Always initialize with first 50 options when modal opens
       setHorizontalSearchResults(indianaCRSOptions.slice(0, 50));
