@@ -16,7 +16,7 @@ interface SourcesFile {
 }
 
 // Backend URL for point cloud data
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = "https://hwc-backend-server.vercel.app";
 
 export const sourcesJsonService = {
   /**
