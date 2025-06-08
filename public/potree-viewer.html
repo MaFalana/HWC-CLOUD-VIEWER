@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,342 +6,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HWC Engineering Cloud Viewer</title>
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      width: 100%;
-      height: 100%;
-      background: #292C30;
-      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    }
-    
-    #potree_render_area {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      left: 0;
-      top: 0;
-      background: #292C30;
-    }
-    
-    #potree_sidebar_container {
-      background: rgba(41, 44, 48, 0.98);
-      backdrop-filter: blur(20px);
-      border-left: 2px solid rgba(238, 47, 39, 0.3);
-      z-index: 30;
-      overflow-y: auto;
-      max-height: calc(100vh - 80px);
-      position: fixed;
-      right: 0;
-      top: 80px;
-      width: 320px;
-      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4);
-    }
-    
-    /* Loading indicator */
-    #loading-indicator {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #292C30;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-    
-    #loading-logo {
-      margin-bottom: 2rem;
-    }
-    
-    #loading-progress-container {
-      width: 300px;
-      height: 4px;
-      background: rgba(221, 212, 204, 0.2);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-bottom: 1rem;
-    }
-    
-    #loading-progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8));
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-    
-    #loading-text {
-      color: rgba(221, 212, 204, 0.9);
-      font-size: 14px;
-    }
-    
-    /* Custom scrollbar with HWC colors */
-    #potree_sidebar_container::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    #potree_sidebar_container::-webkit-scrollbar-track {
-      background: rgba(108, 104, 100, 0.2);
-      border-radius: 3px;
-    }
-    
-    #potree_sidebar_container::-webkit-scrollbar-thumb {
-      background: rgba(238, 47, 39, 0.7);
-      border-radius: 3px;
-    }
-    
-    #potree_sidebar_container::-webkit-scrollbar-thumb:hover {
-      background: rgba(238, 47, 39, 0.9);
-    }
-    
-    /* Modern accordion headers with HWC red */
-    .ui-accordion-header {
-      background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7)) !important;
-      color: white !important;
-      border: none !important;
-      border-radius: 8px !important;
-      margin-bottom: 4px !important;
-      padding: 12px 16px !important;
-      font-weight: 600 !important;
-      font-size: 14px !important;
-      z-index: 31 !important;
-      transition: all 0.2s ease !important;
-      letter-spacing: -0.025em !important;
-    }
-    
-    .ui-accordion-header:hover {
-      background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important;
-      transform: translateY(-1px) !important;
-      box-shadow: 0 4px 12px rgba(238, 47, 39, 0.4) !important;
-    }
-    
-    .ui-accordion-content {
-      background: rgba(41, 44, 48, 0.95) !important;
-      color: rgba(221, 212, 204, 1) !important;
-      border: none !important;
-      border-radius: 8px !important;
-      z-index: 31 !important;
-      overflow-y: auto !important;
-      max-height: 400px !important;
-    }
-    
-    /* Tools grid layout - CRITICAL FIX for proper grid display */
-    .potree_toolbar,
-    .potree_menu_tools,
-    .pv-menu-tools,
-    div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube),
-    div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) {
-      display: grid !important;
-      grid-template-columns: repeat(4, 1fr) !important;
-      gap: 8px !important;
-      padding: 16px !important;
-      background: rgba(221, 212, 204, 0.08) !important;
-      border-radius: 12px !important;
-      margin: 8px 0 !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-    }
-    
-    /* Tool buttons with HWC styling */
-    .potree_toolbar button,
-    .potree_menu_tools button,
-    .pv-menu-tools button,
-    .potree_toolbar .potree_button,
-    .potree_menu_tools .potree_button,
-    .pv-menu-tools .potree_button,
-    div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button,
-    div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button,
-    div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button,
-    div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button {
-      width: 100% !important;
-      height: 44px !important;
-      margin: 0 !important;
-      padding: 8px !important;
-      background: rgba(221, 212, 204, 0.12) !important;
-      border: 1px solid rgba(238, 47, 39, 0.25) !important;
-      border-radius: 8px !important;
-      color: rgba(221, 212, 204, 1) !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      transition: all 0.2s ease !important;
-      font-size: 12px !important;
-      font-weight: 500 !important;
-      cursor: pointer !important;
-      box-sizing: border-box !important;
-    }
-    
-    /* Tool button hover effects */
-    .potree_toolbar button:hover,
-    .potree_menu_tools button:hover,
-    .pv-menu-tools button:hover,
-    .potree_toolbar .potree_button:hover,
-    .potree_menu_tools .potree_button:hover,
-    .pv-menu-tools .potree_button:hover,
-    div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button:hover,
-    div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button:hover,
-    div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button:hover,
-    div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button:hover {
-      background: rgba(238, 47, 39, 0.2) !important;
-      border-color: rgba(238, 47, 39, 0.6) !important;
-      transform: translateY(-2px) !important;
-      box-shadow: 0 4px 12px rgba(238, 47, 39, 0.25) !important;
-      color: white !important;
-    }
-    
-    /* Active tool button styling with HWC red */
-    .potree_toolbar button.active,
-    .potree_menu_tools button.active,
-    .pv-menu-tools button.active,
-    .potree_toolbar .potree_button.active,
-    .potree_menu_tools .potree_button.active,
-    .pv-menu-tools .potree_button.active,
-    .potree_toolbar button.selected,
-    .potree_menu_tools button.selected,
-    .pv-menu-tools button.selected,
-    .potree_toolbar .potree_button.selected,
-    .potree_menu_tools .potree_button.selected,
-    .pv-menu-tools .potree_button.selected,
-    div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button.active,
-    div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button.active,
-    div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.active,
-    div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.active,
-    div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button.selected,
-    div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button.selected,
-    div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.selected,
-    div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.selected {
-      background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7)) !important;
-      border: 2px solid rgba(238, 47, 39, 1) !important;
-      box-shadow: 0 0 16px rgba(238, 47, 39, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-      color: white !important;
-      transform: translateY(-1px) !important;
-    }
-    
-    /* Tool icons styling */
-    .potree_toolbar img,
-    .potree_menu_tools img,
-    .pv-menu-tools img,
-    .potree_toolbar .potree_button img,
-    .potree_menu_tools .potree_button img,
-    .pv-menu-tools .potree_button img,
-    div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) img,
-    div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) img,
-    div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button img,
-    div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button img {
-      width: 18px !important;
-      height: 18px !important;
-      filter: brightness(0) invert(1) !important;
-    }
-    
-    /* Compass and navigation controls - FIXED positioning in bottom right */
-    .potree_compass {
-      z-index: 35 !important;
-      position: fixed !important;
-      bottom: 24px !important;
-      right: 24px !important;
-      left: auto !important;
-      top: auto !important;
-      background: rgba(41, 44, 48, 0.95) !important;
-      border: 2px solid rgba(238, 47, 39, 0.7) !important;
-      border-radius: 50% !important;
-      padding: 12px !important;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3) !important;
-      pointer-events: auto !important;
-      width: 64px !important;
-      height: 64px !important;
-      backdrop-filter: blur(20px) !important;
-    }
-    
-    .potree_navigation_cube {
-      z-index: 35 !important;
-      position: fixed !important;
-      bottom: 24px !important;
-      right: 104px !important;
-      left: auto !important;
-      top: auto !important;
-      background: rgba(41, 44, 48, 0.95) !important;
-      border: 2px solid rgba(238, 47, 39, 0.7) !important;
-      border-radius: 12px !important;
-      padding: 12px !important;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3) !important;
-      pointer-events: auto !important;
-      backdrop-filter: blur(20px) !important;
-    }
-    
-    /* Form elements with HWC styling */
-    #potree_sidebar_container input[type="text"],
-    #potree_sidebar_container input[type="number"],
-    #potree_sidebar_container select {
-      background: rgba(221, 212, 204, 0.1) !important;
-      color: rgba(221, 212, 204, 1) !important;
-      border: 1px solid rgba(238, 47, 39, 0.3) !important;
-      border-radius: 6px !important;
-      padding: 8px 12px !important;
-      font-size: 13px !important;
-      transition: all 0.2s ease !important;
-    }
-    
-    #potree_sidebar_container input[type="text"]:focus,
-    #potree_sidebar_container input[type="number"]:focus,
-    #potree_sidebar_container select:focus {
-      border-color: rgba(238, 47, 39, 0.8) !important;
-      outline: none !important;
-      box-shadow: 0 0 0 3px rgba(238, 47, 39, 0.15) !important;
-    }
-    
-    /* Labels with HWC light color */
-    #potree_sidebar_container label,
-    #potree_sidebar_container .potree_label {
-      color: rgba(221, 212, 204, 0.9) !important;
-      font-weight: 500 !important;
-      font-size: 13px !important;
-    }
-    
-    /* Range inputs with HWC red */
-    input[type="range"] {
-      -webkit-appearance: none !important;
-      background: rgba(221, 212, 204, 0.2) !important;
-      height: 6px !important;
-      border-radius: 3px !important;
-    }
-    
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none !important;
-      width: 18px !important;
-      height: 18px !important;
-      background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important;
-      border-radius: 50% !important;
-      cursor: pointer !important;
-      box-shadow: 0 2px 8px rgba(238, 47, 39, 0.4) !important;
-    }
-    
-    /* Checkbox and radio with HWC red */
-    input[type="checkbox"],
-    input[type="radio"] {
-      accent-color: rgba(238, 47, 39, 1) !important;
-    }
-    
-    /* Progress bars with HWC red */
-    .potree_progress,
-    .progress {
-      background: rgba(221, 212, 204, 0.2) !important;
-      border-radius: 6px !important;
-      overflow: hidden !important;
-      height: 6px !important;
-    }
-    
-    .potree_progress .progress-bar,
-    .progress .progress-bar {
-      background: linear-gradient(90deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important;
-      border-radius: 6px !important;
-    }
+    body, html { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; background: #292C30; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    #potree_render_area { position: absolute; width: 100%; height: 100%; left: 0; top: 0; background: #292C30; }
+    #potree_sidebar_container { background: rgba(41, 44, 48, 0.98); backdrop-filter: blur(20px); border-left: 2px solid rgba(238, 47, 39, 0.3); z-index: 30; overflow-y: auto; max-height: calc(100vh - 80px); position: fixed; right: 0; top: 80px; width: 320px; box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4); }
+    #loading-indicator { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #292C30; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+    #loading-logo { margin-bottom: 2rem; }
+    #loading-progress-container { width: 300px; height: 4px; background: rgba(221, 212, 204, 0.2); border-radius: 2px; overflow: hidden; margin-bottom: 1rem; }
+    #loading-progress-bar { height: 100%; background: linear-gradient(90deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)); width: 0%; transition: width 0.3s ease; }
+    #loading-text { color: rgba(221, 212, 204, 0.9); font-size: 14px; }
+    #potree_sidebar_container::-webkit-scrollbar { width: 6px; }
+    #potree_sidebar_container::-webkit-scrollbar-track { background: rgba(108, 104, 100, 0.2); border-radius: 3px; }
+    #potree_sidebar_container::-webkit-scrollbar-thumb { background: rgba(238, 47, 39, 0.7); border-radius: 3px; }
+    #potree_sidebar_container::-webkit-scrollbar-thumb:hover { background: rgba(238, 47, 39, 0.9); }
+    .ui-accordion-header { background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7)) !important; color: white !important; border: none !important; border-radius: 8px !important; margin-bottom: 4px !important; padding: 12px 16px !important; font-weight: 600 !important; font-size: 14px !important; z-index: 31 !important; transition: all 0.2s ease !important; letter-spacing: -0.025em !important; }
+    .ui-accordion-header:hover { background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important; transform: translateY(-1px) !important; box-shadow: 0 4px 12px rgba(238, 47, 39, 0.4) !important; }
+    .ui-accordion-content { background: rgba(41, 44, 48, 0.95) !important; color: rgba(221, 212, 204, 1) !important; border: none !important; border-radius: 8px !important; z-index: 31 !important; overflow-y: auto !important; max-height: 400px !important; }
+    .potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; padding: 16px !important; background: rgba(221, 212, 204, 0.08) !important; border-radius: 12px !important; margin: 8px 0 !important; width: 100% !important; box-sizing: border-box !important; }
+    .potree_toolbar button, .potree_menu_tools button, .pv-menu-tools button, .potree_toolbar .potree_button, .potree_menu_tools .potree_button, .pv-menu-tools .potree_button, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button { width: 100% !important; height: 44px !important; margin: 0 !important; padding: 8px !important; background: rgba(221, 212, 204, 0.12) !important; border: 1px solid rgba(238, 47, 39, 0.25) !important; border-radius: 8px !important; color: rgba(221, 212, 204, 1) !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: all 0.2s ease !important; font-size: 12px !important; font-weight: 500 !important; cursor: pointer !important; box-sizing: border-box !important; }
+    .potree_toolbar button:hover, .potree_menu_tools button:hover, .pv-menu-tools button:hover, .potree_toolbar .potree_button:hover, .potree_menu_tools .potree_button:hover, .pv-menu-tools .potree_button:hover, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button:hover, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button:hover, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button:hover, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button:hover { background: rgba(238, 47, 39, 0.2) !important; border-color: rgba(238, 47, 39, 0.6) !important; transform: translateY(-2px) !important; box-shadow: 0 4px 12px rgba(238, 47, 39, 0.25) !important; color: white !important; }
+    .potree_toolbar button.active, .potree_menu_tools button.active, .pv-menu-tools button.active, .potree_toolbar .potree_button.active, .potree_menu_tools .potree_button.active, .pv-menu-tools .potree_button.active, .potree_toolbar button.selected, .potree_menu_tools button.selected, .pv-menu-tools button.selected, .potree_toolbar .potree_button.selected, .potree_menu_tools .potree_button.selected, .pv-menu-tools .potree_button.selected, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button.active, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button.active, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.active, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.active, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button.selected, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button.selected, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.selected, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button.selected { background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7)) !important; border: 2px solid rgba(238, 47, 39, 1) !important; box-shadow: 0 0 16px rgba(238, 47, 39, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important; color: white !important; transform: translateY(-1px) !important; }
+    .potree_toolbar img, .potree_menu_tools img, .pv-menu-tools img, .potree_toolbar .potree_button img, .potree_menu_tools .potree_button img, .pv-menu-tools .potree_button img, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) img, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) img, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button img, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button img { width: 18px !important; height: 18px !important; filter: brightness(0) invert(1) !important; }
+    .potree_compass { z-index: 35 !important; position: fixed !important; bottom: 24px !important; right: 24px !important; left: auto !important; top: auto !important; background: rgba(41, 44, 48, 0.95) !important; border: 2px solid rgba(238, 47, 39, 0.7) !important; border-radius: 50% !important; padding: 12px !important; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3) !important; pointer-events: auto !important; width: 64px !important; height: 64px !important; backdrop-filter: blur(20px) !important; }
+    .potree_navigation_cube { z-index: 35 !important; position: fixed !important; bottom: 24px !important; right: 104px !important; left: auto !important; top: auto !important; background: rgba(41, 44, 48, 0.95) !important; border: 2px solid rgba(238, 47, 39, 0.7) !important; border-radius: 12px !important; padding: 12px !important; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3) !important; pointer-events: auto !important; backdrop-filter: blur(20px) !important; }
+    #potree_sidebar_container input[type="text"], #potree_sidebar_container input[type="number"], #potree_sidebar_container select { background: rgba(221, 212, 204, 0.1) !important; color: rgba(221, 212, 204, 1) !important; border: 1px solid rgba(238, 47, 39, 0.3) !important; border-radius: 6px !important; padding: 8px 12px !important; font-size: 13px !important; transition: all 0.2s ease !important; }
+    #potree_sidebar_container input[type="text"]:focus, #potree_sidebar_container input[type="number"]:focus, #potree_sidebar_container select:focus { border-color: rgba(238, 47, 39, 0.8) !important; outline: none !important; box-shadow: 0 0 0 3px rgba(238, 47, 39, 0.15) !important; }
+    #potree_sidebar_container label, #potree_sidebar_container .potree_label { color: rgba(221, 212, 204, 0.9) !important; font-weight: 500 !important; font-size: 13px !important; }
+    input[type="range"] { -webkit-appearance: none !important; background: rgba(221, 212, 204, 0.2) !important; height: 6px !important; border-radius: 3px !important; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none !important; width: 18px !important; height: 18px !important; background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important; border-radius: 50% !important; cursor: pointer !important; box-shadow: 0 2px 8px rgba(238, 47, 39, 0.4) !important; }
+    input[type="checkbox"], input[type="radio"] { accent-color: rgba(238, 47, 39, 1) !important; }
+    .potree_progress, .progress { background: rgba(221, 212, 204, 0.2) !important; border-radius: 6px !important; overflow: hidden !important; height: 6px !important; }
+    .potree_progress .progress-bar, .progress .progress-bar { background: linear-gradient(90deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important; border-radius: 6px !important; }
   </style>
   
-  <!-- Potree CSS -->
   <link rel="stylesheet" href="/potree/build/potree/potree.css">
   <link rel="stylesheet" href="/potree/libs/jquery-ui/jquery-ui.min.css">
   <link rel="stylesheet" type="text/css" href="/potree/libs/openlayers3/ol.css">
@@ -350,21 +47,15 @@
   <link rel="stylesheet" type="text/css" href="/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css">
 </head>
 <body>
-  <!-- Loading indicator -->
   <div id="loading-indicator">
-    <div id="loading-logo">
-      <img src="/hwc-logo-4c-mbe1obbx.png" alt="HWC Engineering" width="200" height="67" style="width: auto; height: auto;">
-    </div>
-    <div id="loading-progress-container">
-      <div id="loading-progress-bar"></div>
-    </div>
+    <div id="loading-logo"><img src="/hwc-logo-4c-mbe1obbx.png" alt="HWC Engineering" width="200" height="67" style="width: auto; height: auto;"></div>
+    <div id="loading-progress-container"><div id="loading-progress-bar"></div></div>
     <div id="loading-text">Loading Potree Viewer... 0%</div>
   </div>
 
   <div id="potree_render_area"></div>
   <div id="potree_sidebar_container"></div>
   
-  <!-- Potree Scripts -->
   <script src="/potree/libs/jquery/jquery-3.1.1.min.js"></script>
   <script src="/potree/libs/spectrum/spectrum.js"></script>
   <script src="/potree/libs/jquery-ui/jquery-ui.min.js"></script>
@@ -385,164 +76,195 @@
   <script src="/potree/libs/papa/papaparse.js"></script>
   
   <script>
-    // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const jobNumber = urlParams.get('jobNumber') || 'example';
-    const mapType = urlParams.get('mapType') || 'default';
-    const latitude = parseFloat(urlParams.get('latitude') || '39.7684');
-    const longitude = parseFloat(urlParams.get('longitude') || '-86.1581');
-    const projectName = urlParams.get('projectName') || `Project ${jobNumber}`;
+    const pointcloudUrlParam = urlParams.get('pointcloud'); // This is the full URL to metadata.json
+    const projectNameParam = urlParams.get('projectName') || "Point Cloud Project";
     
-    // Loading progress
-    let loadingProgress = 0;
-    const updateLoadingProgress = (progress) => {
-      loadingProgress = progress;
-      document.getElementById('loading-progress-bar').style.width = `${progress}%`;
-      document.getElementById('loading-text').textContent = `Loading Potree Viewer... ${Math.round(progress)}%`;
+    let currentLoadingProgress = 0;
+    const loadingTextElement = document.getElementById('loading-text');
+    const loadingProgressBarElement = document.getElementById('loading-progress-bar');
+
+    function updateLoadingProgress(progress, text) {
+      currentLoadingProgress = Math.min(100, Math.max(currentLoadingProgress, progress));
+      if (loadingProgressBarElement) loadingProgressBarElement.style.width = `${currentLoadingProgress}%`;
+      if (loadingTextElement) loadingTextElement.textContent = text || `Loading Potree Viewer... ${Math.round(currentLoadingProgress)}%`;
       
-      // Send progress to parent window
       try {
-        window.parent.postMessage({ type: 'loadingProgress', progress }, '*');
-      } catch (e) {
-        console.error("Error sending message to parent:", e);
-      }
+        window.parent.postMessage({ type: 'loadingProgress', progress: currentLoadingProgress, text: loadingTextElement.textContent }, '*');
+      } catch (e) { console.error("Error sending progress message to parent:", e); }
       
-      if (progress >= 100) {
+      if (currentLoadingProgress >= 100) {
         setTimeout(() => {
-          document.getElementById('loading-indicator').style.display = 'none';
+          const loadingIndicator = document.getElementById('loading-indicator');
+          if (loadingIndicator) loadingIndicator.style.display = 'none';
           try {
             window.parent.postMessage({ type: 'loadingComplete' }, '*');
-          } catch (e) {
-            console.error("Error sending completion message to parent:", e);
-          }
+          } catch (e) { console.error("Error sending completion message to parent:", e); }
         }, 500);
       }
-    };
+    }
     
-    // Initialize with 10% progress
-    updateLoadingProgress(10);
+    updateLoadingProgress(10, "Initializing viewer...");
     
-    // Initialize Potree viewer
     window.addEventListener('load', function() {
       console.log("Window loaded, initializing Potree...");
-      updateLoadingProgress(20);
+      updateLoadingProgress(20, "Setting up Potree environment...");
       
-      // Make sure the render area has dimensions
       const renderArea = document.getElementById('potree_render_area');
+      if (!renderArea) {
+        console.error("Potree render area not found!");
+        updateLoadingProgress(100, "Error: Render area missing.");
+        return;
+      }
       renderArea.style.width = '100%';
       renderArea.style.height = '100%';
       
-      // Initialize Potree viewer
       try {
-        updateLoadingProgress(30);
+        updateLoadingProgress(30, "Creating Potree instance...");
         const viewer = new Potree.Viewer(renderArea);
-        window.viewer = viewer; // Store viewer in global scope for debugging
+        window.viewer = viewer; 
         
         viewer.setEDLEnabled(true);
         viewer.setFOV(60);
-        viewer.setPointBudget(3_000_000); // Increased point budget for better visualization
-        viewer.setDescription(projectName);
+        viewer.setPointBudget(3 * 1000 * 1000);
+        viewer.setDescription(projectNameParam);
+        viewer.setLanguage("en");
         
-        updateLoadingProgress(40);
+        updateLoadingProgress(40, "Loading GUI...");
         
         viewer.loadGUI(() => {
-          viewer.setLanguage("en");
           console.log("Potree GUI loaded");
-          updateLoadingProgress(50);
+          updateLoadingProgress(50, "GUI loaded, preparing point cloud...");
           
-          // Apply custom styling after GUI is loaded
           setTimeout(() => {
-            // Force grid layout for tools
-            $('.potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube)').css({
-              'display': 'grid',
-              'grid-template-columns': 'repeat(4, 1fr)',
-              'gap': '8px',
-              'width': '100%'
-            });
-            
-            // Move compass to bottom right
-            $('.potree_compass').css({
-              'position': 'fixed',
-              'bottom': '24px',
-              'right': '24px',
-              'left': 'auto',
-              'top': 'auto',
-              'z-index': '35'
-            });
-            
-            // Move navigation cube to bottom right
-            $('.potree_navigation_cube').css({
-              'position': 'fixed',
-              'bottom': '24px',
-              'right': '104px',
-              'left': 'auto',
-              'top': 'auto',
-              'z-index': '35'
-            });
-            
-            // Add active state styling to buttons
-            $('.potree_toolbar button, .potree_menu_tools button, .pv-menu-tools button').on('click', function() {
-              $(this).toggleClass('active');
-            });
-            
-            // Apply perfect scrollbar to sidebar
             try {
+              // Apply custom styling and sidebar scrollbar
+              $('.potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube)').css({'display': 'grid', 'grid-template-columns': 'repeat(4, 1fr)', 'gap': '8px', 'width': '100%'});
+              $('.potree_compass').css({'position': 'fixed', 'bottom': '24px', 'right': '24px', 'left': 'auto', 'top': 'auto', 'z-index': '35'});
+              $('.potree_navigation_cube').css({'position': 'fixed', 'bottom': '24px', 'right': '104px', 'left': 'auto', 'top': 'auto', 'z-index': '35'});
+              $('.potree_toolbar button, .potree_menu_tools button, .pv-menu-tools button').on('click', function() { $(this).toggleClass('active'); });
               $('#potree_sidebar_container').perfectScrollbar();
-            } catch (e) {
-              console.log("Error applying perfect scrollbar:", e);
-            }
-            
-            // Notify parent that styling is complete
-            try {
               window.parent.postMessage({ type: 'stylingComplete' }, '*');
-            } catch (e) {
-              console.error("Error sending styling message to parent:", e);
-            }
-            updateLoadingProgress(60);
-          }, 500);
+            } catch(e) { console.error("Error applying custom styles or scrollbar:", e); }
+            updateLoadingProgress(60, "Styling applied...");
+          }, 100);
+
+          const defaultPointCloudName = "Point Cloud";
+          const fallbackUrls = [
+            { url: "/pointclouds/example/metadata.json", name: "Default Example Cloud" },
+            // Potree.loadPointCloud expects a metadata.json or similar, not an HTML file directly for this type of loading.
+            // If lion.html is a Potree example page, it sets up its own point cloud.
+            // For a generic loader, we need direct links to point cloud data.
+            // { url: "/potree/examples/lion.html", name: "Potree Lion Example" } 
+          ];
           
-          // Load point cloud - Try multiple approaches
-          const loadPointCloud = () => {
-            updateLoadingProgress(70);
+          let urlsToTry = [];
+          if (pointcloudUrlParam) {
+            // Ensure the passed URL is decoded if it was encoded
+            urlsToTry.push({ url: decodeURIComponent(pointcloudUrlParam), name: projectNameParam });
+          }
+          fallbackUrls.forEach(fbItem => {
+            if (!urlsToTry.find(item => item.url === fbItem.url)) {
+              urlsToTry.push(fbItem);
+            }
+          });
+
+          function attemptLoadPointCloud(index) {
+            if (index >= urlsToTry.length) {
+              console.error("All point cloud loading attempts failed.");
+              updateLoadingProgress(100, "Failed to load any point cloud.");
+              try {
+                window.parent.postMessage({ type: 'loadingError', error: 'All point cloud loading attempts failed.' }, '*');
+              } catch (e) { console.error("Error sending final error message to parent:", e); }
+              return;
+            }
+
+            const item = urlsToTry[index];
+            const currentUrl = item.url;
+            const currentName = item.name;
             
-            
-        
-        // Listen for messages from parent window
-        window.addEventListener('message', function(event) {
-          if (event.data.type === 'setMapType') {
-            try {
-              const mapView = viewer.mapView;
-              if (mapView && typeof mapView.setMapType === "function") {
-                mapView.setMapType(event.data.mapType);
+            console.log(`Attempting to load: ${currentName} from ${currentUrl}`);
+            const progressStep = (100 - currentLoadingProgress) / (urlsToTry.length - index);
+            updateLoadingProgress(currentLoadingProgress + (progressStep * 0.1), `Loading: ${currentName}...`);
+
+            Potree.loadPointCloud(currentUrl, currentName, e => {
+              if (e.type === 'loading_failed') {
+                console.warn(`Failed to load ${currentName} (${currentUrl}). Error: ${e.error || 'Unknown error'}`);
+                attemptLoadPointCloud(index + 1);
+                return;
               }
-            } catch (error) {
-              console.log("Error updating map type:", error);
-            }
-          } else if (event.data.type === 'toggleSidebar') {
+              
+              if (e.pointcloud) {
+                console.log(`Successfully loaded point cloud: ${currentName} from ${currentUrl}`);
+                let scene = viewer.scene;
+                let pointcloud = e.pointcloud;
+                let material = pointcloud.material;
+
+                material.size = 1;
+                material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                material.shape = Potree.PointShape.SQUARE;
+                material.activeAttributeName = "rgba"; // Or "classification" or "intensity" etc.
+
+                scene.addPointCloud(pointcloud);
+                viewer.fitToScreen();
+                updateLoadingProgress(100, `Loaded: ${currentName}`);
+                try {
+                  window.parent.postMessage({ type: 'pointCloudLoaded', name: currentName, url: currentUrl }, '*');
+                } catch (e) { console.error("Error sending pointCloudLoaded message to parent:", e); }
+              } else if (e.type === 'pointcloud_loaded') { // Some versions might emit this
+                 console.log(`Event pointcloud_loaded for: ${currentName} from ${currentUrl}`);
+                 viewer.fitToScreen();
+                 updateLoadingProgress(100, `Loaded: ${currentName}`);
+                 try {
+                  window.parent.postMessage({ type: 'pointCloudLoaded', name: currentName, url: currentUrl }, '*');
+                } catch (e) { console.error("Error sending pointCloudLoaded message to parent:", e); }
+              } else {
+                // If not explicitly failed but no pointcloud object, treat as failure for this URL
+                console.warn(`No pointcloud object in event for ${currentName} (${currentUrl}), trying next.`);
+                attemptLoadPointCloud(index + 1);
+              }
+            });
+          }
+
+          if (urlsToTry.length > 0) {
+            attemptLoadPointCloud(0);
+          } else {
+            console.error("No point cloud URLs to attempt.");
+            updateLoadingProgress(100, "No point cloud URL provided.");
             try {
-              viewer.toggleSidebar();
-            } catch (error) {
-              console.log("Error toggling sidebar:", error);
-            }
+              window.parent.postMessage({ type: 'loadingError', error: 'No point cloud URL specified.' }, '*');
+            } catch (e) { console.error("Error sending no URL error message to parent:", e); }
           }
         });
       } catch (error) {
         console.error("Error initializing Potree viewer:", error);
+        updateLoadingProgress(100, `Error: ${error.message}`);
         try {
           window.parent.postMessage({ type: 'loadingError', error: 'Failed to initialize Potree viewer: ' + error.message }, '*');
-        } catch (e) {
-          console.error("Error sending error message to parent:", e);
-        }
-        updateLoadingProgress(100); // Force loading to complete even on error
+        } catch (e) { console.error("Error sending init error message to parent:", e); }
       }
     });
     
-    // Send initial loading message to parent
+    window.addEventListener('message', function(event) {
+      if (!window.viewer) return;
+      if (event.data.type === 'toggleSidebar') {
+        try { window.viewer.toggleSidebar(); } catch (e) { console.error("Error toggling sidebar:", e); }
+      } else if (event.data.type === 'changeMapType') {
+         try {
+            const mapView = window.viewer.mapView;
+            if (mapView && typeof mapView.setMapType === "function") {
+                mapView.setMapType(event.data.mapType);
+                console.log("Map type set to:", event.data.mapType);
+            } else {
+                console.warn("viewer.mapView or setMapType not available.");
+            }
+        } catch (e) { console.error("Error changing map type:", e); }
+      }
+    });
+
     try {
       window.parent.postMessage({ type: 'iframeLoaded' }, '*');
-    } catch (e) {
-      console.error("Error sending initial message to parent:", e);
-    }
+    } catch (e) { console.error("Error sending iframeLoaded message to parent:", e); }
   </script>
 </body>
 </html>
