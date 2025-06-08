@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -79,75 +78,97 @@ export default function PotreeViewer() {
         }
 
         setProject(projectData as Project);
-        setLoadingProgress(50);
+        // setLoadingProgress(50); // Parent will now rely on iframe messages for progress > 30%
 
         // Load the Potree viewer
         if (iframeRef.current) {
-          // Create a proper Potree viewer URL
-          const potreeViewerUrl = createPotreeViewerUrl(jobNumber);
+          const potreeViewerUrl = createPotreeViewerUrl(jobNumber, projectData.projectName || `Project ${jobNumber}`);
           console.log("Loading Potree viewer with URL:", potreeViewerUrl);
           
           iframeRef.current.src = potreeViewerUrl;
           
-          // Set up iframe load handler
-          const handleIframeLoad = () => {
-            console.log("Iframe loaded successfully");
-            setLoadingProgress(100);
-            setTimeout(() => {
-              setLoading(false);
-            }, 500);
+          // The iframe's onload event is a basic check. 
+          // More detailed progress will come from postMessage.
+          const handleIframeBasicLoad = () => {
+            console.log("Iframe basic structure loaded. Waiting for Potree messages.");
+            // setLoadingProgress(60); // Example: iframe structure loaded
           };
 
           const handleIframeError = () => {
-            console.error("Failed to load iframe");
-            setLoadingError("Failed to load Potree viewer");
+            console.error("Failed to load iframe src");
+            setLoadingError("Failed to load Potree viewer iframe.");
+            setLoadingProgress(100); // Mark as complete for error display
             setLoading(false);
           };
 
-          iframeRef.current.onload = handleIframeLoad;
+          iframeRef.current.onload = handleIframeBasicLoad;
           iframeRef.current.onerror = handleIframeError;
-
-          // Fallback timeout in case iframe doesn't trigger load event
-          const fallbackTimeout = setTimeout(() => {
-            if (loading) {
-              console.log("Fallback: assuming iframe loaded after timeout");
-              setLoadingProgress(100);
-              setLoading(false);
-            }
-          }, 10000); // 10 second timeout
-
-          return () => {
-            clearTimeout(fallbackTimeout);
-          };
         }
       } catch (err) {
-        console.error("Error loading project data:", err);
-        setLoadingError(`Failed to load project data: ${err instanceof Error ? err.message : "Unknown error"}`);
+        console.error("Error loading project ", err);
+        setLoadingError(`Failed to load project  ${err instanceof Error ? err.message : "Unknown error"}`);
+        setLoadingProgress(100); // Mark as complete for error display
         setLoading(false);
       }
     };
 
     fetchProjectData();
-  }, [jobNumber, loading]);
 
-  const createPotreeViewerUrl = (jobNumber: string): string => {
-    // Try different potential point cloud locations
-    // const potentialPaths = [
-    //   `/pointclouds/${jobNumber}/metadata.json`,
-    //   `/pointclouds/example/metadata.json`, // Fallback to example
-    //   `/potree/examples/lion.html`, // Another fallback
-    // ];
+    // Message listener for iframe communication
+    const handleIframeMessage = (event: MessageEvent) => {
+      // Optional: Check event.origin for security if the iframe source is external or configurable
+      // if (event.origin !== window.location.origin) return;
 
-    // For now, let's use a working example from the Potree installation
-    // You can modify this to point to your actual point cloud data
+      if (event.data && event.data.type) {
+        console.log("Message from iframe:", event.data);
+        switch (event.data.type) {
+          case "loadingProgress":
+            setLoadingProgress(event.data.progress);
+            break;
+          case "loadingComplete":
+            setLoadingProgress(100);
+            setLoading(false);
+            setLoadingError(null); // Clear any previous errors
+            break;
+          case "pointCloudLoaded":
+            setLoadingProgress(100);
+            setLoading(false);
+            setLoadingError(null);
+            console.log(`Point cloud ${event.data.name} loaded from ${event.data.url}`);
+            break;
+          case "loadingError":
+            setLoadingError(event.data.error || "Potree viewer reported an error.");
+            setLoadingProgress(100); // Still complete the loading bar to show the error
+            setLoading(false);
+            break;
+          case "iframeLoaded":
+            console.log("Potree viewer iframe internal scripts are loaded.");
+            // setLoadingProgress(50); // Or some other intermediate value
+            break;
+          case "stylingComplete":
+            console.log("Potree viewer styling applied.");
+            // setLoadingProgress(60); 
+            break;
+        }
+      }
+    };
+
+    window.addEventListener("message", handleIframeMessage);
+
+    return () => {
+      window.removeEventListener("message", handleIframeMessage);
+      // Cleanup iframe src to prevent memory leaks or unwanted loading on unmount
+      if (iframeRef.current) {
+        iframeRef.current.src = "about:blank";
+      }
+    };
+  }, [jobNumber]); // Removed 'loading' from dependencies to avoid re-triggering on setLoading(false)
+
+  const createPotreeViewerUrl = (jobNum: string, projName: string): string => {
     const baseUrl = window.location.origin;
-    
-    // Check if we have a specific point cloud for this job number
-    const pointCloudUrl = `${baseUrl}/pointclouds/${jobNumber}/metadata.json`;
-    
-    // Create the Potree viewer URL with the point cloud
-    const viewerUrl = `/potree-viewer.html?pointcloud=${encodeURIComponent(pointCloudUrl)}`;
-    
+    const pointCloudUrl = `${baseUrl}/pointclouds/${jobNum}/metadata.json`;
+    // Pass project name to be displayed in Potree viewer description
+    const viewerUrl = `/potree-viewer.html?pointcloud=${encodeURIComponent(pointCloudUrl)}&projectName=${encodeURIComponent(projName)}`;
     return viewerUrl;
   };
 
