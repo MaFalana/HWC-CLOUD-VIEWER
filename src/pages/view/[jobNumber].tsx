@@ -52,7 +52,7 @@ export default function PotreeViewer() {
         try {
           const mongoDataPromise = projectService.getProject(jobNumber);
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('MongoDB fetch timeout')), 3000)
+            setTimeout(() => reject(new Error('MongoDB fetch timeout')), 2000)
           );
           
           const mongoProjectData = await Promise.race([mongoDataPromise, timeoutPromise]) as Project;
@@ -70,7 +70,7 @@ export default function PotreeViewer() {
         try {
           const potreeDataPromise = potreeLocationService.getProjectInfo(jobNumber);
           const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Potree fetch timeout')), 3000)
+            setTimeout(() => reject(new Error('Potree fetch timeout')), 2000)
           );
           
           const potreeProjectData = await Promise.race([potreeDataPromise, timeoutPromise]) as Partial<Project>;
@@ -85,32 +85,9 @@ export default function PotreeViewer() {
         setLoadingProgress(30);
         setProject(projectData as Project);
 
-        // Always load the Potree viewer regardless of data fetch success
-        if (iframeRef.current) {
-          const potreeViewerUrl = createPotreeViewerUrl(jobNumber, projectData.projectName || `Project ${jobNumber}`);
-          console.log("Loading Potree viewer with URL:", potreeViewerUrl);
-          
-          iframeRef.current.src = potreeViewerUrl;
-          
-          // The iframe's onload event is a basic check. 
-          // More detailed progress will come from postMessage.
-          const handleIframeBasicLoad = () => {
-            console.log("Iframe basic structure loaded. Waiting for Potree messages.");
-          };
-
-          const handleIframeError = () => {
-            console.error("Failed to load iframe src");
-            setLoadingError("Failed to load Potree viewer iframe.");
-            setLoadingProgress(100);
-            setLoading(false);
-          };
-
-          iframeRef.current.onload = handleIframeBasicLoad;
-          iframeRef.current.onerror = handleIframeError;
-        }
       } catch (err) {
         console.error("Error in fetchProjectData:", err);
-        // Even if there's an error, try to load the iframe with fallback data
+        // Even if there's an error, set fallback project data
         const fallbackProject: Project = {
           jobNumber: jobNumber as string,
           projectName: `Project ${jobNumber}`,
@@ -132,19 +109,50 @@ export default function PotreeViewer() {
         
         setProject(fallbackProject);
         setLoadingProgress(30);
-        
-        // Still try to load the iframe
-        if (iframeRef.current) {
-          const potreeViewerUrl = createPotreeViewerUrl(jobNumber, fallbackProject.projectName);
-          console.log("Loading Potree viewer with fallback data, URL:", potreeViewerUrl);
-          iframeRef.current.src = potreeViewerUrl;
-        }
       }
     };
 
     fetchProjectData();
+  }, [jobNumber]);
 
-    // Message listener for iframe communication
+  // Separate effect for loading the iframe after project data is ready
+  useEffect(() => {
+    if (!project || !iframeRef.current) return;
+
+    const loadIframe = () => {
+      console.log("Loading iframe with project:", project);
+      setLoadingProgress(40);
+      
+      const potreeViewerUrl = createPotreeViewerUrl(project.jobNumber, project.projectName);
+      console.log("Loading Potree viewer with URL:", potreeViewerUrl);
+      
+      if (iframeRef.current) {
+        iframeRef.current.src = potreeViewerUrl;
+        
+        const handleIframeBasicLoad = () => {
+          console.log("Iframe basic structure loaded. Waiting for Potree messages.");
+          setLoadingProgress(50);
+        };
+
+        const handleIframeError = () => {
+          console.error("Failed to load iframe src");
+          setLoadingError("Failed to load Potree viewer iframe.");
+          setLoadingProgress(100);
+          setLoading(false);
+        };
+
+        iframeRef.current.onload = handleIframeBasicLoad;
+        iframeRef.current.onerror = handleIframeError;
+      }
+    };
+
+    // Small delay to ensure iframe ref is ready
+    const timer = setTimeout(loadIframe, 100);
+    return () => clearTimeout(timer);
+  }, [project]);
+
+  // Message listener effect
+  useEffect(() => {
     const handleIframeMessage = (event: MessageEvent) => {
       if (event.data && event.data.type) {
         console.log("Message from iframe:", event.data);
@@ -182,12 +190,17 @@ export default function PotreeViewer() {
 
     return () => {
       window.removeEventListener("message", handleIframeMessage);
-      // Cleanup iframe src to prevent memory leaks or unwanted loading on unmount
+    };
+  }, []);
+
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
       if (iframeRef.current) {
         iframeRef.current.src = "about:blank";
       }
     };
-  }, [jobNumber]);
+  }, []);
 
   const createPotreeViewerUrl = (jobNum: string, projName: string): string => {
     const baseUrl = window.location.origin;
