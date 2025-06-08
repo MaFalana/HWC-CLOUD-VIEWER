@@ -430,9 +430,9 @@ export default function Dashboard() {
   return (
     <>
       <Head>
-        <title>HWC Engineering Cloud Viewer</title>
+        <title>HWC Engineering | Cloud Viewer</title>
         <meta name="description" content="Point cloud project management dashboard" />
-        <link rel="icon" href="/HWC-angle-logo-16px.png" />
+        <link rel="icon" href="/hwc-angle-logo-16px-mbe1odp0.png" />
       </Head>
 
       <div className="min-h-screen bg-gray-50">

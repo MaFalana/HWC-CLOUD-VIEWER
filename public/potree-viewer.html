@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HWC Engineering Potree Viewer</title>
+  <title>HWC Engineering Cloud Viewer</title>
   <style>
     body, html {
       margin: 0;
@@ -505,75 +505,7 @@
           const loadPointCloud = () => {
             updateLoadingProgress(70);
             
-            // Try to load from example directory
-            const exampleMetadataPath = "/pointclouds/example/metadata.json";
-            console.log(`Loading point cloud from example: ${exampleMetadataPath}`);
             
-            // Load the point cloud from example
-            Potree.loadPointCloud(exampleMetadataPath, "example", e => {
-              if (e.pointcloud) {
-                console.log("Example point cloud loaded successfully");
-                viewer.scene.addPointCloud(e.pointcloud);
-                
-                // Set point cloud material properties
-                e.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-                e.pointcloud.material.size = 1.0;
-                e.pointcloud.material.pointColorType = Potree.PointColorType.RGB;
-                
-                // Fit the point cloud to the screen
-                viewer.fitToScreen();
-                
-                // Position the map view
-                try {
-                  const mapView = viewer.mapView;
-                  if (mapView && typeof mapView.setCenter === "function") {
-                    mapView.setCenter([longitude, latitude]);
-                    if (typeof mapView.setZoom === "function") {
-                      mapView.setZoom(15);
-                    }
-                    if (typeof mapView.setMapType === "function" && mapType !== "default") {
-                      mapView.setMapType(mapType);
-                    }
-                    console.log(`Map positioned at: ${latitude}, ${longitude}`);
-                  }
-                } catch (mapError) {
-                  console.log("Failed to set map location:", mapError);
-                }
-                
-                updateLoadingProgress(100);
-              } else {
-                console.error("Failed to load example point cloud, trying Potree example");
-                tryPotreeExample();
-              }
-            });
-          };
-          
-          // Try to load from Potree example as last resort
-          const tryPotreeExample = () => {
-            console.log("Trying Potree example as last resort");
-            
-            Potree.loadPointCloud("/potree/pointclouds/lion_takanawa/cloud.js", "lion", e => {
-              if (e.pointcloud) {
-                console.log("Lion point cloud loaded successfully");
-                viewer.scene.addPointCloud(e.pointcloud);
-                
-                // Set point cloud material properties
-                e.pointcloud.material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-                e.pointcloud.material.size = 1.0;
-                e.pointcloud.material.pointColorType = Potree.PointColorType.RGB;
-                
-                // Fit the point cloud to the screen
-                viewer.fitToScreen();
-              } else {
-                console.error("Failed to load any point cloud");
-              }
-              updateLoadingProgress(100);
-            });
-          };
-          
-          // Start loading the point cloud
-          loadPointCloud();
-        });
         
         // Listen for messages from parent window
         window.addEventListener('message', function(event) {

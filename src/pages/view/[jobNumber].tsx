@@ -38,8 +38,16 @@ export default function PotreeViewer() {
           console.log("Failed to fetch project data from MongoDB:", error);
         }
         
+        setLoadingProgress(30);
+        
         // Next, get the Potree project data
-        const potreeProjectData = await potreeLocationService.getProjectInfo(jobNumber);
+        let potreeProjectData: Partial<Project> | null = null;
+        try {
+          potreeProjectData = await potreeLocationService.getProjectInfo(jobNumber);
+          console.log("Potree project data:", potreeProjectData);
+        } catch (error) {
+          console.log("Failed to fetch Potree project data:", error);
+        }
         
         // Create a base project data object
         let projectData: Partial<Project> = {
@@ -73,16 +81,43 @@ export default function PotreeViewer() {
         setProject(projectData as Project);
         setLoadingProgress(50);
 
-        // Load the example point cloud directly
+        // Load the Potree viewer
         if (iframeRef.current) {
-          // Use the example point cloud data
-          iframeRef.current.src = `/potree/examples/lion.html`;
+          // Create a proper Potree viewer URL
+          const potreeViewerUrl = createPotreeViewerUrl(jobNumber);
+          console.log("Loading Potree viewer with URL:", potreeViewerUrl);
           
-          iframeRef.current.onload = () => {
+          iframeRef.current.src = potreeViewerUrl;
+          
+          // Set up iframe load handler
+          const handleIframeLoad = () => {
+            console.log("Iframe loaded successfully");
             setLoadingProgress(100);
             setTimeout(() => {
               setLoading(false);
             }, 500);
+          };
+
+          const handleIframeError = () => {
+            console.error("Failed to load iframe");
+            setLoadingError("Failed to load Potree viewer");
+            setLoading(false);
+          };
+
+          iframeRef.current.onload = handleIframeLoad;
+          iframeRef.current.onerror = handleIframeError;
+
+          // Fallback timeout in case iframe doesn't trigger load event
+          const fallbackTimeout = setTimeout(() => {
+            if (loading) {
+              console.log("Fallback: assuming iframe loaded after timeout");
+              setLoadingProgress(100);
+              setLoading(false);
+            }
+          }, 10000); // 10 second timeout
+
+          return () => {
+            clearTimeout(fallbackTimeout);
           };
         }
       } catch (err) {
@@ -93,13 +128,56 @@ export default function PotreeViewer() {
     };
 
     fetchProjectData();
-  }, [jobNumber]);
+  }, [jobNumber, loading]);
+
+  const createPotreeViewerUrl = (jobNumber: string): string => {
+    // Try different potential point cloud locations
+    const potentialPaths = [
+      `/pointclouds/${jobNumber}/metadata.json`,
+      `/pointclouds/example/metadata.json`, // Fallback to example
+      `/potree/examples/lion.html`, // Another fallback
+    ];
+
+    // For now, let's use a working example from the Potree installation
+    // You can modify this to point to your actual point cloud data
+    const baseUrl = window.location.origin;
+    
+    // Check if we have a specific point cloud for this job number
+    const pointCloudUrl = `${baseUrl}/pointclouds/${jobNumber}/metadata.json`;
+    
+    // Create the Potree viewer URL with the point cloud
+    const viewerUrl = `/potree-viewer.html?pointcloud=${encodeURIComponent(pointCloudUrl)}`;
+    
+    return viewerUrl;
+  };
 
   // Handle sidebar toggle
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
     if (iframeRef.current && iframeRef.current.contentWindow) {
-      iframeRef.current.contentWindow.postMessage({ type: "toggleSidebar" }, "*");
+      try {
+        iframeRef.current.contentWindow.postMessage({ 
+          type: "toggleSidebar",
+          visible: !sidebarVisible 
+        }, "*");
+      } catch (error) {
+        console.log("Could not send message to iframe:", error);
+      }
+    }
+  };
+
+  // Handle map type changes
+  const handleMapTypeChange = (newMapType: typeof mapType) => {
+    setMapType(newMapType);
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      try {
+        iframeRef.current.contentWindow.postMessage({ 
+          type: "changeMapType",
+          mapType: newMapType 
+        }, "*");
+      } catch (error) {
+        console.log("Could not send map type message to iframe:", error);
+      }
     }
   };
 
@@ -130,6 +208,12 @@ export default function PotreeViewer() {
               ></div>
             </div>
             <p className="text-hwc-light">Loading {loadingProgress}%</p>
+            {loadingProgress < 50 && (
+              <p className="text-xs text-hwc-light/60 mt-2">Fetching project data...</p>
+            )}
+            {loadingProgress >= 50 && loadingProgress < 100 && (
+              <p className="text-xs text-hwc-light/60 mt-2">Loading Potree viewer...</p>
+            )}
           </div>
           
           <div className="mt-8 text-sm text-hwc-light">
@@ -155,13 +239,28 @@ export default function PotreeViewer() {
           />
           <h1 className="text-2xl font-bold mb-4">Error Loading Viewer</h1>
           <p className="mb-6 text-hwc-light">{loadingError}</p>
-          <Button
-            onClick={() => router.push("/")}
-            className="bg-hwc-red hover:bg-hwc-red/90"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Return to Dashboard
-          </Button>
+          <div className="space-y-3">
+            <Button
+              onClick={() => {
+                setLoadingError(null);
+                setLoading(true);
+                setLoadingProgress(0);
+                // Retry loading
+                window.location.reload();
+              }}
+              className="bg-hwc-red hover:bg-hwc-red/90 mr-3"
+            >
+              Try Again
+            </Button>
+            <Button
+              onClick={() => router.push("/")}
+              variant="outline"
+              className="border-hwc-red text-hwc-red hover:bg-hwc-red hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Return to Dashboard
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -170,9 +269,9 @@ export default function PotreeViewer() {
   return (
     <>
       <Head>
-        <title>{project?.projectName || `Project ${jobNumber}`} - HWC Engineering Cloud Viewer</title>
+        <title>{project?.projectName || `Project ${jobNumber}`} - HWC Engineering | Cloud Viewer</title>
         <meta name="description" content="Point cloud viewer" />
-        <link rel="icon" href="/HWC-angle-logo-16px.png" />
+        <link rel="icon" href="/hwc-angle-logo-16px-mbe1odp0.png" />
       </Head>
 
       {/* Custom Header */}
@@ -310,7 +409,7 @@ export default function PotreeViewer() {
               <Button
                 variant={mapType === "default" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setMapType("default")}
+                onClick={() => handleMapTypeChange("default")}
                 className={`text-xs h-9 ${mapType === "default" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
               >
                 Default
@@ -318,7 +417,7 @@ export default function PotreeViewer() {
               <Button
                 variant={mapType === "terrain" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setMapType("terrain")}
+                onClick={() => handleMapTypeChange("terrain")}
                 className={`text-xs h-9 ${mapType === "terrain" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
               >
                 Terrain
@@ -326,7 +425,7 @@ export default function PotreeViewer() {
               <Button
                 variant={mapType === "satellite" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setMapType("satellite")}
+                onClick={() => handleMapTypeChange("satellite")}
                 className={`text-xs h-9 ${mapType === "satellite" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
               >
                 Satellite
@@ -334,7 +433,7 @@ export default function PotreeViewer() {
               <Button
                 variant={mapType === "openstreet" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setMapType("openstreet")}
+                onClick={() => handleMapTypeChange("openstreet")}
                 className={`text-xs h-9 ${mapType === "openstreet" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
               >
                 OpenStreet
@@ -344,12 +443,13 @@ export default function PotreeViewer() {
         </Card>
       </div>
 
-      {/* Potree Viewer Iframe - Using a direct example from Potree */}
+      {/* Potree Viewer Iframe */}
       <iframe
         ref={iframeRef}
         className="absolute inset-0 w-full h-full border-0 z-10"
         title="Potree Viewer"
         style={{ background: "#292C30" }}
+        allow="fullscreen"
       />
     </>
   );
