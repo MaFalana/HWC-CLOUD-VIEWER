@@ -132,11 +132,11 @@ export default function PotreeViewer() {
 
   const createPotreeViewerUrl = (jobNumber: string): string => {
     // Try different potential point cloud locations
-    const potentialPaths = [
-      `/pointclouds/${jobNumber}/metadata.json`,
-      `/pointclouds/example/metadata.json`, // Fallback to example
-      `/potree/examples/lion.html`, // Another fallback
-    ];
+    // const potentialPaths = [
+    //   `/pointclouds/${jobNumber}/metadata.json`,
+    //   `/pointclouds/example/metadata.json`, // Fallback to example
+    //   `/potree/examples/lion.html`, // Another fallback
+    // ];
 
     // For now, let's use a working example from the Potree installation
     // You can modify this to point to your actual point cloud data
