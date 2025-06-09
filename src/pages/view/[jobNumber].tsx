@@ -114,9 +114,12 @@ export default function PotreeViewer() {
     return new Promise((resolve, reject) => {
       // Check if Potree is already loaded
       if (window.Potree) {
+        console.log("Potree already loaded");
         resolve();
         return;
       }
+
+      console.log("Loading Potree scripts...");
 
       const scripts = [
         "/potree/libs/jquery/jquery-3.1.1.min.js",
@@ -144,14 +147,27 @@ export default function PotreeViewer() {
 
       const loadScript = (src: string) => {
         return new Promise<void>((scriptResolve, scriptReject) => {
+          // Check if script is already loaded
+          const existingScript = document.querySelector(`script[src="${src}"]`);
+          if (existingScript) {
+            console.log(`Script already loaded: ${src}`);
+            scriptResolve();
+            return;
+          }
+
+          console.log(`Loading script: ${src}`);
           const script = document.createElement("script");
           script.src = src;
           script.onload = () => {
             loadedCount++;
+            console.log(`Loaded script ${loadedCount}/${totalScripts}: ${src}`);
             setLoadingProgress(30 + (loadedCount / totalScripts) * 20);
             scriptResolve();
           };
-          script.onerror = () => scriptReject(new Error(`Failed to load script: ${src}`));
+          script.onerror = () => {
+            console.error(`Failed to load script: ${src}`);
+            scriptReject(new Error(`Failed to load script: ${src}`));
+          };
           document.head.appendChild(script);
         });
       };
@@ -162,8 +178,19 @@ export default function PotreeViewer() {
           for (const script of scripts) {
             await loadScript(script);
           }
-          resolve();
+          
+          // Wait a bit for Potree to be fully initialized
+          setTimeout(() => {
+            if (window.Potree) {
+              console.log("Potree library loaded successfully");
+              resolve();
+            } else {
+              console.error("Potree library not available after loading scripts");
+              reject(new Error("Potree library not available after loading scripts"));
+            }
+          }, 500);
         } catch (error) {
+          console.error("Error loading scripts:", error);
           reject(error);
         }
       };
@@ -182,66 +209,82 @@ export default function PotreeViewer() {
           return;
         }
 
+        // Check if Potree is available
+        if (!window.Potree) {
+          reject(new Error("Potree library not loaded"));
+          return;
+        }
+
         // Clear any existing content
         renderAreaRef.current.innerHTML = "";
         
-        // Initialize Potree viewer
-        const viewer = new window.Potree.Viewer(renderAreaRef.current);
-        window.viewer = viewer;
-        
-        viewer.setEDLEnabled(true);
-        viewer.setFOV(60);
-        viewer.setPointBudget(3 * 1000 * 1000);
-        viewer.setDescription(projectName);
-        viewer.setLanguage("en");
-        
-        setLoadingProgress(70);
-        
-        viewer.loadGUI(() => {
-          console.log("Potree GUI loaded");
-          setLoadingProgress(80);
-          
-          // Apply custom styling
-          setTimeout(() => {
-            try {
-              if (window.$) {
-                window.$('.potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube)').css({
-                  'display': 'grid',
-                  'grid-template-columns': 'repeat(4, 1fr)',
-                  'gap': '8px',
-                  'width': '100%'
-                });
-                
-                window.$('.potree_compass').css({
-                  'position': 'fixed',
-                  'bottom': '24px',
-                  'right': '24px',
-                  'left': 'auto',
-                  'top': 'auto',
-                  'z-index': '35'
-                });
-                
-                window.$('.potree_navigation_cube').css({
-                  'position': 'fixed',
-                  'bottom': '24px',
-                  'right': '104px',
-                  'left': 'auto',
-                  'top': 'auto',
-                  'z-index': '35'
-                });
-                
-                window.$('#potree_sidebar_container').perfectScrollbar();
-              }
-            } catch (e) {
-              console.error("Error applying custom styles:", e);
-            }
+        // Wait a bit for DOM to be ready
+        setTimeout(() => {
+          try {
+            console.log("Creating Potree viewer...");
             
-            setLoadingProgress(85);
+            // Initialize Potree viewer
+            const viewer = new window.Potree.Viewer(renderAreaRef.current);
+            window.viewer = viewer;
             
-            // Load point cloud
-            loadPointCloud(jobNum, projectName, viewer, resolve, reject);
-          }, 100);
-        });
+            viewer.setEDLEnabled(true);
+            viewer.setFOV(60);
+            viewer.setPointBudget(3 * 1000 * 1000);
+            viewer.setDescription(projectName);
+            viewer.setLanguage("en");
+            
+            setLoadingProgress(70);
+            
+            viewer.loadGUI(() => {
+              console.log("Potree GUI loaded");
+              setLoadingProgress(80);
+              
+              // Apply custom styling
+              setTimeout(() => {
+                try {
+                  if (window.$) {
+                    window.$('.potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube)').css({
+                      'display': 'grid',
+                      'grid-template-columns': 'repeat(4, 1fr)',
+                      'gap': '8px',
+                      'width': '100%'
+                    });
+                    
+                    window.$('.potree_compass').css({
+                      'position': 'fixed',
+                      'bottom': '24px',
+                      'right': '24px',
+                      'left': 'auto',
+                      'top': 'auto',
+                      'z-index': '35'
+                    });
+                    
+                    window.$('.potree_navigation_cube').css({
+                      'position': 'fixed',
+                      'bottom': '24px',
+                      'right': '104px',
+                      'left': 'auto',
+                      'top': 'auto',
+                      'z-index': '35'
+                    });
+                    
+                    window.$('#potree_sidebar_container').perfectScrollbar();
+                  }
+                } catch (e) {
+                  console.error("Error applying custom styles:", e);
+                }
+                
+                setLoadingProgress(85);
+                
+                // Load point cloud
+                loadPointCloud(jobNum, projectName, viewer, resolve, reject);
+              }, 100);
+            });
+          } catch (error) {
+            console.error("Error creating Potree viewer:", error);
+            reject(error);
+          }
+        }, 200);
         
       } catch (error) {
         console.error("Error initializing Potree:", error);
