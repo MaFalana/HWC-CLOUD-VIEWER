@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -24,70 +25,11 @@ export default function PotreeViewer() {
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
 
-    const fetchProjectData = async () => {
+    const initializeViewer = async () => {
       try {
         setLoadingProgress(10);
         
-        // Create a base project data object first
-        let projectData: Partial<Project> = {
-          jobNumber: jobNumber as string,
-          projectName: `Project ${jobNumber}`,
-          clientName: "Demo Client",
-          acquistionDate: new Date().toISOString(),
-          description: "Point cloud project",
-          status: "active" as const,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          projectType: "survey",
-          location: {
-            latitude: 39.7684,
-            longitude: -86.1581,
-            address: "Indianapolis, IN",
-            source: "fallback" as const,
-            confidence: "low" as const
-          }
-        };
-
-        // Try to get the project data from MongoDB using projectService (with timeout)
-        try {
-          const mongoDataPromise = projectService.getProject(jobNumber);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('MongoDB fetch timeout')), 2000)
-          );
-          
-          const mongoProjectData = await Promise.race([mongoDataPromise, timeoutPromise]) as Project;
-          if (mongoProjectData) {
-            projectData = { ...projectData, ...mongoProjectData };
-            console.log("Using MongoDB project data:", projectData);
-          }
-        } catch (error) {
-          console.log("Failed to fetch project data from MongoDB:", error);
-        }
-        
-        setLoadingProgress(20);
-        
-        // Try to get the Potree project data (with timeout)
-        try {
-          const potreeDataPromise = potreeLocationService.getProjectInfo(jobNumber);
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Potree fetch timeout')), 2000)
-          );
-          
-          const potreeProjectData = await Promise.race([potreeDataPromise, timeoutPromise]) as Partial<Project>;
-          if (potreeProjectData && !projectData.location?.source?.includes('mongo')) {
-            projectData = { ...projectData, ...potreeProjectData };
-            console.log("Using Potree project data:", projectData);
-          }
-        } catch (error) {
-          console.log("Failed to fetch Potree project data:", error);
-        }
-        
-        setLoadingProgress(30);
-        setProject(projectData as Project);
-
-      } catch (err) {
-        console.error("Error in fetchProjectData:", err);
-        // Even if there's an error, set fallback project data
+        // Create fallback project data
         const fallbackProject: Project = {
           jobNumber: jobNumber as string,
           projectName: `Project ${jobNumber}`,
@@ -106,53 +48,59 @@ export default function PotreeViewer() {
             confidence: "low" as const
           }
         };
-        
+
         setProject(fallbackProject);
         setLoadingProgress(30);
+
+        // Load the iframe immediately
+        if (iframeRef.current) {
+          const potreeViewerUrl = createPotreeViewerUrl(jobNumber, fallbackProject.projectName);
+          console.log("Loading Potree viewer with URL:", potreeViewerUrl);
+          iframeRef.current.src = potreeViewerUrl;
+        }
+
+        // Try to fetch real project data in background (don't block iframe loading)
+        try {
+          const mongoDataPromise = projectService.getProject(jobNumber);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('MongoDB fetch timeout')), 3000)
+          );
+          
+          const mongoProjectData = await Promise.race([mongoDataPromise, timeoutPromise]) as Project;
+          if (mongoProjectData) {
+            setProject(prev => ({ ...prev, ...mongoProjectData }));
+            console.log("Updated with MongoDB project data");
+          }
+        } catch (error) {
+          console.log("Failed to fetch project data from MongoDB:", error);
+        }
+
+        try {
+          const potreeDataPromise = potreeLocationService.getProjectInfo(jobNumber);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Potree fetch timeout')), 3000)
+          );
+          
+          const potreeProjectData = await Promise.race([potreeDataPromise, timeoutPromise]) as Partial<Project>;
+          if (potreeProjectData) {
+            setProject(prev => ({ ...prev, ...potreeProjectData }));
+            console.log("Updated with Potree project data");
+          }
+        } catch (error) {
+          console.log("Failed to fetch Potree project data:", error);
+        }
+
+      } catch (err) {
+        console.error("Error in initializeViewer:", err);
+        setLoadingError(`Failed to initialize viewer: ${err instanceof Error ? err.message : "Unknown error"}`);
+        setLoadingProgress(100);
+        setLoading(false);
       }
     };
 
-    fetchProjectData();
-  }, [jobNumber]);
+    initializeViewer();
 
-  // Separate effect for loading the iframe after project data is ready
-  useEffect(() => {
-    if (!project || !iframeRef.current) return;
-
-    const loadIframe = () => {
-      console.log("Loading iframe with project:", project);
-      setLoadingProgress(40);
-      
-      const potreeViewerUrl = createPotreeViewerUrl(project.jobNumber, project.projectName);
-      console.log("Loading Potree viewer with URL:", potreeViewerUrl);
-      
-      if (iframeRef.current) {
-        iframeRef.current.src = potreeViewerUrl;
-        
-        const handleIframeBasicLoad = () => {
-          console.log("Iframe basic structure loaded. Waiting for Potree messages.");
-          setLoadingProgress(50);
-        };
-
-        const handleIframeError = () => {
-          console.error("Failed to load iframe src");
-          setLoadingError("Failed to load Potree viewer iframe.");
-          setLoadingProgress(100);
-          setLoading(false);
-        };
-
-        iframeRef.current.onload = handleIframeBasicLoad;
-        iframeRef.current.onerror = handleIframeError;
-      }
-    };
-
-    // Small delay to ensure iframe ref is ready
-    const timer = setTimeout(loadIframe, 100);
-    return () => clearTimeout(timer);
-  }, [project]);
-
-  // Message listener effect
-  useEffect(() => {
+    // Message listener for iframe communication
     const handleIframeMessage = (event: MessageEvent) => {
       if (event.data && event.data.type) {
         console.log("Message from iframe:", event.data);
@@ -178,6 +126,7 @@ export default function PotreeViewer() {
             break;
           case "iframeLoaded":
             console.log("Potree viewer iframe internal scripts are loaded.");
+            setLoadingProgress(50);
             break;
           case "stylingComplete":
             console.log("Potree viewer styling applied.");
@@ -191,21 +140,11 @@ export default function PotreeViewer() {
     return () => {
       window.removeEventListener("message", handleIframeMessage);
     };
-  }, []);
-
-  // Cleanup effect
-  useEffect(() => {
-    return () => {
-      if (iframeRef.current) {
-        iframeRef.current.src = "about:blank";
-      }
-    };
-  }, []);
+  }, [jobNumber]);
 
   const createPotreeViewerUrl = (jobNum: string, projName: string): string => {
     const baseUrl = window.location.origin;
     const pointCloudUrl = `${baseUrl}/pointclouds/${jobNum}/metadata.json`;
-    // Pass project name to be displayed in Potree viewer description
     const viewerUrl = `/potree-viewer.html?pointcloud=${encodeURIComponent(pointCloudUrl)}&projectName=${encodeURIComponent(projName)}`;
     return viewerUrl;
   };
@@ -268,7 +207,7 @@ export default function PotreeViewer() {
             </div>
             <p className="text-hwc-light">Loading {loadingProgress}%</p>
             {loadingProgress < 50 && (
-              <p className="text-xs text-hwc-light/60 mt-2">Fetching project data...</p>
+              <p className="text-xs text-hwc-light/60 mt-2">Initializing viewer...</p>
             )}
             {loadingProgress >= 50 && loadingProgress < 100 && (
               <p className="text-xs text-hwc-light/60 mt-2">Loading Potree viewer...</p>
@@ -304,7 +243,6 @@ export default function PotreeViewer() {
                 setLoadingError(null);
                 setLoading(true);
                 setLoadingProgress(0);
-                // Retry loading
                 window.location.reload();
               }}
               className="bg-hwc-red hover:bg-hwc-red/90 mr-3"

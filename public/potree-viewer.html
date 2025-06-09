@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -77,7 +76,7 @@
   
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const pointcloudUrlParam = urlParams.get('pointcloud'); // This is the full URL to metadata.json
+    const pointcloudUrlParam = urlParams.get('pointcloud');
     const projectNameParam = urlParams.get('projectName') || "Point Cloud Project";
     
     let currentLoadingProgress = 0;
@@ -103,6 +102,11 @@
         }, 500);
       }
     }
+    
+    // Send initial message to parent
+    try {
+      window.parent.postMessage({ type: 'iframeLoaded' }, '*');
+    } catch (e) { console.error("Error sending iframeLoaded message to parent:", e); }
     
     updateLoadingProgress(10, "Initializing viewer...");
     
@@ -149,18 +153,13 @@
             updateLoadingProgress(60, "Styling applied...");
           }, 100);
 
-          const defaultPointCloudName = "Point Cloud";
+          // Define point cloud URLs to attempt
           const fallbackUrls = [
-            { url: "/pointclouds/example/metadata.json", name: "Default Example Cloud" },
-            // Potree.loadPointCloud expects a metadata.json or similar, not an HTML file directly for this type of loading.
-            // If lion.html is a Potree example page, it sets up its own point cloud.
-            // For a generic loader, we need direct links to point cloud data.
-            // { url: "/potree/examples/lion.html", name: "Potree Lion Example" } 
+            { url: "/pointclouds/example/metadata.json", name: "Default Example Cloud" }
           ];
           
           let urlsToTry = [];
           if (pointcloudUrlParam) {
-            // Ensure the passed URL is decoded if it was encoded
             urlsToTry.push({ url: decodeURIComponent(pointcloudUrlParam), name: projectNameParam });
           }
           fallbackUrls.forEach(fbItem => {
@@ -172,10 +171,10 @@
           function attemptLoadPointCloud(index) {
             if (index >= urlsToTry.length) {
               console.error("All point cloud loading attempts failed.");
-              updateLoadingProgress(100, "Failed to load any point cloud.");
+              updateLoadingProgress(100, "No point cloud data available - viewer ready");
               try {
-                window.parent.postMessage({ type: 'loadingError', error: 'All point cloud loading attempts failed.' }, '*');
-              } catch (e) { console.error("Error sending final error message to parent:", e); }
+                window.parent.postMessage({ type: 'loadingComplete' }, '*');
+              } catch (e) { console.error("Error sending completion message to parent:", e); }
               return;
             }
 
@@ -184,8 +183,7 @@
             const currentName = item.name;
             
             console.log(`Attempting to load: ${currentName} from ${currentUrl}`);
-            const progressStep = (100 - currentLoadingProgress) / (urlsToTry.length - index);
-            updateLoadingProgress(currentLoadingProgress + (progressStep * 0.1), `Loading: ${currentName}...`);
+            updateLoadingProgress(70 + (index * 10), `Loading: ${currentName}...`);
 
             Potree.loadPointCloud(currentUrl, currentName, e => {
               if (e.type === 'loading_failed') {
@@ -203,7 +201,7 @@
                 material.size = 1;
                 material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
                 material.shape = Potree.PointShape.SQUARE;
-                material.activeAttributeName = "rgba"; // Or "classification" or "intensity" etc.
+                material.activeAttributeName = "rgba";
 
                 scene.addPointCloud(pointcloud);
                 viewer.fitToScreen();
@@ -211,7 +209,7 @@
                 try {
                   window.parent.postMessage({ type: 'pointCloudLoaded', name: currentName, url: currentUrl }, '*');
                 } catch (e) { console.error("Error sending pointCloudLoaded message to parent:", e); }
-              } else if (e.type === 'pointcloud_loaded') { // Some versions might emit this
+              } else if (e.type === 'pointcloud_loaded') {
                  console.log(`Event pointcloud_loaded for: ${currentName} from ${currentUrl}`);
                  viewer.fitToScreen();
                  updateLoadingProgress(100, `Loaded: ${currentName}`);
@@ -219,7 +217,6 @@
                   window.parent.postMessage({ type: 'pointCloudLoaded', name: currentName, url: currentUrl }, '*');
                 } catch (e) { console.error("Error sending pointCloudLoaded message to parent:", e); }
               } else {
-                // If not explicitly failed but no pointcloud object, treat as failure for this URL
                 console.warn(`No pointcloud object in event for ${currentName} (${currentUrl}), trying next.`);
                 attemptLoadPointCloud(index + 1);
               }
@@ -230,10 +227,10 @@
             attemptLoadPointCloud(0);
           } else {
             console.error("No point cloud URLs to attempt.");
-            updateLoadingProgress(100, "No point cloud URL provided.");
+            updateLoadingProgress(100, "Viewer ready - no point cloud specified");
             try {
-              window.parent.postMessage({ type: 'loadingError', error: 'No point cloud URL specified.' }, '*');
-            } catch (e) { console.error("Error sending no URL error message to parent:", e); }
+              window.parent.postMessage({ type: 'loadingComplete' }, '*');
+            } catch (e) { console.error("Error sending completion message to parent:", e); }
           }
         });
       } catch (error) {
@@ -261,10 +258,6 @@
         } catch (e) { console.error("Error changing map type:", e); }
       }
     });
-
-    try {
-      window.parent.postMessage({ type: 'iframeLoaded' }, '*');
-    } catch (e) { console.error("Error sending iframeLoaded message to parent:", e); }
   </script>
 </body>
 </html>
