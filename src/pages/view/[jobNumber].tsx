@@ -10,6 +10,14 @@ import { Project } from "@/types/project";
 import { potreeLocationService } from "@/services/potreeLocationService";
 import { projectService } from "@/services/projectService";
 
+declare global {
+  interface Window {
+    Potree: any;
+    viewer: any;
+    $: any;
+  }
+}
+
 export default function PotreeViewer() {
   const router = useRouter();
   const { jobNumber } = router.query;
@@ -20,7 +28,8 @@ export default function PotreeViewer() {
   const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showProjectInfo, setShowProjectInfo] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const renderAreaRef = useRef<HTMLDivElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
@@ -52,14 +61,14 @@ export default function PotreeViewer() {
         setProject(fallbackProject);
         setLoadingProgress(30);
 
-        // Load the iframe immediately
-        if (iframeRef.current) {
-          const potreeViewerUrl = createPotreeViewerUrl(jobNumber, fallbackProject.projectName);
-          console.log("Loading Potree viewer with URL:", potreeViewerUrl);
-          iframeRef.current.src = potreeViewerUrl;
-        }
+        // Load Potree scripts and initialize
+        await loadPotreeScripts();
+        setLoadingProgress(50);
+        
+        // Initialize Potree viewer
+        await initializePotree(jobNumber, fallbackProject.projectName);
 
-        // Try to fetch real project data in background (don't block iframe loading)
+        // Try to fetch real project data in background
         try {
           const mongoDataPromise = projectService.getProject(jobNumber);
           const timeoutPromise = new Promise((_, reject) => 
@@ -99,67 +108,214 @@ export default function PotreeViewer() {
     };
 
     initializeViewer();
-
-    // Message listener for iframe communication
-    const handleIframeMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type) {
-        console.log("Message from iframe:", event.data);
-        switch (event.data.type) {
-          case "loadingProgress":
-            setLoadingProgress(event.data.progress);
-            break;
-          case "loadingComplete":
-            setLoadingProgress(100);
-            setLoading(false);
-            setLoadingError(null);
-            break;
-          case "pointCloudLoaded":
-            setLoadingProgress(100);
-            setLoading(false);
-            setLoadingError(null);
-            console.log(`Point cloud ${event.data.name} loaded from ${event.data.url}`);
-            break;
-          case "loadingError":
-            setLoadingError(event.data.error || "Potree viewer reported an error.");
-            setLoadingProgress(100);
-            setLoading(false);
-            break;
-          case "iframeLoaded":
-            console.log("Potree viewer iframe internal scripts are loaded.");
-            setLoadingProgress(50);
-            break;
-          case "stylingComplete":
-            console.log("Potree viewer styling applied.");
-            break;
-        }
-      }
-    };
-
-    window.addEventListener("message", handleIframeMessage);
-
-    return () => {
-      window.removeEventListener("message", handleIframeMessage);
-    };
   }, [jobNumber]);
 
-  const createPotreeViewerUrl = (jobNum: string, projName: string): string => {
-    const baseUrl = window.location.origin;
-    const pointCloudUrl = `${baseUrl}/pointclouds/${jobNum}/metadata.json`;
-    const viewerUrl = `/potree-viewer.html?pointcloud=${encodeURIComponent(pointCloudUrl)}&projectName=${encodeURIComponent(projName)}`;
-    return viewerUrl;
+  const loadPotreeScripts = async (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      // Check if Potree is already loaded
+      if (window.Potree) {
+        resolve();
+        return;
+      }
+
+      const scripts = [
+        "/potree/libs/jquery/jquery-3.1.1.min.js",
+        "/potree/libs/spectrum/spectrum.js",
+        "/potree/libs/jquery-ui/jquery-ui.min.js",
+        "/potree/libs/other/BinaryHeap.js",
+        "/potree/libs/tween/tween.min.js",
+        "/potree/libs/d3/d3.js",
+        "/potree/libs/proj4/proj4.js",
+        "/potree/libs/openlayers3/ol.js",
+        "/potree/libs/i18next/i18next.js",
+        "/potree/libs/jstree/jstree.js",
+        "/potree/build/potree/potree.js",
+        "/potree/libs/plasio/js/laslaz.js",
+        "/potree/libs/Cesium/Cesium.js",
+        "/potree/libs/perfect-scrollbar/js/perfect-scrollbar.jquery.js",
+        "/potree/libs/amcharts/amcharts.js",
+        "/potree/libs/amcharts/serial.js",
+        "/potree/libs/panzoom/panzoom.min.js",
+        "/potree/libs/papa/papaparse.js"
+      ];
+
+      let loadedCount = 0;
+      const totalScripts = scripts.length;
+
+      const loadScript = (src: string) => {
+        return new Promise<void>((scriptResolve, scriptReject) => {
+          const script = document.createElement("script");
+          script.src = src;
+          script.onload = () => {
+            loadedCount++;
+            setLoadingProgress(30 + (loadedCount / totalScripts) * 20);
+            scriptResolve();
+          };
+          script.onerror = () => scriptReject(new Error(`Failed to load script: ${src}`));
+          document.head.appendChild(script);
+        });
+      };
+
+      // Load scripts sequentially
+      const loadSequentially = async () => {
+        try {
+          for (const script of scripts) {
+            await loadScript(script);
+          }
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      };
+
+      loadSequentially();
+    });
+  };
+
+  const initializePotree = async (jobNum: string, projectName: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      try {
+        setLoadingProgress(60);
+        
+        if (!renderAreaRef.current) {
+          reject(new Error("Render area not found"));
+          return;
+        }
+
+        // Clear any existing content
+        renderAreaRef.current.innerHTML = "";
+        
+        // Initialize Potree viewer
+        const viewer = new window.Potree.Viewer(renderAreaRef.current);
+        window.viewer = viewer;
+        
+        viewer.setEDLEnabled(true);
+        viewer.setFOV(60);
+        viewer.setPointBudget(3 * 1000 * 1000);
+        viewer.setDescription(projectName);
+        viewer.setLanguage("en");
+        
+        setLoadingProgress(70);
+        
+        viewer.loadGUI(() => {
+          console.log("Potree GUI loaded");
+          setLoadingProgress(80);
+          
+          // Apply custom styling
+          setTimeout(() => {
+            try {
+              if (window.$) {
+                window.$('.potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube)').css({
+                  'display': 'grid',
+                  'grid-template-columns': 'repeat(4, 1fr)',
+                  'gap': '8px',
+                  'width': '100%'
+                });
+                
+                window.$('.potree_compass').css({
+                  'position': 'fixed',
+                  'bottom': '24px',
+                  'right': '24px',
+                  'left': 'auto',
+                  'top': 'auto',
+                  'z-index': '35'
+                });
+                
+                window.$('.potree_navigation_cube').css({
+                  'position': 'fixed',
+                  'bottom': '24px',
+                  'right': '104px',
+                  'left': 'auto',
+                  'top': 'auto',
+                  'z-index': '35'
+                });
+                
+                window.$('#potree_sidebar_container').perfectScrollbar();
+              }
+            } catch (e) {
+              console.error("Error applying custom styles:", e);
+            }
+            
+            setLoadingProgress(85);
+            
+            // Load point cloud
+            loadPointCloud(jobNum, projectName, viewer, resolve, reject);
+          }, 100);
+        });
+        
+      } catch (error) {
+        console.error("Error initializing Potree:", error);
+        reject(error);
+      }
+    });
+  };
+
+  const loadPointCloud = (jobNum: string, projectName: string, viewer: any, resolve: () => void, reject: (error: Error) => void) => {
+    const pointCloudUrl = `/pointclouds/${jobNum}/metadata.json`;
+    const fallbackUrls = [
+      { url: pointCloudUrl, name: projectName },
+      { url: "/pointclouds/example/metadata.json", name: "Default Example Cloud" }
+    ];
+
+    let currentIndex = 0;
+
+    const attemptLoad = () => {
+      if (currentIndex >= fallbackUrls.length) {
+        console.log("All point cloud loading attempts completed. Viewer ready without point cloud.");
+        setLoadingProgress(100);
+        setLoading(false);
+        resolve();
+        return;
+      }
+
+      const { url, name } = fallbackUrls[currentIndex];
+      console.log(`Attempting to load: ${name} from ${url}`);
+      setLoadingProgress(85 + (currentIndex * 5));
+
+      window.Potree.loadPointCloud(url, name, (e: any) => {
+        if (e.type === 'loading_failed') {
+          console.warn(`Failed to load ${name} (${url}). Trying next...`);
+          currentIndex++;
+          attemptLoad();
+          return;
+        }
+        
+        if (e.pointcloud) {
+          console.log(`Successfully loaded point cloud: ${name} from ${url}`);
+          const scene = viewer.scene;
+          const pointcloud = e.pointcloud;
+          const material = pointcloud.material;
+
+          material.size = 1;
+          material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
+          material.shape = window.Potree.PointShape.SQUARE;
+          material.activeAttributeName = "rgba";
+
+          scene.addPointCloud(pointcloud);
+          viewer.fitToScreen();
+          
+          setLoadingProgress(100);
+          setLoading(false);
+          resolve();
+        } else {
+          console.warn(`No pointcloud object in event for ${name} (${url}), trying next.`);
+          currentIndex++;
+          attemptLoad();
+        }
+      });
+    };
+
+    attemptLoad();
   };
 
   // Handle sidebar toggle
   const toggleSidebar = () => {
     setSidebarVisible(!sidebarVisible);
-    if (iframeRef.current && iframeRef.current.contentWindow) {
+    if (window.viewer && typeof window.viewer.toggleSidebar === 'function') {
       try {
-        iframeRef.current.contentWindow.postMessage({ 
-          type: "toggleSidebar",
-          visible: !sidebarVisible 
-        }, "*");
+        window.viewer.toggleSidebar();
       } catch (error) {
-        console.log("Could not send message to iframe:", error);
+        console.log("Could not toggle sidebar:", error);
       }
     }
   };
@@ -167,14 +323,12 @@ export default function PotreeViewer() {
   // Handle map type changes
   const handleMapTypeChange = (newMapType: typeof mapType) => {
     setMapType(newMapType);
-    if (iframeRef.current && iframeRef.current.contentWindow) {
+    if (window.viewer && window.viewer.mapView && typeof window.viewer.mapView.setMapType === 'function') {
       try {
-        iframeRef.current.contentWindow.postMessage({ 
-          type: "changeMapType",
-          mapType: newMapType 
-        }, "*");
+        window.viewer.mapView.setMapType(newMapType);
+        console.log("Map type set to:", newMapType);
       } catch (error) {
-        console.log("Could not send map type message to iframe:", error);
+        console.log("Could not change map type:", error);
       }
     }
   };
@@ -209,8 +363,11 @@ export default function PotreeViewer() {
             {loadingProgress < 50 && (
               <p className="text-xs text-hwc-light/60 mt-2">Initializing viewer...</p>
             )}
-            {loadingProgress >= 50 && loadingProgress < 100 && (
-              <p className="text-xs text-hwc-light/60 mt-2">Loading Potree viewer...</p>
+            {loadingProgress >= 50 && loadingProgress < 80 && (
+              <p className="text-xs text-hwc-light/60 mt-2">Loading Potree scripts...</p>
+            )}
+            {loadingProgress >= 80 && loadingProgress < 100 && (
+              <p className="text-xs text-hwc-light/60 mt-2">Loading point cloud...</p>
             )}
           </div>
           
@@ -269,6 +426,32 @@ export default function PotreeViewer() {
         <title>{project?.projectName || `Project ${jobNumber}`} - HWC Engineering | Cloud Viewer</title>
         <meta name="description" content="Point cloud viewer" />
         <link rel="icon" href="/hwc-angle-logo-16px-mbe1odp0.png" />
+        
+        {/* Potree CSS */}
+        <link rel="stylesheet" href="/potree/build/potree/potree.css" />
+        <link rel="stylesheet" href="/potree/libs/jquery-ui/jquery-ui.min.css" />
+        <link rel="stylesheet" href="/potree/libs/openlayers3/ol.css" />
+        <link rel="stylesheet" href="/potree/libs/spectrum/spectrum.css" />
+        <link rel="stylesheet" href="/potree/libs/jstree/themes/mixed/style.css" />
+        <link rel="stylesheet" href="/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css" />
+        <link rel="stylesheet" href="/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css" />
+        
+        <style jsx>{`
+          body, html { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; background: #292C30; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+          #potree_render_area { position: absolute; width: 100%; height: 100%; left: 0; top: 0; background: #292C30; }
+          #potree_sidebar_container { background: rgba(41, 44, 48, 0.98); backdrop-filter: blur(20px); border-left: 2px solid rgba(238, 47, 39, 0.3); z-index: 30; overflow-y: auto; max-height: calc(100vh - 80px); position: fixed; right: 0; top: 80px; width: 320px; box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4); }
+          #potree_sidebar_container::-webkit-scrollbar { width: 6px; }
+          #potree_sidebar_container::-webkit-scrollbar-track { background: rgba(108, 104, 100, 0.2); border-radius: 3px; }
+          #potree_sidebar_container::-webkit-scrollbar-thumb { background: rgba(238, 47, 39, 0.7); border-radius: 3px; }
+          #potree_sidebar_container::-webkit-scrollbar-thumb:hover { background: rgba(238, 47, 39, 0.9); }
+          .ui-accordion-header { background: linear-gradient(135deg, rgba(238, 47, 39, 0.9), rgba(238, 47, 39, 0.7)) !important; color: white !important; border: none !important; border-radius: 8px !important; margin-bottom: 4px !important; padding: 12px 16px !important; font-weight: 600 !important; font-size: 14px !important; z-index: 31 !important; transition: all 0.2s ease !important; letter-spacing: -0.025em !important; }
+          .ui-accordion-header:hover { background: linear-gradient(135deg, rgba(238, 47, 39, 1), rgba(238, 47, 39, 0.8)) !important; transform: translateY(-1px) !important; box-shadow: 0 4px 12px rgba(238, 47, 39, 0.4) !important; }
+          .ui-accordion-content { background: rgba(41, 44, 48, 0.95) !important; color: rgba(221, 212, 204, 1) !important; border: none !important; border-radius: 8px !important; z-index: 31 !important; overflow-y: auto !important; max-height: 400px !important; }
+          .potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; padding: 16px !important; background: rgba(221, 212, 204, 0.08) !important; border-radius: 12px !important; margin: 8px 0 !important; width: 100% !important; box-sizing: border-box !important; }
+          .potree_toolbar button, .potree_menu_tools button, .pv-menu-tools button, .potree_toolbar .potree_button, .potree_menu_tools .potree_button, .pv-menu-tools .potree_button, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) button, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) button, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button, div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_button { width: 100% !important; height: 44px !important; margin: 0 !important; padding: 8px !important; background: rgba(221, 212, 204, 0.12) !important; border: 1px solid rgba(238, 47, 39, 0.25) !important; border-radius: 8px !important; color: rgba(221, 212, 204, 1) !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: all 0.2s ease !important; font-size: 12px !important; font-weight: 500 !important; cursor: pointer !important; box-sizing: border-box !important; }
+          .potree_compass { z-index: 35 !important; position: fixed !important; bottom: 24px !important; right: 24px !important; left: auto !important; top: auto !important; background: rgba(41, 44, 48, 0.95) !important; border: 2px solid rgba(238, 47, 39, 0.7) !important; border-radius: 50% !important; padding: 12px !important; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3) !important; pointer-events: auto !important; width: 64px !important; height: 64px !important; backdrop-filter: blur(20px) !important; }
+          .potree_navigation_cube { z-index: 35 !important; position: fixed !important; bottom: 24px !important; right: 104px !important; left: auto !important; top: auto !important; background: rgba(41, 44, 48, 0.95) !important; border: 2px solid rgba(238, 47, 39, 0.7) !important; border-radius: 12px !important; padding: 12px !important; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(238, 47, 39, 0.3) !important; pointer-events: auto !important; backdrop-filter: blur(20px) !important; }
+        `}</style>
       </Head>
 
       {/* Custom Header */}
@@ -440,13 +623,19 @@ export default function PotreeViewer() {
         </Card>
       </div>
 
-      {/* Potree Viewer Iframe */}
-      <iframe
-        ref={iframeRef}
-        className="absolute inset-0 w-full h-full border-0 z-10"
-        title="Potree Viewer"
+      {/* Potree Render Area */}
+      <div 
+        ref={renderAreaRef}
+        id="potree_render_area"
+        className="absolute inset-0 w-full h-full z-10"
         style={{ background: "#292C30" }}
-        allow="fullscreen"
+      />
+      
+      {/* Potree Sidebar Container */}
+      <div 
+        ref={sidebarRef}
+        id="potree_sidebar_container"
+        className="z-30"
       />
     </>
   );
