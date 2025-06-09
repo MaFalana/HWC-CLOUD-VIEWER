@@ -213,13 +213,48 @@ export default function PotreeViewer() {
 
   const initializePotree = async (jobNum: string, projectName: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      // Function to check if render area is ready
+      // Function to check if render area is ready with better detection
       const checkRenderArea = () => {
-        if (!renderAreaRef.current) {
-          console.log("Render area not ready, waiting...");
+        const renderArea = renderAreaRef.current;
+        
+        if (!renderArea) {
+          console.log("Render area ref not ready, waiting...");
           setTimeout(checkRenderArea, 100);
           return;
         }
+
+        // Check if element is actually in the DOM and has dimensions
+        const isInDOM = document.contains(renderArea);
+        const hasSize = renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0;
+        
+        if (!isInDOM) {
+          console.log("Render area not in DOM yet, waiting...");
+          setTimeout(checkRenderArea, 100);
+          return;
+        }
+
+        if (!hasSize) {
+          console.log("Render area has no dimensions yet, waiting...");
+          // Force dimensions if needed
+          renderArea.style.width = "100%";
+          renderArea.style.height = "100%";
+          renderArea.style.position = "absolute";
+          renderArea.style.top = "0";
+          renderArea.style.left = "0";
+          renderArea.style.minWidth = "100px";
+          renderArea.style.minHeight = "100px";
+          
+          setTimeout(checkRenderArea, 100);
+          return;
+        }
+
+        console.log("Render area is ready:", {
+          element: renderArea,
+          inDOM: isInDOM,
+          width: renderArea.offsetWidth,
+          height: renderArea.offsetHeight,
+          id: renderArea.id
+        });
 
         try {
           setLoadingProgress(60);
@@ -237,20 +272,27 @@ export default function PotreeViewer() {
           }
 
           // Clear any existing content and ensure proper setup
-          const renderArea = renderAreaRef.current;
           renderArea.innerHTML = "";
           renderArea.style.width = "100%";
           renderArea.style.height = "100%";
           renderArea.style.position = "absolute";
           renderArea.style.top = "0";
           renderArea.style.left = "0";
+          renderArea.style.background = "#292C30";
           
-          // Wait a bit for DOM to be ready
+          // Force a reflow to ensure styles are applied
+          renderArea.offsetHeight;
+          
+          // Wait a bit more for DOM to be fully ready
           setTimeout(() => {
             try {
               console.log("Creating Potree viewer with element:", renderArea);
-              console.log("Potree object:", window.Potree);
-              console.log("Potree.Viewer:", window.Potree.Viewer);
+              console.log("Element dimensions:", {
+                width: renderArea.offsetWidth,
+                height: renderArea.offsetHeight,
+                clientWidth: renderArea.clientWidth,
+                clientHeight: renderArea.clientHeight
+              });
               
               // Initialize Potree viewer
               const viewer = new window.Potree.Viewer(renderArea);
@@ -317,12 +359,16 @@ export default function PotreeViewer() {
                 message: error.message,
                 stack: error.stack,
                 renderArea: renderArea,
+                renderAreaDimensions: {
+                  width: renderArea.offsetWidth,
+                  height: renderArea.offsetHeight
+                },
                 potreeAvailable: !!window.Potree,
                 viewerAvailable: !!(window.Potree && window.Potree.Viewer)
               });
               reject(error);
             }
-          }, 200);
+          }, 300);
           
         } catch (error) {
           console.error("Error initializing Potree:", error);
@@ -330,8 +376,8 @@ export default function PotreeViewer() {
         }
       };
 
-      // Start checking for render area
-      checkRenderArea();
+      // Start checking for render area with a small delay to ensure DOM is ready
+      setTimeout(checkRenderArea, 100);
     });
   };
 
