@@ -7,7 +7,6 @@ import ViewerErrorOverlay from "@/components/viewer/ViewerErrorOverlay";
 import ViewerHeader from "@/components/viewer/ViewerHeader";
 import ViewerProjectInfoPanel from "@/components/viewer/ViewerProjectInfoPanel";
 import ViewerMapControls from "@/components/viewer/ViewerMapControls";
-import "@/styles/potree-viewer.css"; 
 
 export default function PotreeViewerPage() {
   const router = useRouter();
