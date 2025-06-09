@@ -192,8 +192,8 @@ export function usePotreeViewer({ jobNumber }: UsePotreeViewerProps) {
 
       if (!isMountedRef.current) return;
       setLoadingMessage("Loading point cloud...");
-      const cloudJsPath = `/pointclouds/${jobNumber}/cloud.js`;
-      const metadataPath = `/pointclouds/${jobNumber}/metadata.json`;
+      const cloudJsPath = `https://hwc-backend-server.vercel.app/pointclouds/${jobNumber}/cloud.js`;
+      const metadataPath = `https://hwc-backend-server.vercel.app/pointclouds/${jobNumber}/metadata.json`;
       const exampleCloudJsPath = "/pointclouds/example/cloud.js";
       const exampleMetadataPath = "/pointclouds/example/metadata.json";
 
