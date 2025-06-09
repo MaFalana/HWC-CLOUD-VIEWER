@@ -194,7 +194,10 @@ export default function PotreeViewerPage() {
 
         if (!isMounted) return;
         setLoadingMessage("Loading point cloud...");
+        // Update paths to prioritize cloud.js
+        const cloudJsPath = `/pointclouds/${jobNumber}/cloud.js`;
         const metadataPath = `/pointclouds/${jobNumber}/metadata.json`;
+        const exampleCloudJsPath = "/pointclouds/example/cloud.js"; // Assuming example might also have cloud.js
         const exampleMetadataPath = "/pointclouds/example/metadata.json";
 
         const loadCallback = (e: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -208,30 +211,54 @@ export default function PotreeViewerPage() {
             setIsLoading(false);
             setViewerInstanceReady(true);
           } else {
-            console.error("Failed to load point cloud from primary path, event:", e);
-            if (e.path !== exampleMetadataPath) { 
-                setLoadingMessage("Primary point cloud failed, trying example...");
-                window.Potree.loadPointCloud(exampleMetadataPath, "Example Cloud", loadCallback, loadErrorCallback);
-            } else {
-                setLoadingError("Failed to load point cloud and example fallback.");
+            // This block might be reached if the load was technically successful but no pointcloud object was in the event
+            // Or if Potree internally decided not to proceed after a certain stage.
+            // The error callback is more reliable for actual load failures.
+            console.warn("Load callback invoked but no pointcloud in event, or Potree internal issue. Event:", e);
+            // Attempting next fallback if not already on the last one.
+            // This logic is tricky here, better handled by the error callback chain.
+            // For now, we rely on the error callback to try next. If this is reached without error, it's an ambiguous state.
+            if (e.path !== exampleMetadataPath && e.path !== exampleCloudJsPath) {
+                 setLoadingMessage("Problem loading primary cloud, trying next fallback...");
+                 // This manual retry here might conflict with the error callback's retry.
+                 // It's safer to let the error callback handle retries.
+            } else if (!loadingError) { // Only set error if not already set by error callback
+                setLoadingError("Failed to load point cloud and example fallback (ambiguous success).");
                 setIsLoading(false);
             }
           }
         };
         
-        const loadErrorCallback = (errorEvent: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        const loadErrorCallback = (errorEvent: any, attemptedPath: string, nextAttemptFn?: () => void) => { // eslint-disable-line @typescript-eslint/no-explicit-any
             if (!isMounted) return;
-            console.error(`Error loading point cloud from ${errorEvent.path}:`, errorEvent);
-            if (errorEvent.path !== exampleMetadataPath) {
-                setLoadingMessage("Primary point cloud failed, trying example...");
-                window.Potree.loadPointCloud(exampleMetadataPath, "Example Cloud", loadCallback, loadErrorCallback);
+            console.error(`Error loading point cloud from ${attemptedPath}:`, errorEvent);
+            if (nextAttemptFn) {
+                setLoadingMessage(`Failed: ${attemptedPath.split('/').pop()}. Trying next...`);
+                nextAttemptFn();
             } else {
-                setLoadingError(`Failed to load point cloud: ${errorEvent.message || "Unknown error"}`);
+                setLoadingError(`Failed to load point cloud: ${errorEvent.message || "Unknown error"} after all fallbacks.`);
                 setIsLoading(false);
             }
         };
 
-        window.Potree.loadPointCloud(metadataPath, currentProjectName, loadCallback, loadErrorCallback);
+        const tryLoadExampleMetadata = () => {
+            setLoadingMessage("Trying example metadata.json...");
+            window.Potree.loadPointCloud(exampleMetadataPath, "Example Cloud (metadata)", loadCallback, (err: any) => loadErrorCallback(err, exampleMetadataPath));
+        };
+        
+        const tryLoadExampleCloudJs = () => {
+            setLoadingMessage("Trying example cloud.js...");
+            window.Potree.loadPointCloud(exampleCloudJsPath, "Example Cloud (cloud.js)", loadCallback, (err: any) => loadErrorCallback(err, exampleCloudJsPath, tryLoadExampleMetadata));
+        };
+
+        const tryLoadProjectMetadata = () => {
+            setLoadingMessage(`Trying ${currentProjectName} metadata.json...`);
+            window.Potree.loadPointCloud(metadataPath, currentProjectName, loadCallback, (err: any) => loadErrorCallback(err, metadataPath, tryLoadExampleCloudJs));
+        };
+
+        // Start loading sequence
+        setLoadingMessage(`Trying ${currentProjectName} cloud.js...`);
+        window.Potree.loadPointCloud(cloudJsPath, currentProjectName, loadCallback, (err: any) => loadErrorCallback(err, cloudJsPath, tryLoadProjectMetadata));
 
       } catch (err) {
         if (isMounted) {
