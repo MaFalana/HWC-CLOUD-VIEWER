@@ -30,6 +30,7 @@ export default function PotreeViewer() {
   const [showProjectInfo, setShowProjectInfo] = useState(false);
   const renderAreaRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const [viewerReady, setViewerReady] = useState(false);
   
   useEffect(() => {
     if (!jobNumber || typeof jobNumber !== "string") return;
@@ -64,6 +65,10 @@ export default function PotreeViewer() {
         // Load Potree scripts and initialize
         await loadPotreeScripts();
         setLoadingProgress(50);
+        
+        // Wait for DOM to be ready
+        await waitForDOM();
+        setLoadingProgress(60);
         
         // Initialize Potree viewer
         await initializePotree(jobNumber, fallbackProject.projectName);
@@ -109,6 +114,48 @@ export default function PotreeViewer() {
 
     initializeViewer();
   }, [jobNumber]);
+
+  const waitForDOM = async (): Promise<void> => {
+    return new Promise((resolve) => {
+      const checkDOM = () => {
+        const renderArea = renderAreaRef.current;
+        
+        if (!renderArea) {
+          console.log("Waiting for render area ref...");
+          setTimeout(checkDOM, 50);
+          return;
+        }
+
+        // Ensure the element is in the DOM and has proper dimensions
+        const rect = renderArea.getBoundingClientRect();
+        const isVisible = rect.width > 0 && rect.height > 0;
+        
+        if (!isVisible) {
+          console.log("Waiting for render area to have dimensions...", rect);
+          // Force dimensions
+          renderArea.style.width = "100vw";
+          renderArea.style.height = "100vh";
+          renderArea.style.position = "fixed";
+          renderArea.style.top = "0";
+          renderArea.style.left = "0";
+          renderArea.style.zIndex = "10";
+          renderArea.style.background = "#292C30";
+          
+          // Force a reflow
+          renderArea.offsetHeight;
+          
+          setTimeout(checkDOM, 50);
+          return;
+        }
+
+        console.log("DOM ready with dimensions:", rect);
+        resolve();
+      };
+
+      // Start checking after a small delay
+      setTimeout(checkDOM, 100);
+    });
+  };
 
   const loadPotreeScripts = async (): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -179,15 +226,13 @@ export default function PotreeViewer() {
             await loadScript(script);
           }
           
-          // Wait longer for Potree to be fully initialized
+          // Wait for Potree to be fully initialized
           let attempts = 0;
           const maxAttempts = 20;
           
           const checkPotree = () => {
             attempts++;
             console.log(`Checking Potree availability (attempt ${attempts}/${maxAttempts})`);
-            console.log("window.Potree:", window.Potree);
-            console.log("window.Potree.Viewer:", window.Potree && window.Potree.Viewer);
             
             if (window.Potree && window.Potree.Viewer) {
               console.log("Potree library loaded successfully");
@@ -213,171 +258,101 @@ export default function PotreeViewer() {
 
   const initializePotree = async (jobNum: string, projectName: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      // Function to check if render area is ready with better detection
-      const checkRenderArea = () => {
+      try {
         const renderArea = renderAreaRef.current;
         
         if (!renderArea) {
-          console.log("Render area ref not ready, waiting...");
-          setTimeout(checkRenderArea, 100);
+          reject(new Error("Render area not available"));
           return;
         }
 
-        // Check if element is actually in the DOM and has dimensions
-        const isInDOM = document.contains(renderArea);
-        const hasSize = renderArea.offsetWidth > 0 && renderArea.offsetHeight > 0;
+        console.log("Initializing Potree with render area:", renderArea);
         
-        if (!isInDOM) {
-          console.log("Render area not in DOM yet, waiting...");
-          setTimeout(checkRenderArea, 100);
+        // Ensure proper setup
+        renderArea.innerHTML = "";
+        renderArea.style.width = "100vw";
+        renderArea.style.height = "100vh";
+        renderArea.style.position = "fixed";
+        renderArea.style.top = "0";
+        renderArea.style.left = "0";
+        renderArea.style.zIndex = "10";
+        renderArea.style.background = "#292C30";
+        
+        // Force reflow
+        renderArea.offsetHeight;
+        
+        setLoadingProgress(70);
+        
+        // Check if Potree is available
+        if (!window.Potree || !window.Potree.Viewer) {
+          reject(new Error("Potree library not available"));
           return;
         }
 
-        if (!hasSize) {
-          console.log("Render area has no dimensions yet, waiting...");
-          // Force dimensions if needed
-          renderArea.style.width = "100%";
-          renderArea.style.height = "100%";
-          renderArea.style.position = "absolute";
-          renderArea.style.top = "0";
-          renderArea.style.left = "0";
-          renderArea.style.minWidth = "100px";
-          renderArea.style.minHeight = "100px";
+        console.log("Creating Potree viewer...");
+        
+        // Initialize Potree viewer
+        const viewer = new window.Potree.Viewer(renderArea);
+        window.viewer = viewer;
+        
+        console.log("Potree viewer created successfully:", viewer);
+        
+        viewer.setEDLEnabled(true);
+        viewer.setFOV(60);
+        viewer.setPointBudget(3 * 1000 * 1000);
+        viewer.setDescription(projectName);
+        viewer.setLanguage("en");
+        
+        setLoadingProgress(80);
+        
+        viewer.loadGUI(() => {
+          console.log("Potree GUI loaded");
+          setLoadingProgress(85);
           
-          setTimeout(checkRenderArea, 100);
-          return;
-        }
-
-        console.log("Render area is ready:", {
-          element: renderArea,
-          inDOM: isInDOM,
-          width: renderArea.offsetWidth,
-          height: renderArea.offsetHeight,
-          id: renderArea.id
-        });
-
-        try {
-          setLoadingProgress(60);
-          
-          // Check if Potree is available
-          if (!window.Potree) {
-            reject(new Error("Potree library not loaded"));
-            return;
-          }
-
-          // Check if Potree.Viewer is available
-          if (!window.Potree.Viewer) {
-            reject(new Error("Potree.Viewer not available"));
-            return;
-          }
-
-          // Clear any existing content and ensure proper setup
-          renderArea.innerHTML = "";
-          renderArea.style.width = "100%";
-          renderArea.style.height = "100%";
-          renderArea.style.position = "absolute";
-          renderArea.style.top = "0";
-          renderArea.style.left = "0";
-          renderArea.style.background = "#292C30";
-          
-          // Force a reflow to ensure styles are applied
-          renderArea.offsetHeight;
-          
-          // Wait a bit more for DOM to be fully ready
+          // Apply custom styling
           setTimeout(() => {
             try {
-              console.log("Creating Potree viewer with element:", renderArea);
-              console.log("Element dimensions:", {
-                width: renderArea.offsetWidth,
-                height: renderArea.offsetHeight,
-                clientWidth: renderArea.clientWidth,
-                clientHeight: renderArea.clientHeight
-              });
-              
-              // Initialize Potree viewer
-              const viewer = new window.Potree.Viewer(renderArea);
-              window.viewer = viewer;
-              
-              console.log("Potree viewer created successfully:", viewer);
-              
-              viewer.setEDLEnabled(true);
-              viewer.setFOV(60);
-              viewer.setPointBudget(3 * 1000 * 1000);
-              viewer.setDescription(projectName);
-              viewer.setLanguage("en");
-              
-              setLoadingProgress(70);
-              
-              viewer.loadGUI(() => {
-                console.log("Potree GUI loaded");
-                setLoadingProgress(80);
+              if (window.$) {
+                window.$('.potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube)').css({
+                  'display': 'grid',
+                  'grid-template-columns': 'repeat(4, 1fr)',
+                  'gap': '8px',
+                  'width': '100%'
+                });
                 
-                // Apply custom styling
-                setTimeout(() => {
-                  try {
-                    if (window.$) {
-                      window.$('.potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube)').css({
-                        'display': 'grid',
-                        'grid-template-columns': 'repeat(4, 1fr)',
-                        'gap': '8px',
-                        'width': '100%'
-                      });
-                      
-                      window.$('.potree_compass').css({
-                        'position': 'fixed',
-                        'bottom': '24px',
-                        'right': '24px',
-                        'left': 'auto',
-                        'top': 'auto',
-                        'z-index': '35'
-                      });
-                      
-                      window.$('.potree_navigation_cube').css({
-                        'position': 'fixed',
-                        'bottom': '24px',
-                        'right': '104px',
-                        'left': 'auto',
-                        'top': 'auto',
-                        'z-index': '35'
-                      });
-                      
-                      window.$('#potree_sidebar_container').perfectScrollbar();
-                    }
-                  } catch (e) {
-                    console.error("Error applying custom styles:", e);
-                  }
-                  
-                  setLoadingProgress(85);
-                  
-                  // Load point cloud
-                  loadPointCloud(jobNum, projectName, viewer, resolve, reject);
-                }, 100);
-              });
-            } catch (error) {
-              console.error("Error creating Potree viewer:", error);
-              console.error("Error details:", {
-                message: error.message,
-                stack: error.stack,
-                renderArea: renderArea,
-                renderAreaDimensions: {
-                  width: renderArea.offsetWidth,
-                  height: renderArea.offsetHeight
-                },
-                potreeAvailable: !!window.Potree,
-                viewerAvailable: !!(window.Potree && window.Potree.Viewer)
-              });
-              reject(error);
+                window.$('.potree_compass').css({
+                  'position': 'fixed',
+                  'bottom': '24px',
+                  'right': '24px',
+                  'left': 'auto',
+                  'top': 'auto',
+                  'z-index': '35'
+                });
+                
+                window.$('.potree_navigation_cube').css({
+                  'position': 'fixed',
+                  'bottom': '24px',
+                  'right': '104px',
+                  'left': 'auto',
+                  'top': 'auto',
+                  'z-index': '35'
+                });
+                
+                window.$('#potree_sidebar_container').perfectScrollbar();
+              }
+            } catch (e) {
+              console.error("Error applying custom styles:", e);
             }
-          }, 300);
-          
-        } catch (error) {
-          console.error("Error initializing Potree:", error);
-          reject(error);
-        }
-      };
-
-      // Start checking for render area with a small delay to ensure DOM is ready
-      setTimeout(checkRenderArea, 100);
+            
+            // Load point cloud
+            loadPointCloud(jobNum, projectName, viewer, resolve, reject);
+          }, 100);
+        });
+        
+      } catch (error) {
+        console.error("Error initializing Potree:", error);
+        reject(error);
+      }
     });
   };
 
@@ -395,6 +370,7 @@ export default function PotreeViewer() {
         console.log("All point cloud loading attempts completed. Viewer ready without point cloud.");
         setLoadingProgress(100);
         setLoading(false);
+        setViewerReady(true);
         resolve();
         return;
       }
@@ -427,6 +403,7 @@ export default function PotreeViewer() {
           
           setLoadingProgress(100);
           setLoading(false);
+          setViewerReady(true);
           resolve();
         } else {
           console.warn(`No pointcloud object in event for ${name} (${url}), trying next.`);
@@ -495,7 +472,7 @@ export default function PotreeViewer() {
               <p className="text-xs text-hwc-light/60 mt-2">Initializing viewer...</p>
             )}
             {loadingProgress >= 50 && loadingProgress < 80 && (
-              <p className="text-xs text-hwc-light/60 mt-2">Loading Potree scripts...</p>
+              <p className="text-xs text-hwc-light/60 mt-2">Setting up render area...</p>
             )}
             {loadingProgress >= 80 && loadingProgress < 100 && (
               <p className="text-xs text-hwc-light/60 mt-2">Loading point cloud...</p>
@@ -569,7 +546,7 @@ export default function PotreeViewer() {
         
         <style jsx>{`
           body, html { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; background: #292C30; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-          #potree_render_area { position: absolute; width: 100%; height: 100%; left: 0; top: 0; background: #292C30; }
+          #potree_render_area { position: fixed; width: 100vw; height: 100vh; left: 0; top: 0; background: #292C30; z-index: 10; }
           #potree_sidebar_container { background: rgba(41, 44, 48, 0.98); backdrop-filter: blur(20px); border-left: 2px solid rgba(238, 47, 39, 0.3); z-index: 30; overflow-y: auto; max-height: calc(100vh - 80px); position: fixed; right: 0; top: 80px; width: 320px; box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4); }
           #potree_sidebar_container::-webkit-scrollbar { width: 6px; }
           #potree_sidebar_container::-webkit-scrollbar-track { background: rgba(108, 104, 100, 0.2); border-radius: 3px; }
@@ -585,77 +562,94 @@ export default function PotreeViewer() {
         `}</style>
       </Head>
 
-      {/* Custom Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 bg-hwc-dark/95 backdrop-blur-md text-white border-b border-hwc-red/20">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/")}
-              className="text-white hover:bg-hwc-red/20 font-medium"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Dashboard
-            </Button>
-            <div className="h-6 w-px bg-hwc-gray/50"></div>
-            <h1 className="text-xl font-semibold tracking-tight">
-              {project?.projectName || `Project ${jobNumber}`}
-            </h1>
-            {project?.location && (
-              <div className="flex items-center gap-2 text-sm text-hwc-light/80">
-                <MapPin className="h-3 w-3" />
-                <span className="font-mono">
-                  {project.location.latitude.toFixed(4)}, {project.location.longitude.toFixed(4)}
-                  {project.location.source && (
-                    <span className="ml-2 text-xs opacity-60 bg-hwc-gray/20 px-2 py-1 rounded">
-                      {project.location.source}
-                    </span>
-                  )}
-                </span>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowProjectInfo(!showProjectInfo)}
-              className="text-white hover:bg-hwc-red/20"
-            >
-              <Info className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleSidebar}
-              className="text-white hover:bg-hwc-red/20"
-            >
-              {sidebarVisible ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </Button>
-            <a 
-              href="https://www.hwcengineering.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="cursor-pointer"
-            >
-              <Image
-                src="/hwc-logo-4c-mbe1obbx.png"
-                alt="HWC Engineering"
-                width={100}
-                height={34}
-                priority
-                className="h-8 hover:opacity-80 transition-opacity"
-                style={{ width: "auto", height: "auto" }}
-              />
-            </a>
+      {/* Potree Render Area - Must be first for proper initialization */}
+      <div 
+        ref={renderAreaRef}
+        id="potree_render_area"
+        style={{ 
+          position: "fixed",
+          width: "100vw",
+          height: "100vh",
+          top: 0,
+          left: 0,
+          zIndex: 10,
+          background: "#292C30"
+        }}
+      />
+
+      {/* Custom Header - Only show when viewer is ready */}
+      {viewerReady && (
+        <div className="absolute top-0 left-0 right-0 z-50 bg-hwc-dark/95 backdrop-blur-md text-white border-b border-hwc-red/20">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center gap-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push("/")}
+                className="text-white hover:bg-hwc-red/20 font-medium"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Dashboard
+              </Button>
+              <div className="h-6 w-px bg-hwc-gray/50"></div>
+              <h1 className="text-xl font-semibold tracking-tight">
+                {project?.projectName || `Project ${jobNumber}`}
+              </h1>
+              {project?.location && (
+                <div className="flex items-center gap-2 text-sm text-hwc-light/80">
+                  <MapPin className="h-3 w-3" />
+                  <span className="font-mono">
+                    {project.location.latitude.toFixed(4)}, {project.location.longitude.toFixed(4)}
+                    {project.location.source && (
+                      <span className="ml-2 text-xs opacity-60 bg-hwc-gray/20 px-2 py-1 rounded">
+                        {project.location.source}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowProjectInfo(!showProjectInfo)}
+                className="text-white hover:bg-hwc-red/20"
+              >
+                <Info className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSidebar}
+                className="text-white hover:bg-hwc-red/20"
+              >
+                {sidebarVisible ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              </Button>
+              <a 
+                href="https://www.hwcengineering.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="cursor-pointer"
+              >
+                <Image
+                  src="/hwc-logo-4c-mbe1obbx.png"
+                  alt="HWC Engineering"
+                  width={100}
+                  height={34}
+                  priority
+                  className="h-8 hover:opacity-80 transition-opacity"
+                  style={{ width: "auto", height: "auto" }}
+                />
+              </a>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Project Info Panel */}
-      {showProjectInfo && project && (
+      {viewerReady && showProjectInfo && project && (
         <div className="absolute top-20 right-6 z-40 w-96">
           <Card className="bg-hwc-dark/95 backdrop-blur-md border border-hwc-red/20 text-white">
             <CardContent className="p-6">
@@ -713,54 +707,48 @@ export default function PotreeViewer() {
       )}
 
       {/* Map Type Controls */}
-      <div className="absolute top-20 left-6 z-40">
-        <Card className="bg-hwc-dark/95 backdrop-blur-md border border-hwc-red/20">
-          <CardContent className="p-3">
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={mapType === "default" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => handleMapTypeChange("default")}
-                className={`text-xs h-9 ${mapType === "default" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
-              >
-                Default
-              </Button>
-              <Button
-                variant={mapType === "terrain" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => handleMapTypeChange("terrain")}
-                className={`text-xs h-9 ${mapType === "terrain" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
-              >
-                Terrain
-              </Button>
-              <Button
-                variant={mapType === "satellite" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => handleMapTypeChange("satellite")}
-                className={`text-xs h-9 ${mapType === "satellite" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
-              >
-                Satellite
-              </Button>
-              <Button
-                variant={mapType === "openstreet" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => handleMapTypeChange("openstreet")}
-                className={`text-xs h-9 ${mapType === "openstreet" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
-              >
-                OpenStreet
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Potree Render Area */}
-      <div 
-        ref={renderAreaRef}
-        id="potree_render_area"
-        className="absolute inset-0 w-full h-full z-10"
-        style={{ background: "#292C30" }}
-      />
+      {viewerReady && (
+        <div className="absolute top-20 left-6 z-40">
+          <Card className="bg-hwc-dark/95 backdrop-blur-md border border-hwc-red/20">
+            <CardContent className="p-3">
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={mapType === "default" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => handleMapTypeChange("default")}
+                  className={`text-xs h-9 ${mapType === "default" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
+                >
+                  Default
+                </Button>
+                <Button
+                  variant={mapType === "terrain" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => handleMapTypeChange("terrain")}
+                  className={`text-xs h-9 ${mapType === "terrain" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
+                >
+                  Terrain
+                </Button>
+                <Button
+                  variant={mapType === "satellite" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => handleMapTypeChange("satellite")}
+                  className={`text-xs h-9 ${mapType === "satellite" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
+                >
+                  Satellite
+                </Button>
+                <Button
+                  variant={mapType === "openstreet" ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => handleMapTypeChange("openstreet")}
+                  className={`text-xs h-9 ${mapType === "openstreet" ? "bg-hwc-red hover:bg-hwc-red/90" : "text-white hover:bg-hwc-red/20"}`}
+                >
+                  OpenStreet
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       
       {/* Potree Sidebar Container */}
       <div 
