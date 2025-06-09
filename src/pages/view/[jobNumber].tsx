@@ -302,17 +302,14 @@ export default function PotreeViewerPage() {
   }, [jobNumber, setProjectData, setLoadingMessage, setLoadingError, setIsLoading, setViewerInstanceReady, loadingError]);
 
   useEffect(() => {
-    let isMountedGlobal = true; // For cleanup related to this specific effect instance
+    // let isMountedGlobal = true; // This variable is not strictly necessary for the cleanup logic here.
 
     if (jobNumber) {
       fetchProjectAndLoadViewer();
     }
 
     return () => {
-      isMountedGlobal = false; // This will signal that this particular effect instance has cleaned up.
-      // The cleanup logic inside fetchProjectAndLoadViewer using its local 'isMounted'
-      // is more about preventing state updates after its specific async operations complete if unmounted.
-      // The global cleanup of scripts and viewer instance should happen here.
+      // isMountedGlobal = false; // No longer needed
       
       console.log("Cleaning up Potree viewer and scripts from main useEffect...");
       if (window.viewer) {
