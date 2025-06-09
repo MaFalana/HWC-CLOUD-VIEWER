@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Image from "next/image";
@@ -58,13 +58,16 @@ export default function PotreeViewerPage() {
 
   const loadedScriptsRef = useRef<HTMLScriptElement[]>([]);
 
-  useEffect(() => {
+  const fetchProjectAndLoadViewer = useCallback(async () => {
     if (!jobNumber || typeof jobNumber !== "string") {
       setLoadingMessage("Waiting for project information...");
       return;
     }
 
-    let isMounted = true;
+    let isMounted = true; // This variable will be local to each call of fetchProjectAndLoadViewer
+    // We need a way to make sure cleanup uses the correct isMounted if the effect re-runs.
+    // However, the main useEffect cleanup will handle the global sense of mounting.
+
     const scriptsCurrentlyLoaded: HTMLScriptElement[] = [];
 
     const loadScript = (src: string): Promise<void> => {
@@ -222,7 +225,7 @@ export default function PotreeViewerPage() {
                  setLoadingMessage("Problem loading primary cloud, trying next fallback...");
                  // This manual retry here might conflict with the error callback's retry.
                  // It's safer to let the error callback handle retries.
-            } else if (!loadingError) { // Only set error if not already set by error callback
+            } else if (!loadingError) { // Only set error if not already set by error callback // loadingError is used here
                 setLoadingError("Failed to load point cloud and example fallback (ambiguous success).");
                 setIsLoading(false);
             }
@@ -243,29 +246,28 @@ export default function PotreeViewerPage() {
 
         const tryLoadExampleMetadata = () => {
             setLoadingMessage("Trying example metadata.json...");
-            window.Potree.loadPointCloud(exampleMetadataPath, "Example Cloud (metadata)", loadCallback, (err: any) => loadErrorCallback(err, exampleMetadataPath));
+            window.Potree.loadPointCloud(exampleMetadataPath, "Example Cloud (metadata)", loadCallback, (err: any) => loadErrorCallback(err, exampleMetadataPath)); // eslint-disable-line @typescript-eslint/no-explicit-any
         };
         
         const tryLoadExampleCloudJs = () => {
             setLoadingMessage("Trying example cloud.js...");
-            window.Potree.loadPointCloud(exampleCloudJsPath, "Example Cloud (cloud.js)", loadCallback, (err: any) => loadErrorCallback(err, exampleCloudJsPath, tryLoadExampleMetadata));
+            window.Potree.loadPointCloud(exampleCloudJsPath, "Example Cloud (cloud.js)", loadCallback, (err: any) => loadErrorCallback(err, exampleCloudJsPath, tryLoadExampleMetadata)); // eslint-disable-line @typescript-eslint/no-explicit-any
         };
 
         const tryLoadProjectMetadata = () => {
             setLoadingMessage(`Trying ${currentProjectName} metadata.json...`);
-            window.Potree.loadPointCloud(metadataPath, currentProjectName, loadCallback, (err: any) => loadErrorCallback(err, metadataPath, tryLoadExampleCloudJs));
+            window.Potree.loadPointCloud(metadataPath, currentProjectName, loadCallback, (err: any) => loadErrorCallback(err, metadataPath, tryLoadExampleCloudJs)); // eslint-disable-line @typescript-eslint/no-explicit-any
         };
 
         // Start loading sequence
         setLoadingMessage(`Trying ${currentProjectName} cloud.js...`);
-        window.Potree.loadPointCloud(cloudJsPath, currentProjectName, loadCallback, (err: any) => loadErrorCallback(err, cloudJsPath, tryLoadProjectMetadata));
+        window.Potree.loadPointCloud(cloudJsPath, currentProjectName, loadCallback, (err: any) => loadErrorCallback(err, cloudJsPath, tryLoadProjectMetadata)); // eslint-disable-line @typescript-eslint/no-explicit-any
 
       } catch (err) {
-        if (isMounted) {
-          console.error("Error during viewer initialization:", err);
-          setLoadingError(err instanceof Error ? err.message : String(err));
-          setIsLoading(false);
-        }
+        // No need to check isMounted here as this is within the async function's scope
+        console.error("Error during viewer initialization:", err);
+        setLoadingError(err instanceof Error ? err.message : String(err));
+        setIsLoading(false);
       }
     };
 
@@ -297,7 +299,46 @@ export default function PotreeViewerPage() {
       });
       loadedScriptsRef.current = [];
     };
-  }, [jobNumber]);
+  }, [jobNumber, setProjectData, setLoadingMessage, setLoadingError, setIsLoading, setViewerInstanceReady, loadingError]);
+
+  useEffect(() => {
+    let isMountedGlobal = true; // For cleanup related to this specific effect instance
+
+    if (jobNumber) {
+      fetchProjectAndLoadViewer();
+    }
+
+    return () => {
+      isMountedGlobal = false; // This will signal that this particular effect instance has cleaned up.
+      // The cleanup logic inside fetchProjectAndLoadViewer using its local 'isMounted'
+      // is more about preventing state updates after its specific async operations complete if unmounted.
+      // The global cleanup of scripts and viewer instance should happen here.
+      
+      console.log("Cleaning up Potree viewer and scripts from main useEffect...");
+      if (window.viewer) {
+        try {
+            if (window.viewer.scene && window.viewer.scene.pointclouds) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                window.viewer.scene.pointclouds.forEach((pc: any) => window.viewer.scene.removePointCloud(pc));
+            }
+            const renderArea = document.getElementById("potree_render_area");
+            if (renderArea) renderArea.innerHTML = ""; 
+            const sidebarArea = document.getElementById("potree_sidebar_container");
+            if(sidebarArea) sidebarArea.innerHTML = "";
+        } catch (e) {
+            console.error("Error during Potree viewer cleanup:", e);
+        }
+        window.viewer = undefined;
+      }
+      loadedScriptsRef.current.forEach(script => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+          console.log(`Removed script: ${script.src}`);
+        }
+      });
+      loadedScriptsRef.current = [];
+    };
+  }, [jobNumber, fetchProjectAndLoadViewer]);
 
   const toggleCustomSidebar = () => {
     setCustomSidebarVisible(prev => !prev);
