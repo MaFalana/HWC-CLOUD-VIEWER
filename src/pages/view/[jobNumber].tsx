@@ -213,118 +213,125 @@ export default function PotreeViewer() {
 
   const initializePotree = async (jobNum: string, projectName: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      try {
-        setLoadingProgress(60);
-        
+      // Function to check if render area is ready
+      const checkRenderArea = () => {
         if (!renderAreaRef.current) {
-          reject(new Error("Render area not found"));
+          console.log("Render area not ready, waiting...");
+          setTimeout(checkRenderArea, 100);
           return;
         }
 
-        // Check if Potree is available
-        if (!window.Potree) {
-          reject(new Error("Potree library not loaded"));
-          return;
-        }
-
-        // Check if Potree.Viewer is available
-        if (!window.Potree.Viewer) {
-          reject(new Error("Potree.Viewer not available"));
-          return;
-        }
-
-        // Clear any existing content and ensure proper setup
-        const renderArea = renderAreaRef.current;
-        renderArea.innerHTML = "";
-        renderArea.style.width = "100%";
-        renderArea.style.height = "100%";
-        renderArea.style.position = "absolute";
-        renderArea.style.top = "0";
-        renderArea.style.left = "0";
-        
-        // Wait a bit for DOM to be ready
-        setTimeout(() => {
-          try {
-            console.log("Creating Potree viewer with element:", renderArea);
-            console.log("Potree object:", window.Potree);
-            console.log("Potree.Viewer:", window.Potree.Viewer);
-            
-            // Initialize Potree viewer
-            const viewer = new window.Potree.Viewer(renderArea);
-            window.viewer = viewer;
-            
-            console.log("Potree viewer created successfully:", viewer);
-            
-            viewer.setEDLEnabled(true);
-            viewer.setFOV(60);
-            viewer.setPointBudget(3 * 1000 * 1000);
-            viewer.setDescription(projectName);
-            viewer.setLanguage("en");
-            
-            setLoadingProgress(70);
-            
-            viewer.loadGUI(() => {
-              console.log("Potree GUI loaded");
-              setLoadingProgress(80);
-              
-              // Apply custom styling
-              setTimeout(() => {
-                try {
-                  if (window.$) {
-                    window.$('.potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube)').css({
-                      'display': 'grid',
-                      'grid-template-columns': 'repeat(4, 1fr)',
-                      'gap': '8px',
-                      'width': '100%'
-                    });
-                    
-                    window.$('.potree_compass').css({
-                      'position': 'fixed',
-                      'bottom': '24px',
-                      'right': '24px',
-                      'left': 'auto',
-                      'top': 'auto',
-                      'z-index': '35'
-                    });
-                    
-                    window.$('.potree_navigation_cube').css({
-                      'position': 'fixed',
-                      'bottom': '24px',
-                      'right': '104px',
-                      'left': 'auto',
-                      'top': 'auto',
-                      'z-index': '35'
-                    });
-                    
-                    window.$('#potree_sidebar_container').perfectScrollbar();
-                  }
-                } catch (e) {
-                  console.error("Error applying custom styles:", e);
-                }
-                
-                setLoadingProgress(85);
-                
-                // Load point cloud
-                loadPointCloud(jobNum, projectName, viewer, resolve, reject);
-              }, 100);
-            });
-          } catch (error) {
-            console.error("Error creating Potree viewer:", error);
-            console.error("Error details:", {
-              message: error.message,
-              stack: error.stack,
-              renderArea: renderArea,
-              potreeAvailable: !!window.Potree,
-              viewerAvailable: !!(window.Potree && window.Potree.Viewer)
-            });
-            reject(error);
+        try {
+          setLoadingProgress(60);
+          
+          // Check if Potree is available
+          if (!window.Potree) {
+            reject(new Error("Potree library not loaded"));
+            return;
           }
-        }, 500);
-        
-      } catch (error) {
-        console.error("Error initializing Potree:", error);
-        reject(error);
-      }
+
+          // Check if Potree.Viewer is available
+          if (!window.Potree.Viewer) {
+            reject(new Error("Potree.Viewer not available"));
+            return;
+          }
+
+          // Clear any existing content and ensure proper setup
+          const renderArea = renderAreaRef.current;
+          renderArea.innerHTML = "";
+          renderArea.style.width = "100%";
+          renderArea.style.height = "100%";
+          renderArea.style.position = "absolute";
+          renderArea.style.top = "0";
+          renderArea.style.left = "0";
+          
+          // Wait a bit for DOM to be ready
+          setTimeout(() => {
+            try {
+              console.log("Creating Potree viewer with element:", renderArea);
+              console.log("Potree object:", window.Potree);
+              console.log("Potree.Viewer:", window.Potree.Viewer);
+              
+              // Initialize Potree viewer
+              const viewer = new window.Potree.Viewer(renderArea);
+              window.viewer = viewer;
+              
+              console.log("Potree viewer created successfully:", viewer);
+              
+              viewer.setEDLEnabled(true);
+              viewer.setFOV(60);
+              viewer.setPointBudget(3 * 1000 * 1000);
+              viewer.setDescription(projectName);
+              viewer.setLanguage("en");
+              
+              setLoadingProgress(70);
+              
+              viewer.loadGUI(() => {
+                console.log("Potree GUI loaded");
+                setLoadingProgress(80);
+                
+                // Apply custom styling
+                setTimeout(() => {
+                  try {
+                    if (window.$) {
+                      window.$('.potree_toolbar, .potree_menu_tools, .pv-menu-tools, div[class*="tools"]:not(.potree_compass):not(.potree_navigation_cube), div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube)').css({
+                        'display': 'grid',
+                        'grid-template-columns': 'repeat(4, 1fr)',
+                        'gap': '8px',
+                        'width': '100%'
+                      });
+                      
+                      window.$('.potree_compass').css({
+                        'position': 'fixed',
+                        'bottom': '24px',
+                        'right': '24px',
+                        'left': 'auto',
+                        'top': 'auto',
+                        'z-index': '35'
+                      });
+                      
+                      window.$('.potree_navigation_cube').css({
+                        'position': 'fixed',
+                        'bottom': '24px',
+                        'right': '104px',
+                        'left': 'auto',
+                        'top': 'auto',
+                        'z-index': '35'
+                      });
+                      
+                      window.$('#potree_sidebar_container').perfectScrollbar();
+                    }
+                  } catch (e) {
+                    console.error("Error applying custom styles:", e);
+                  }
+                  
+                  setLoadingProgress(85);
+                  
+                  // Load point cloud
+                  loadPointCloud(jobNum, projectName, viewer, resolve, reject);
+                }, 100);
+              });
+            } catch (error) {
+              console.error("Error creating Potree viewer:", error);
+              console.error("Error details:", {
+                message: error.message,
+                stack: error.stack,
+                renderArea: renderArea,
+                potreeAvailable: !!window.Potree,
+                viewerAvailable: !!(window.Potree && window.Potree.Viewer)
+              });
+              reject(error);
+            }
+          }, 200);
+          
+        } catch (error) {
+          console.error("Error initializing Potree:", error);
+          reject(error);
+        }
+      };
+
+      // Start checking for render area
+      checkRenderArea();
     });
   };
 
