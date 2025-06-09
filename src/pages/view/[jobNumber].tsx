@@ -113,7 +113,7 @@ export default function PotreeViewer() {
   const loadPotreeScripts = async (): Promise<void> => {
     return new Promise((resolve, reject) => {
       // Check if Potree is already loaded
-      if (window.Potree) {
+      if (window.Potree && window.Potree.Viewer) {
         console.log("Potree already loaded");
         resolve();
         return;
@@ -179,16 +179,28 @@ export default function PotreeViewer() {
             await loadScript(script);
           }
           
-          // Wait a bit for Potree to be fully initialized
-          setTimeout(() => {
-            if (window.Potree) {
+          // Wait longer for Potree to be fully initialized
+          let attempts = 0;
+          const maxAttempts = 20;
+          
+          const checkPotree = () => {
+            attempts++;
+            console.log(`Checking Potree availability (attempt ${attempts}/${maxAttempts})`);
+            console.log("window.Potree:", window.Potree);
+            console.log("window.Potree.Viewer:", window.Potree && window.Potree.Viewer);
+            
+            if (window.Potree && window.Potree.Viewer) {
               console.log("Potree library loaded successfully");
               resolve();
-            } else {
-              console.error("Potree library not available after loading scripts");
+            } else if (attempts >= maxAttempts) {
+              console.error("Potree library not available after loading scripts and waiting");
               reject(new Error("Potree library not available after loading scripts"));
+            } else {
+              setTimeout(checkPotree, 250);
             }
-          }, 500);
+          };
+          
+          setTimeout(checkPotree, 500);
         } catch (error) {
           console.error("Error loading scripts:", error);
           reject(error);
@@ -215,17 +227,33 @@ export default function PotreeViewer() {
           return;
         }
 
-        // Clear any existing content
-        renderAreaRef.current.innerHTML = "";
+        // Check if Potree.Viewer is available
+        if (!window.Potree.Viewer) {
+          reject(new Error("Potree.Viewer not available"));
+          return;
+        }
+
+        // Clear any existing content and ensure proper setup
+        const renderArea = renderAreaRef.current;
+        renderArea.innerHTML = "";
+        renderArea.style.width = "100%";
+        renderArea.style.height = "100%";
+        renderArea.style.position = "absolute";
+        renderArea.style.top = "0";
+        renderArea.style.left = "0";
         
         // Wait a bit for DOM to be ready
         setTimeout(() => {
           try {
-            console.log("Creating Potree viewer...");
+            console.log("Creating Potree viewer with element:", renderArea);
+            console.log("Potree object:", window.Potree);
+            console.log("Potree.Viewer:", window.Potree.Viewer);
             
             // Initialize Potree viewer
-            const viewer = new window.Potree.Viewer(renderAreaRef.current);
+            const viewer = new window.Potree.Viewer(renderArea);
             window.viewer = viewer;
+            
+            console.log("Potree viewer created successfully:", viewer);
             
             viewer.setEDLEnabled(true);
             viewer.setFOV(60);
@@ -282,9 +310,16 @@ export default function PotreeViewer() {
             });
           } catch (error) {
             console.error("Error creating Potree viewer:", error);
+            console.error("Error details:", {
+              message: error.message,
+              stack: error.stack,
+              renderArea: renderArea,
+              potreeAvailable: !!window.Potree,
+              viewerAvailable: !!(window.Potree && window.Potree.Viewer)
+            });
             reject(error);
           }
-        }, 200);
+        }, 500);
         
       } catch (error) {
         console.error("Error initializing Potree:", error);
