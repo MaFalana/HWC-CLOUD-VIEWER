@@ -340,7 +340,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h4 className="font-medium text-sm truncate">{project.projectName}</h4>
-                  <p className="text-xs text-gray-500">#{project.jobNumber}</p>
+                  <p className="text-xs text-gray-500">{project.jobNumber}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge className={`${getStatusColor(project.status)} text-white text-xs`}>
                       {project.status}
