@@ -1,4 +1,21 @@
 // Transform coordinates using MapTiler API
+
+// Type definitions for coordinate transformation
+interface TransformationParams {
+  fromCRS: string;
+  toCRS: string;
+  coordinates: [number, number];
+}
+
+interface TransformedCoordinates {
+  latitude: number;
+  longitude: number;
+  originalX: number;
+  originalY: number;
+  fromCRS: string;
+  toCRS: string;
+}
+
 const transformWithMapTiler = async (
   fromCRS: string,
   toCRS: string,
