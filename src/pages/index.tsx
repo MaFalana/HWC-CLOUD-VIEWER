@@ -435,7 +435,7 @@ export default function Dashboard() {
         <link rel="icon" href="/hwc-angle-logo-16px-mbe1odp0.png" />
       </Head>
 
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header
           onNewProject={handleNewProject}
           onViewChange={setCurrentView}
@@ -446,7 +446,7 @@ export default function Dashboard() {
           onSortChange={setSortBy}
         />
 
-        <main className="container py-6">
+        <main className="container py-6 flex-1 overflow-auto">
           {renderContent()}
         </main>
 
