@@ -259,11 +259,16 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === "acquistionDate") {
-      // Store the date as-is without timezone conversion
-      setFormData(prev => ({
-        ...prev,
-        [name]: value ? value + "T00:00:00.000Z" : "",
-      }));
+      if (value) { // value is "YYYY-MM-DD"
+        // Simply append T00:00:00.000Z to treat it as UTC midnight on the selected date
+        const utcDateString = `${value}T00:00:00.000Z`;
+        setFormData(prev => ({
+          ...prev,
+          [name]: utcDateString,
+        }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: "" }));
+      }
     } else {
       setFormData(prev => ({
         ...prev,

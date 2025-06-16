@@ -83,14 +83,6 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
         </div>
 
         <div className="space-y-1 text-sm text-gray-600">
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {new Date(project.acquistionDate).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </div>
           {project.clientName && (
             <div className="flex items-center gap-1">
               <span>{project.clientName}</span>
@@ -102,6 +94,15 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
               {project.location.address || `${project.location.latitude}, ${project.location.longitude}`}
             </div>
           )}
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            Acquired: {project.acquistionDate ? new Date(project.acquistionDate).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              timeZone: "UTC", // Ensure UTC display
+            }) : "N/A"}
+          </div>
         </div>
 
         {project.tags && project.tags.length > 0 && (
@@ -118,15 +119,6 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
             )}
           </div>
         )}
-        <div className="flex items-center text-xs text-gray-500">
-          <Calendar className="h-3 w-3 mr-1.5" />
-          Acquired: {project.acquistionDate ? new Date(project.acquistionDate).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-            timeZone: "UTC", // Ensure UTC display
-          }) : "N/A"}
-        </div>
       </CardContent>
 
       <CardFooter className="p-4 pt-0">

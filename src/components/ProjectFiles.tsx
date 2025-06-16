@@ -38,7 +38,8 @@ export default function ProjectFiles({ project, onUpdateProject }: ProjectFilesP
   const getFileTypeIcon = (type: string) => {
     switch (type) {
       case "image":
-        return <Image className="h-4 w-4" />; // Removed alt=""
+        // Removed alt prop from Lucide Image component
+        return <Image className="h-4 w-4" />;
       case "prj":
       case "jgw":
       case "tfw":

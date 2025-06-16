@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { Project } from "@/types/project";
+// Project import removed as it's unused
+// import { Project } from "@/types/project";
 // projectService is not directly used here anymore as usePotreeViewer handles data fetching
 // import { projectService } from "@/services/projectService"; 
 import ViewerHeader from "@/components/viewer/ViewerHeader";
@@ -33,16 +34,13 @@ export default function ProjectViewerPage() {
     retryLoad: potreeRetryLoad,
   } = usePotreeViewer({ jobNumber });
 
-  // Local project state for components like ProjectFiles that might need to update project details
-  // This will be initialized/updated based on potreeProjectData
-  // Removed unused state: projectForFiles, setProjectForFiles
-  const [_, setProjectForFiles] = useState<Project | null>(null); // Keep setProjectForFiles to avoid breaking useEffect if it's used elsewhere, but mark projectForFiles as unused
-
-  useEffect(() => {
-    if (potreeProjectData) {
-      setProjectForFiles(potreeProjectData); // This might be used by other effects or future code
-    }
-  }, [potreeProjectData]);
+  // Removed unused projectForFiles state and its useEffect
+  // const [_, setProjectForFiles] = useState<Project | null>(null);
+  // useEffect(() => {
+  //   if (potreeProjectData) {
+  //     setProjectForFiles(potreeProjectData);
+  //   }
+  // }, [potreeProjectData]);
 
   // Removed unused callback: handleUpdateProject
 
@@ -96,12 +94,7 @@ export default function ProjectViewerPage() {
       <Head>
         <title>{potreeProjectData.projectName} | HWC Engineering Cloud Viewer</title>
         <meta name="description" content={`View project: ${potreeProjectData.projectName}`} />
-        <link rel="stylesheet" type="text/css" href="/potree/build/potree/potree.css" />
-        <link rel="stylesheet" type="text/css" href="/potree/libs/jquery-ui/jquery-ui.min.css" />
-        <link rel="stylesheet" type="text/css" href="/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css" />
-        <link rel="stylesheet" type="text/css" href="/potree/libs/openlayers3/ol.css" />
-        <link rel="stylesheet" type="text/css" href="/potree/libs/spectrum/spectrum.css" />
-        <link rel="stylesheet" type="text/css" href="/potree/libs/jstree/themes/mixed/style.css" />
+        {/* Potree CSS links moved to _document.tsx */}
       </Head>
 
       <div className="min-h-screen bg-gray-100 flex flex-col relative">
