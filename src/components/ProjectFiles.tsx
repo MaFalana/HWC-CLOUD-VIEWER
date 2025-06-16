@@ -38,7 +38,7 @@ export default function ProjectFiles({ project, onUpdateProject }: ProjectFilesP
   const getFileTypeIcon = (type: string) => {
     switch (type) {
       case "image":
-        return <Image className="h-4 w-4" />; // lucide-react Image icon
+        return <Image className="h-4 w-4" alt="" />; // lucide-react Image icon
       case "prj":
       case "jgw":
       case "tfw":

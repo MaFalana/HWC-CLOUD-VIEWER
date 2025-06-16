@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
@@ -14,7 +13,7 @@ import ProjectFiles from "@/components/ProjectFiles";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // PotreeViewerInstance type for clarity, though Potree itself is 'any' for now
-type PotreeViewerInstance = any; 
+// type PotreeViewerInstance = any; // Removed unused type alias
 
 export default function ProjectViewerPage() {
   const router = useRouter();
