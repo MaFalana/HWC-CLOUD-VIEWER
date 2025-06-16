@@ -259,11 +259,10 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === "acquistionDate") {
-      // Ensure date is stored as ISO string at UTC midnight
-      const utcDate = value ? new Date(value + "T00:00:00.000Z").toISOString() : "";
+      // Store the date as-is without timezone conversion
       setFormData(prev => ({
         ...prev,
-        [name]: utcDate,
+        [name]: value ? value + "T00:00:00.000Z" : "",
       }));
     } else {
       setFormData(prev => ({

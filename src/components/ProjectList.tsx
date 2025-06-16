@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Eye, Edit, Trash2, MapPin, Calendar } from "lucide-react";
+import { MoreVertical, Eye, Edit, Trash2, MapPin, Calendar, File } from "lucide-react";
 import { Project } from "@/types/project";
 import { useRouter } from "next/router";
 
@@ -105,7 +105,6 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
                     month: "short",
                     day: "numeric",
                     year: "numeric",
-                    timeZone: "UTC", 
                   }) : "-"}
                 </div>
               </TableCell>
@@ -119,7 +118,11 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => handleOpen(project.jobNumber)}>
                       <Eye className="h-4 w-4 mr-2" />
-                      Open
+                      Open Viewer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push(`/files/${project.jobNumber}`)}>
+                      <File className="h-4 w-4 mr-2" />
+                      Manage Files
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onEdit(project)}>
                       <Edit className="h-4 w-4 mr-2" />

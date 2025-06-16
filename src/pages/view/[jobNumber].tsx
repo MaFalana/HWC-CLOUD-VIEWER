@@ -119,43 +119,29 @@ export default function ProjectViewerPage() {
         />
         
         <main className="flex-1 flex flex-col overflow-hidden pt-[70px]"> {/* Adjust pt for header height */}
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "viewer" | "files")} className="flex-1 flex flex-col overflow-hidden p-4">
-            <TabsList className="mb-4">
-              <TabsTrigger value="viewer">3D Viewer</TabsTrigger>
-              <TabsTrigger value="files">Files & Attachments</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="viewer" className="flex-1 flex flex-col overflow-hidden relative">
-              {potreeIsLoading && viewerInstanceReady === false && ( // Show loading only if viewer not ready
-                <ViewerLoadingOverlay
-                  projectData={potreeProjectData}
-                  jobNumber={jobNumber}
-                  loadingMessage={potreeLoadingMessage || "Loading point cloud..."}
+          {/* Remove Tabs and just show the viewer directly */}
+          <div className="flex-1 flex flex-col overflow-hidden relative">
+            {potreeIsLoading && viewerInstanceReady === false && ( // Show loading only if viewer not ready
+              <ViewerLoadingOverlay
+                projectData={potreeProjectData}
+                jobNumber={jobNumber}
+                loadingMessage={potreeLoadingMessage || "Loading point cloud..."}
+              />
+            )}
+            {potreeLoadingError && viewerInstanceReady === false && ( // Show error if viewer not ready
+               <ViewerErrorOverlay
+                  loadingError={potreeLoadingError}
+                  onRetry={potreeRetryLoad}
                 />
-              )}
-              {potreeLoadingError && viewerInstanceReady === false && ( // Show error if viewer not ready
-                 <ViewerErrorOverlay
-                    loadingError={potreeLoadingError}
-                    onRetry={potreeRetryLoad}
-                  />
-              )}
-              {/* Potree Render Area and Sidebar Container */}
-              <div id="potree_render_area" className="flex-1 w-full h-full bg-black" />
-              <div id="potree_sidebar_container" className={`potree-sidebar ${customSidebarVisible ? "" : "hidden"}`}></div>
+            )}
+            {/* Potree Render Area and Sidebar Container */}
+            <div id="potree_render_area" className="flex-1 w-full h-full bg-black" />
+            <div id="potree_sidebar_container" className={`potree-sidebar ${customSidebarVisible ? "" : "hidden"}`}></div>
 
-              {viewerInstanceReady && projectInfoPanelVisible && (
-                <ViewerProjectInfoPanel projectData={potreeProjectData} />
-              )}
-            </TabsContent>
-
-            <TabsContent value="files" className="flex-1 overflow-y-auto p-1">
-              {projectForFiles ? (
-                <ProjectFiles project={projectForFiles} onUpdateProject={handleUpdateProject} />
-              ) : (
-                <p>Loading project files information...</p> 
-              )}
-            </TabsContent>
-          </Tabs>
+            {viewerInstanceReady && projectInfoPanelVisible && (
+              <ViewerProjectInfoPanel projectData={potreeProjectData} />
+            )}
+          </div>
         </main>
       </div>
     </>
