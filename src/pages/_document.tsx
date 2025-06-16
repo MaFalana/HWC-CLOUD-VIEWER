@@ -15,6 +15,8 @@ export default function Document() {
           async
           data-softgen-monitoring="true"
         />
+        {/* Add permissions policy to allow XR features and prevent SecurityError */}
+        <meta httpEquiv="Permissions-Policy" content="xr-spatial-tracking=*, camera=*, microphone=*, geolocation=*" />
         {/* Potree CSS Files - Placed here for global availability */}
         <link rel="stylesheet" type="text/css" href="/potree/build/potree/potree.css" />
         <link rel="stylesheet" type="text/css" href="/potree/libs/jquery-ui/jquery-ui.min.css" />
