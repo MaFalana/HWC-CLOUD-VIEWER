@@ -45,7 +45,7 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
             <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Location</TableHead>
-            {/* <TableHead>Acquisition Date</TableHead> Removed this column */}
+            <TableHead>Acquisition Date</TableHead> {/* Re-added this column */}
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -97,8 +97,7 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
                   "-"
                 )}
               </TableCell>
-              {/* Removed Acquisition Date TableCell */}
-              {/* 
+              {/* Re-added Acquisition Date TableCell */}
               <TableCell>
                 <div className="flex items-center gap-1 text-sm">
                   <Calendar className="h-3 w-3" />
@@ -110,7 +109,6 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
                   }) : "-"}
                 </div>
               </TableCell>
-              */}
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
