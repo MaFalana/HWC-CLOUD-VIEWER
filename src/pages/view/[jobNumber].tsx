@@ -9,8 +9,7 @@ import ViewerProjectInfoPanel from "@/components/viewer/ViewerProjectInfoPanel";
 import ViewerLoadingOverlay from "@/components/viewer/ViewerLoadingOverlay";
 import ViewerErrorOverlay from "@/components/viewer/ViewerErrorOverlay";
 import { usePotreeViewer } from "@/hooks/usePotreeViewer";
-import ProjectFiles from "@/components/ProjectFiles";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Removed unused imports: ProjectFiles, Tabs, TabsContent, TabsList, TabsTrigger
 
 // PotreeViewerInstance type for clarity, though Potree itself is 'any' for now
 // type PotreeViewerInstance = any; // Removed unused type alias
@@ -20,7 +19,7 @@ export default function ProjectViewerPage() {
   const { jobNumber } = router.query as { jobNumber: string };
   
   // State for viewer page specific UI elements
-  const [activeTab, setActiveTab] = useState<"viewer" | "files">("viewer");
+  // Removed unused state: activeTab, setActiveTab
   const [customSidebarVisible, setCustomSidebarVisible] = useState(true); // Potree sidebar
   const [projectInfoPanelVisible, setProjectInfoPanelVisible] = useState(true);
 
@@ -36,20 +35,16 @@ export default function ProjectViewerPage() {
 
   // Local project state for components like ProjectFiles that might need to update project details
   // This will be initialized/updated based on potreeProjectData
-  const [projectForFiles, setProjectForFiles] = useState<Project | null>(null);
+  // Removed unused state: projectForFiles, setProjectForFiles
+  const [_, setProjectForFiles] = useState<Project | null>(null); // Keep setProjectForFiles to avoid breaking useEffect if it's used elsewhere, but mark projectForFiles as unused
 
   useEffect(() => {
     if (potreeProjectData) {
-      setProjectForFiles(potreeProjectData);
+      setProjectForFiles(potreeProjectData); // This might be used by other effects or future code
     }
   }, [potreeProjectData]);
 
-  const handleUpdateProject = useCallback((updatedProject: Project) => {
-    setProjectForFiles(updatedProject);
-    // If needed, you could also inform usePotreeViewer or re-fetch,
-    // but for now, this updates the local state for ProjectFiles.
-    console.log("Project updated in viewer page (for ProjectFiles):", updatedProject);
-  }, []);
+  // Removed unused callback: handleUpdateProject
 
   const toggleCustomSidebar = () => {
     setCustomSidebarVisible(!customSidebarVisible);

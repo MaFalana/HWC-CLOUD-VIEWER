@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -119,6 +118,15 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
             )}
           </div>
         )}
+        <div className="flex items-center text-xs text-gray-500">
+          <Calendar className="h-3 w-3 mr-1.5" />
+          Acquired: {project.acquistionDate ? new Date(project.acquistionDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            timeZone: "UTC", // Ensure UTC display
+          }) : "N/A"}
+        </div>
       </CardContent>
 
       <CardFooter className="p-4 pt-0">

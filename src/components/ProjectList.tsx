@@ -105,6 +105,7 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
                     month: "short",
                     day: "numeric",
                     year: "numeric",
+                    timeZone: "UTC", // Ensure UTC display
                   }) : "-"}
                 </div>
               </TableCell>
