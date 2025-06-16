@@ -258,10 +258,19 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (name === "acquistionDate") {
+      // Ensure date is stored as ISO string at UTC midnight
+      const utcDate = value ? new Date(value + "T00:00:00.000Z").toISOString() : "";
+      setFormData(prev => ({
+        ...prev,
+        [name]: utcDate,
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -738,7 +747,7 @@ export default function ProjectModal({ isOpen, onClose, onSubmit, project, mode 
                   id="acquistionDate"
                   name="acquistionDate"
                   type="date"
-                  value={formData.acquistionDate ? new Date(formData.acquistionDate).toISOString().split('T')[0] : ""}
+                  value={formData.acquistionDate ? formData.acquistionDate.split('T')[0] : ""}
                   onChange={handleInputChange}
                 />
               </div>

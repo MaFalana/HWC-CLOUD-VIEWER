@@ -34,14 +34,6 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
     }
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
   return (
     <div className="bg-white rounded-lg shadow">
       <Table>
@@ -53,7 +45,6 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
             <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Location</TableHead>
-            <TableHead>Created</TableHead>
             <TableHead>Acquisition Date</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
@@ -109,17 +100,12 @@ export default function ProjectList({ projects, onEdit, onDelete }: ProjectListP
               <TableCell>
                 <div className="flex items-center gap-1 text-sm">
                   <Calendar className="h-3 w-3" />
-                  {formatDate(project.createdAt)}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-1 text-sm">
-                  <Calendar className="h-3 w-3" />
-                  {new Date(project.acquistionDate).toLocaleDateString("en-US", {
+                  {project.acquistionDate ? new Date(project.acquistionDate).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
-                  })}
+                    timeZone: "UTC", // Display date as UTC
+                  }) : "-"}
                 </div>
               </TableCell>
               <TableCell>

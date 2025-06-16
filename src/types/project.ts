@@ -48,6 +48,7 @@ export interface Project {
     content: string;
     parsed?: Partial<ParsedWorldFile>;
   };
+  attachments?: ProjectAttachment[];
   status: "active" | "completed" | "archived" | "processing";
   createdAt: Date;
   updatedAt: Date;
@@ -56,6 +57,16 @@ export interface Project {
   pointCloudUrl?: string;
   tags?: string[];
   projectType?: string;
+}
+
+export interface ProjectAttachment {
+  id: string;
+  name: string;
+  type: 'image' | 'prj' | 'jgw' | 'tfw' | 'pointcloud' | 'other';
+  size: number;
+  uploadedAt: Date;
+  url?: string;
+  description?: string;
 }
 
 export interface CreateProjectData {

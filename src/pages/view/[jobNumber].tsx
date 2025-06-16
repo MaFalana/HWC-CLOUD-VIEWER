@@ -1,112 +1,124 @@
-import { useState } from "react";
-import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import Head from "next/head";
-import { usePotreeViewer } from "@/hooks/usePotreeViewer";
-import ViewerLoadingOverlay from "@/components/viewer/ViewerLoadingOverlay";
-import ViewerErrorOverlay from "@/components/viewer/ViewerErrorOverlay";
+import { useRouter } from "next/router";
+import { Project } from "@/types/project";
+import { projectService } from "@/services/projectService";
+import Header from "@/components/Header";
 import ViewerHeader from "@/components/viewer/ViewerHeader";
 import ViewerProjectInfoPanel from "@/components/viewer/ViewerProjectInfoPanel";
-import ViewerMapControls from "@/components/viewer/ViewerMapControls";
+import ViewerLoadingOverlay from "@/components/viewer/ViewerLoadingOverlay";
+import ViewerErrorOverlay from "@/components/viewer/ViewerErrorOverlay";
+import { usePotreeViewer } from "@/hooks/usePotreeViewer";
+import ProjectFiles from "@/components/ProjectFiles"; // Import ProjectFiles
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import Tabs
 
-export default function PotreeViewerPage() {
+export default function ProjectViewerPage() {
   const router = useRouter();
-  const { jobNumber } = router.query;
+  const { jobNumber } = router.query as { jobNumber: string };
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"viewer" | "files">("viewer");
 
+  const potreeContainerId = "potree_render_area";
   const {
-    projectData,
-    isLoading,
-    loadingMessage,
-    loadingError,
-    viewerInstanceReady,
-    retryLoad,
-  } = usePotreeViewer({ jobNumber });
-  
-  const [mapType, setMapType] = useState<"default" | "terrain" | "satellite" | "openstreet">("default");
-  const [customSidebarVisible, setCustomSidebarVisible] = useState(true); 
-  const [showProjectInfoPanel, setShowProjectInfoPanel] = useState(false);
+    viewer,
+    loading: potreeLoading,
+    error: potreeError,
+    progress,
+  } = usePotreeViewer(
+    potreeContainerId,
+    project?.pointCloudUrl || `/pointclouds/example/metadata.json` // Fallback to example if no URL
+  );
 
-  const toggleCustomSidebar = () => {
-    setCustomSidebarVisible(prev => {
-      const newVisibility = !prev;
-      const sidebarEl = document.getElementById("potree_sidebar_container");
-      if (sidebarEl) {
-          sidebarEl.style.display = newVisibility ? "block" : "none";
-      }
-      return newVisibility;
-    });
-  };
-
-  const handleMapTypeChange = (newMapType: "default" | "terrain" | "satellite" | "openstreet") => {
-    setMapType(newMapType);
-    if (window.viewer && window.viewer.mapView && typeof window.viewer.mapView.setMapType === "function") {
-      try {
-        window.viewer.mapView.setMapType(newMapType);
-        console.log("Map type set to:", newMapType);
-      } catch (error) {
-        console.error("Could not change map type:", error);
-      }
-    } else {
-      console.warn("Viewer or map view not available for map type change.");
+  useEffect(() => {
+    if (jobNumber) {
+      const fetchProject = async () => {
+        try {
+          setLoading(true);
+          // Try fetching from service, then fallback to mock data from index.tsx if not found
+          let data = await projectService.getProjectByJobNumber(jobNumber);
+          if (!data) {
+            // Fallback to mock data logic (simplified, ideally fetch from a shared source)
+            const allProjects = await projectService.getAllProjects(); // This uses mock if API fails
+            data = allProjects.find(p => p.jobNumber === jobNumber) || null;
+          }
+          
+          if (data) {
+            setProject(data);
+          } else {
+            setError("Project not found.");
+          }
+        } catch (err) {
+          console.error("Failed to load project:", err);
+          setError("Failed to load project data.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchProject();
     }
+  }, [jobNumber]);
+
+  const handleUpdateProject = (updatedProject: Project) => {
+    setProject(updatedProject);
+    // Here you would typically call a service to save the updated project
+    // For now, it just updates the local state
+    console.log("Project updated (mock):", updatedProject);
   };
+
+  if (loading) {
+    return <ViewerLoadingOverlay message="Loading project data..." />;
+  }
+
+  if (error) {
+    return <ViewerErrorOverlay message={error} />;
+  }
+
+  if (!project) {
+    return <ViewerErrorOverlay message="Project data could not be loaded." />;
+  }
 
   return (
     <>
       <Head>
-        <title>{projectData?.projectName || (jobNumber ? `Project ${jobNumber}` : "Potree Viewer")} - HWC Engineering</title>
-        <meta name="description" content="HWC Engineering Point Cloud Viewer" />
-        <link rel="icon" href="/hwc-angle-logo-16px-mbe1odp0.png" />
-        {/* Potree specific CSS files, loaded directly as they are external */}
+        <title>{project.projectName} | HWC Engineering Cloud Viewer</title>
+        <meta name="description" content={`View project: ${project.projectName}`} />
+        {/* Potree specific CSS files - these might be necessary for Potree to function correctly */}
+        {/* It's generally better to include global styles in _app.tsx, but Potree might have specific needs */}
         <link rel="stylesheet" type="text/css" href="/potree/build/potree/potree.css" />
         <link rel="stylesheet" type="text/css" href="/potree/libs/jquery-ui/jquery-ui.min.css" />
+        <link rel="stylesheet" type="text/css" href="/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css" />
         <link rel="stylesheet" type="text/css" href="/potree/libs/openlayers3/ol.css" />
         <link rel="stylesheet" type="text/css" href="/potree/libs/spectrum/spectrum.css" />
         <link rel="stylesheet" type="text/css" href="/potree/libs/jstree/themes/mixed/style.css" />
-        <link rel="stylesheet" type="text/css" href="/potree/libs/Cesium/Widgets/CesiumWidget/CesiumWidget.css" />
-        <link rel="stylesheet" type="text/css" href="/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css" />
       </Head>
 
-      {/* Potree containers - always rendered for Potree to attach to */}
-      <div className="potree_outer_container">
-        <div id="potree_render_area" />
-        <div id="potree_sidebar_container" style={{ display: customSidebarVisible ? "block" : "none" }} />
-      </div>
-
-      {isLoading && (
-        <ViewerLoadingOverlay 
-          projectData={projectData}
-          jobNumber={jobNumber}
-          loadingMessage={loadingMessage}
-        />
-      )}
-
-      {loadingError && !isLoading && (
-        <ViewerErrorOverlay
-          loadingError={loadingError}
-          onRetry={retryLoad}
-        />
-      )}
-
-      {viewerInstanceReady && !isLoading && !loadingError && (
-        <>
-          <ViewerHeader
-            projectData={projectData}
-            jobNumber={jobNumber}
-            customSidebarVisible={customSidebarVisible}
-            onToggleCustomSidebar={toggleCustomSidebar}
-            onToggleProjectInfoPanel={() => setShowProjectInfoPanel(!showProjectInfoPanel)}
-          />
-
-          {showProjectInfoPanel && (
-            <ViewerProjectInfoPanel projectData={projectData} />
-          )}
+      <div className="min-h-screen bg-gray-100 flex flex-col">
+        <Header onNewProject={() => {}} /> {/* Simplified Header for viewer page */}
+        
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <ViewerHeader project={project} />
           
-          <ViewerMapControls
-            currentMapType={mapType}
-            onMapTypeChange={handleMapTypeChange}
-          />
-        </>
-      )}
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "viewer" | "files")} className="flex-1 flex flex-col overflow-hidden p-4">
+            <TabsList className="mb-4">
+              <TabsTrigger value="viewer">3D Viewer</TabsTrigger>
+              <TabsTrigger value="files">Files & Attachments</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="viewer" className="flex-1 flex flex-col overflow-hidden relative">
+              {potreeLoading && <ViewerLoadingOverlay message={`Loading point cloud... ${progress.toFixed(0)}%`} />}
+              {potreeError && <ViewerErrorOverlay message={`Potree Error: ${potreeError}`} />}
+              <div id={potreeContainerId} className="flex-1 w-full h-full bg-black" />
+              {viewer && <ViewerProjectInfoPanel project={project} viewer={viewer} />}
+            </TabsContent>
+
+            <TabsContent value="files" className="flex-1 overflow-y-auto p-1">
+              <ProjectFiles project={project} onUpdateProject={handleUpdateProject} />
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
     </>
   );
 }
