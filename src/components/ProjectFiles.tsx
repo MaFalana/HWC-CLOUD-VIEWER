@@ -13,9 +13,7 @@ import {
   MapPin, 
   Folder, 
   Download, 
-  Trash2, 
-  // Eye removed as it's unused
-  // Plus removed as it's unused
+  Trash2,
   X
 } from "lucide-react";
 import { Project, ProjectAttachment } from "@/types/project";
@@ -40,15 +38,15 @@ export default function ProjectFiles({ project, onUpdateProject }: ProjectFilesP
   const getFileTypeIcon = (type: string) => {
     switch (type) {
       case "image":
-        return <Image className="h-4 w-4" alt="Image file icon" />;
+        return <Image className="h-4 w-4" />;
       case "prj":
       case "jgw":
       case "tfw":
-        return <MapPin className="h-4 w-4" alt="Map/GIS file icon" />;
+        return <MapPin className="h-4 w-4" />;
       case "pointcloud":
-        return <Folder className="h-4 w-4" alt="Point cloud folder icon" />;
+        return <Folder className="h-4 w-4" />;
       default:
-        return <File className="h-4 w-4" alt="Generic file icon" />;
+        return <File className="h-4 w-4" />;
     }
   };
 
@@ -270,8 +268,7 @@ export default function ProjectFiles({ project, onUpdateProject }: ProjectFilesP
             ref={folderInputRef}
             type="file"
             multiple
-            // Use direct attributes for webkitdirectory
-            // @ts-ignore because webkitdirectory is non-standard but widely used
+            // @ts-expect-error webkitdirectory is a non-standard attribute but widely supported
             webkitdirectory="" 
             directory=""
             className="hidden"

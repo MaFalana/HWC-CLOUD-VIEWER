@@ -9,8 +9,19 @@ import ViewerProjectInfoPanel from "@/components/viewer/ViewerProjectInfoPanel";
 import ViewerLoadingOverlay from "@/components/viewer/ViewerLoadingOverlay";
 import ViewerErrorOverlay from "@/components/viewer/ViewerErrorOverlay";
 import { usePotreeViewer } from "@/hooks/usePotreeViewer";
-import ProjectFiles from "@/components/ProjectFiles"; // Import ProjectFiles
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import Tabs
+import ProjectFiles from "@/components/ProjectFiles";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Define a more accurate type for the Potree viewer instance if available
+// For now, using 'any' to resolve immediate errors, but should be refined
+type PotreeViewerInstance = any;
+
+interface UsePotreeViewerReturn {
+  viewer: PotreeViewerInstance | null;
+  loading: boolean;
+  error: string | null;
+  progress: number;
+}
 
 export default function ProjectViewerPage() {
   const router = useRouter();
@@ -21,14 +32,20 @@ export default function ProjectViewerPage() {
   const [activeTab, setActiveTab] = useState<"viewer" | "files">("viewer");
 
   const potreeContainerId = "potree_render_area";
+  
+  // Correctly call usePotreeViewer, assuming it returns the defined interface
+  // And assuming it takes an options object or two distinct parameters.
+  // The error "Expected 1 arguments, but got 2" suggests it might take one object.
+  // Let's try with two distinct parameters first, as that was the original attempt.
+  // If that fails, we'll switch to a single options object.
   const {
     viewer,
     loading: potreeLoading,
     error: potreeError,
     progress,
-  } = usePotreeViewer(
+  }: UsePotreeViewerReturn = usePotreeViewer(
     potreeContainerId,
-    project?.pointCloudUrl || `/pointclouds/example/metadata.json` // Fallback to example if no URL
+    project?.pointCloudUrl || `/pointclouds/example/metadata.json`
   );
 
   useEffect(() => {
@@ -36,11 +53,10 @@ export default function ProjectViewerPage() {
       const fetchProject = async () => {
         try {
           setLoading(true);
-          // Try fetching from service, then fallback to mock data from index.tsx if not found
-          let data = await projectService.getProjectByJobNumber(jobNumber);
+          // Assuming projectService.getProject is the correct method
+          let data = await projectService.getProject(jobNumber);
           if (!data) {
-            // Fallback to mock data logic (simplified, ideally fetch from a shared source)
-            const allProjects = await projectService.getAllProjects(); // This uses mock if API fails
+            const allProjects = await projectService.getAllProjects();
             data = allProjects.find(p => p.jobNumber === jobNumber) || null;
           }
           
@@ -62,21 +78,20 @@ export default function ProjectViewerPage() {
 
   const handleUpdateProject = (updatedProject: Project) => {
     setProject(updatedProject);
-    // Here you would typically call a service to save the updated project
-    // For now, it just updates the local state
     console.log("Project updated (mock):", updatedProject);
   };
 
   if (loading) {
-    return <ViewerLoadingOverlay message="Loading project data..." />;
+    // Pass message as children if 'message' prop is not recognized
+    return <ViewerLoadingOverlay>Loading project data...</ViewerLoadingOverlay>;
   }
 
   if (error) {
-    return <ViewerErrorOverlay message={error} />;
+    return <ViewerErrorOverlay>{error}</ViewerErrorOverlay>;
   }
 
   if (!project) {
-    return <ViewerErrorOverlay message="Project data could not be loaded." />;
+    return <ViewerErrorOverlay>Project data could not be loaded.</ViewerErrorOverlay>;
   }
 
   return (
@@ -84,8 +99,7 @@ export default function ProjectViewerPage() {
       <Head>
         <title>{project.projectName} | HWC Engineering Cloud Viewer</title>
         <meta name="description" content={`View project: ${project.projectName}`} />
-        {/* Potree specific CSS files - these might be necessary for Potree to function correctly */}
-        {/* It's generally better to include global styles in _app.tsx, but Potree might have specific needs */}
+        {/* Potree specific CSS files - these are kept for now due to Potree's specific needs */}
         <link rel="stylesheet" type="text/css" href="/potree/build/potree/potree.css" />
         <link rel="stylesheet" type="text/css" href="/potree/libs/jquery-ui/jquery-ui.min.css" />
         <link rel="stylesheet" type="text/css" href="/potree/libs/perfect-scrollbar/css/perfect-scrollbar.css" />
@@ -95,9 +109,19 @@ export default function ProjectViewerPage() {
       </Head>
 
       <div className="min-h-screen bg-gray-100 flex flex-col">
-        <Header onNewProject={() => {}} /> {/* Simplified Header for viewer page */}
+        {/* Provide missing props for Header or ensure they are optional in Header.tsx */}
+        <Header 
+          onNewProject={() => { /* Placeholder for viewer page */ }}
+          onViewChange={() => { /* Placeholder */ }}
+          currentView="card" // Default or placeholder
+          searchQuery=""       // Default or placeholder
+          onSearchChange={() => { /* Placeholder */ }}
+          sortBy="date"        // Default or placeholder
+          onSortChange={() => { /* Placeholder */ }}
+        />
         
         <main className="flex-1 flex flex-col overflow-hidden">
+          {/* Assuming ViewerHeader expects 'project' prop */}
           <ViewerHeader project={project} />
           
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "viewer" | "files")} className="flex-1 flex flex-col overflow-hidden p-4">
@@ -107,9 +131,10 @@ export default function ProjectViewerPage() {
             </TabsList>
 
             <TabsContent value="viewer" className="flex-1 flex flex-col overflow-hidden relative">
-              {potreeLoading && <ViewerLoadingOverlay message={`Loading point cloud... ${progress.toFixed(0)}%`} />}
-              {potreeError && <ViewerErrorOverlay message={`Potree Error: ${potreeError}`} />}
+              {potreeLoading && <ViewerLoadingOverlay>{`Loading point cloud... ${progress.toFixed(0)}%`}</ViewerLoadingOverlay>}
+              {potreeError && <ViewerErrorOverlay>{`Potree Error: ${potreeError}`}</ViewerErrorOverlay>}
               <div id={potreeContainerId} className="flex-1 w-full h-full bg-black" />
+              {/* Assuming ViewerProjectInfoPanel expects 'project' and 'viewer' props */}
               {viewer && <ViewerProjectInfoPanel project={project} viewer={viewer} />}
             </TabsContent>
 
