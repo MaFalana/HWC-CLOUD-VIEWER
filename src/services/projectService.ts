@@ -67,10 +67,11 @@ export const projectService = {
       let location = project.location;
       
       // If no location or invalid location, try to derive from CRS
-      if (!location || 
-          !locationService.validateCoordinates(location.latitude, location.longitude)) {
+      if (!location) 
+      {
         const derivedLocation = locationService.deriveLocationFromProject({ crs });
-        if (derivedLocation) {
+        if (derivedLocation) 
+        {
           location = derivedLocation;
         }
       }

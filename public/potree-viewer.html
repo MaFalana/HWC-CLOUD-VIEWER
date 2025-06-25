@@ -128,6 +128,8 @@
         const viewer = new Potree.Viewer(renderArea);
         window.viewer = viewer; 
         
+        viewer.setNavigationMode(Potree.EarthControls);
+        viewer.setLengthUnit("ft");
         viewer.setEDLEnabled(true);
         viewer.setFOV(60);
         viewer.setPointBudget(3 * 1000 * 1000);

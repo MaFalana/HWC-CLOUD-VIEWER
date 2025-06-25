@@ -137,6 +137,16 @@ export default function ProjectFiles({ project, onUpdateProject }: ProjectFilesP
 
     try {
       // In a real implementation, you would upload files to your backend/storage
+     
+      // const formData = new FormData();
+      // uploadFiles.forEach(file => formData.append('files', file));
+      // const response = await fetch('/api/upload', {
+      //   method: 'POST',
+      //   body: formData,
+      // });
+      // const data = await response.json();
+      // const uploadedFiles = data.files; // This would be an array of uploaded file info
+
       // For now, we'll simulate the upload and create attachment records
       const newAttachments: ProjectAttachment[] = uploadFiles.map((file, index) => ({
         id: `${Date.now()}-${index}`,

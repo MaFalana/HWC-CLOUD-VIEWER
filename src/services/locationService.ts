@@ -121,14 +121,7 @@ export const locationService = {
       return { ...location };
     }
     
-    // Default to center of Indiana if CRS not found
-    if (crsCode.includes('EPSG:') || crsCode.includes('Indiana') || crsCode.includes('InGCS')) {
-      return {
-        latitude: 39.7684,
-        longitude: -86.1581,
-        address: "Indiana"
-      };
-    }
+    
     
     return null;
   },
@@ -137,7 +130,8 @@ export const locationService = {
    * Derive location from project CRS data
    */
   deriveLocationFromProject(project: { crs?: { horizontal?: string; vertical?: string; geoidModel?: string } }): { latitude: number; longitude: number; address: string } | null {
-    if (!project.crs?.horizontal) {
+    if (!project.crs?.horizontal) 
+      {
       return null;
     }
 

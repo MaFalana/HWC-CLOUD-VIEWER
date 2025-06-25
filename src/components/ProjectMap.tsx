@@ -96,8 +96,8 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
             return {
               ...project,
               transformedLocation: {
-                latitude: 39.7684,
-                longitude: -86.1581
+                latitude: project.location?.latitude,// || 39.7684, // Default to Indianapolis latitude
+                longitude: project.location?.longitude// || -86.1581 // Default to Indianapolis longitude
               }
             };
           }
@@ -133,34 +133,9 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
           }
           
           // If transformation failed, try to use the center of the CRS bbox as a fallback
-          if (project.crs?.horizontal) {
-            const crsCode = project.crs.horizontal;
-            const crsData = indianaData.find(item => `${item.id.authority}:${item.id.code}` === crsCode);
-            
-            if (crsData && crsData.bbox) {
-              const [minLon, minLat, maxLon, maxLat] = crsData.bbox;
-              const centerLat = (minLat + maxLat) / 2;
-              const centerLon = (minLon + maxLon) / 2;
-              
-              console.log(`Using CRS bbox center for ${project.jobNumber}: [${centerLat}, ${centerLon}]`);
-              return {
-                ...project,
-                transformedLocation: {
-                  latitude: centerLat,
-                  longitude: centerLon
-                }
-              };
-            }
-          }
           
           // Default to center of Indiana if all else fails
-          return {
-            ...project,
-            transformedLocation: {
-              latitude: 39.7684,
-              longitude: -86.1581
-            }
-          };
+          
         })
       );
       setTransformedProjects(transformed);
@@ -259,10 +234,10 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
       let hasValidMarkers = false;
       
       projectsWithLocation.forEach(project => {
-        const location = project.transformedLocation || project.location;
+        const location =  project.location;
         if (location && location.latitude && location.longitude) {
           // Validate coordinates are within reasonable bounds
-          if (Math.abs(location.latitude) <= 90 && Math.abs(location.longitude) <= 180) {
+          
             const markerIcon = window.L.divIcon({
               className: 'custom-div-icon',
               html: `<div class="marker-pin ${getStatusColor(project.status).replace('bg-', '')}"></div>`,
@@ -286,9 +261,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
             hasValidMarkers = true;
             
             console.log(`Added marker for ${project.jobNumber} at [${location.latitude}, ${location.longitude}]`);
-          } else {
-            console.warn(`Project ${project.jobNumber} has invalid transformed coordinates:`, location);
-          }
+          
         }
       });
 
@@ -429,6 +402,7 @@ export default function ProjectMap({ projects, onEdit, onDelete }: ProjectMapPro
                   month: "short",
                   day: "numeric",
                   year: "numeric",
+                  timeZone: "UTC", // Ensure UTC display
                 })}
               </div>
               
