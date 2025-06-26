@@ -16,12 +16,13 @@ declare global {
 
 const POTREE_SCRIPTS = [
   "/potree/libs/jquery/jquery-3.1.1.min.js",
+  "/potree/libs/proj4/proj4.js",
+  "/potree/libs/three.js/build/three.js",          // <--- Add non-module THREE here
   "/potree/libs/spectrum/spectrum.js",
   "/potree/libs/jquery-ui/jquery-ui.min.js",
   "/potree/libs/other/BinaryHeap.js",
   "/potree/libs/tween/tween.min.js",
   "/potree/libs/d3/d3.js",
-  "/potree/libs/proj4/proj4.js",
   "/potree/libs/openlayers3/ol.js",
   "/potree/libs/i18next/i18next.js",
   "/potree/libs/jstree/jstree.js",
@@ -115,6 +116,7 @@ export function usePotreeViewer({ jobNumber }: UsePotreeViewerProps) {
       }
 
       if (!window.Cesium) throw new Error("Cesium failed to load");
+      if (!window.THREE) throw new Error("THREE.js failed to load");
 
       if (viewerCache.has(jobNumber)) {
         window.viewer = viewerCache.get(jobNumber);
@@ -140,21 +142,21 @@ export function usePotreeViewer({ jobNumber }: UsePotreeViewerProps) {
 
         renderArea = document.createElement("div");
         renderArea.id = "potree_render_area";
-        Object.assign(renderArea.style, {
-          position: "absolute",
-          width: "100%",
-          height: "100%",
-          zIndex: "1",
-        });
+        // Object.assign(renderArea.style, {
+        //   position: "absolute",
+        //   //width: "100%",
+        //   //height: "100%",
+        //   zIndex: "1",
+        // });
 
-        cesiumContainer = document.createElement("div");
-        cesiumContainer.id = "cesiumContainer";
-        Object.assign(cesiumContainer.style, {
-          position: "absolute",
-          width: "100%",
-          height: "100%",
-          zIndex: "0",
-        });
+        // cesiumContainer = document.createElement("div");
+        // cesiumContainer.id = "cesiumContainer";
+        // Object.assign(cesiumContainer.style, {
+        //   position: "absolute",
+        //   width: "100%",
+        //   height: "100%",
+        //   zIndex: "1",
+        // });
 
         renderArea.appendChild(cesiumContainer);
 
@@ -170,12 +172,12 @@ export function usePotreeViewer({ jobNumber }: UsePotreeViewerProps) {
         if (!cesiumContainer) {
           cesiumContainer = document.createElement("div");
           cesiumContainer.id = "cesiumContainer";
-          Object.assign(cesiumContainer.style, {
-            position: "absolute",
-            width: "100%",
-            height: "100%",
-            zIndex: "0",
-          });
+          // Object.assign(cesiumContainer.style, {
+          //   position: "absolute",
+          //   width: "100%",
+          //   height: "100%",
+          //   //zIndex: "0",
+          // });
           renderArea.prepend(cesiumContainer);
         }
       }
@@ -194,13 +196,14 @@ export function usePotreeViewer({ jobNumber }: UsePotreeViewerProps) {
           selectionIndicator: false,
           timeline: false,
           navigationHelpButton: false,
+          //terrainProvider: window.Cesium.createWorldTerrain(),
           imageryProvider: window.Cesium.createOpenStreetMapImageryProvider({
             url: "https://a.tile.openstreetmap.org/",
-          }),
+          }) ,
           terrainShadows: window.Cesium.ShadowMode.DISABLED,
         });
 
-        const cp = new window.Cesium.Cartesian3(4303414.154, 552161.235, 4660771.704);
+        const cp = new Cesium.Cartesian3(220795.584, -5032839.981, 3904168.319);
         window.cesiumViewer.camera.setView({
           destination: cp,
           orientation: {
@@ -218,7 +221,7 @@ export function usePotreeViewer({ jobNumber }: UsePotreeViewerProps) {
       viewer.setEDLEnabled(true);
       viewer.setFOV(60);
       viewer.setPointBudget(3_000_000);
-      viewer.setDescription(currentProjectName);
+      //viewer.setDescription(currentProjectName);
       viewer.setLanguage("en");
       viewer.setLengthUnit("ft");
       viewer.setBackground(null);
@@ -242,10 +245,36 @@ export function usePotreeViewer({ jobNumber }: UsePotreeViewerProps) {
             viewer.scene.addPointCloud(e.pointcloud);
             e.pointcloud.material.pointSizeType = window.Potree.PointSizeType.ADAPTIVE;
             e.pointcloud.material.size = 1;
+
+
+            const cameraParamsPath = `https://hwc-backend-server.vercel.app/pointclouds/${jobNumber}/orthos/${jobNumber}.xml`;
+            const imageParamsPath = `https://hwc-backend-server.vercel.app/pointclouds/${jobNumber}/orthos/${jobNumber}.txt`;
+
+            window.Potree.OrientedImageLoader.load(cameraParamsPath, imageParamsPath, viewer).then( images => {
+              viewer.scene.addOrientedImages(images);
+            });
+
+            
             viewer.fitToScreen(0.8);
             setIsLoading(false);
             setViewerInstanceReady(true);
+            
+            // let pointcloudProjection = e.pointcloud.projection;
+            // //let pointcloudProjection = "+proj=utm +zone=33 +ellps=WGS84 +datum=WGS84 +units=m +no_defs";
+            // let mapProjection = viewer.proj4.defs("WGS84");
+
+            // window.toMap = viewer.proj4(pointcloudProjection, mapProjection);
+            // window.Potree.toScene = viewer.proj4(mapProjection, pointcloudProjection);
+            
+            // {
+            //   let bb = viewer.getBoundingBox();
+
+            //   let minWGS84 = viewer.proj4(pointcloudProjection, mapProjection, bb.min.toArray());
+            //   let maxWGS84 = viewer.proj4(pointcloudProjection, mapProjection, bb.max.toArray());
+            // }
           }
+
+          
         },
         (err: unknown) => {
           if (!isMounted.current) return;
@@ -255,8 +284,25 @@ export function usePotreeViewer({ jobNumber }: UsePotreeViewerProps) {
         }
       );
 
+      function setInteractionMode(mode: "potree" | "cesium") {
+        const cesium = document.getElementById("cesiumContainer");
+        const potree = document.getElementById("potree_render_area");
+
+        if (!cesium || !potree) return;
+
+        if (mode === "cesium") {
+          cesium.style.pointerEvents = "auto";
+          potree.style.pointerEvents = "none";
+        } else {
+          cesium.style.pointerEvents = "none";
+          potree.style.pointerEvents = "auto";
+        }
+      }
+
+
       // Main animation loop
-      function animationLoop(timestamp: number) {
+      function animationLoop(timestamp: number) 
+      {
         requestAnimationFrame(animationLoop);
         const Potree = window.Potree;
         const viewer = window.viewer;
@@ -265,9 +311,55 @@ export function usePotreeViewer({ jobNumber }: UsePotreeViewerProps) {
 
         if (!Potree || !viewer || !Cesium || !cesiumViewer) return;
 
-        const delta = viewer.clock.getDelta();
-        viewer.update(delta, timestamp);
+        viewer.update(viewer.clock.getDelta(), timestamp);
         viewer.render();
+
+        if (window.toMap !== undefined) {
+          let camera = viewer.scene.getActiveCamera();
+
+          let pPos = new window.THREE.Vector3(0, 0, 0).applyMatrix4(camera.matrixWorld);
+          let pRight = new window.THREE.Vector3(600, 0, 0).applyMatrix4(camera.matrixWorld);
+          let pUp = new window.THREE.Vector3(0, 600, 0).applyMatrix4(camera.matrixWorld);
+          let pTarget = viewer.scene.view.getPivot();
+
+          let toCes = (pos: any) => {
+            let xy = [pos.x, pos.y];
+            let height = pos.z;
+            let deg = window.toMap.forward(xy);
+            let cPos = Cesium.Cartesian3.fromDegrees(deg[1], deg[0], height);
+
+            return cPos;
+          };
+
+          let cPos = toCes(pPos);
+          let cUpTarget = toCes(pUp);
+          let cTarget = toCes(pTarget);
+
+          let cDir = Cesium.Cartesian3.subtract(cTarget, cPos, new Cesium.Cartesian3());
+          let cUp = Cesium.Cartesian3.subtract(cUpTarget, cPos, new Cesium.Cartesian3());
+
+          cDir = Cesium.Cartesian3.normalize(cDir, new Cesium.Cartesian3());
+          cUp = Cesium.Cartesian3.normalize(cUp, new Cesium.Cartesian3());
+
+          cesiumViewer.camera.setView({
+            destination: cPos,
+            orientation: {
+              direction: cDir,
+              up: cUp,
+            },
+          });
+        }
+
+        let aspect = viewer.scene.getActiveCamera().aspect;
+        if (aspect < 1) {
+          let fovy = Math.PI * (viewer.scene.getActiveCamera().fov / 180);
+          cesiumViewer.camera.frustum.fov = fovy;
+        } else {
+          let fovy = Math.PI * (viewer.scene.getActiveCamera().fov / 180);
+          let fovx = Math.atan(Math.tan(0.5 * fovy) * aspect) * 2;
+          cesiumViewer.camera.frustum.fov = fovx;
+        }
+        //potreeViewer.setClearAlpha(0)
         cesiumViewer.render();
       }
 

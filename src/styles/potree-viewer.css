@@ -20,26 +20,15 @@ body, html {
 }
 
 #potree_render_area { 
+  position: absolute;
   width: 100%; 
   height: 100%; 
-  background-image: url('/potree/build/potree/resources/images/background.jpg'); 
-  background-size: cover; 
+  /*background-image: url('/potree/build/potree/resources/images/background.jpg'); */
+  background-size: cover;
+  
 }
 
-/* Potree's default sidebar container ID, ensure it's styled and positioned correctly */
-#potree_sidebar_container { 
-  background: rgba(41, 44, 48, 0.98) !important; 
-  backdrop-filter: blur(20px) !important; 
-  border-left: 2px solid rgba(238, 47, 39, 0.3) !important; 
-  z-index: 30 !important; /* Above render area, below custom UI overlays if needed */
-  overflow-y: auto !important; 
-  max-height: calc(100vh - 80px) !important; /* Assuming header height of 80px */
-  position: fixed !important; 
-  right: 0 !important; 
-  top: 80px !important; /* Adjust if header height changes */
-  width: 320px !important; 
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4) !important; 
-}
+
 
 #potree_sidebar_container::-webkit-scrollbar { 
   width: 6px !important; 
@@ -191,3 +180,15 @@ div[class*="toolbar"]:not(.potree_compass):not(.potree_navigation_cube) .potree_
   color: white;
   text-align: center;
 }
+
+
+#cesiumContainer 
+{
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  /*z-index: 1;*/
+  /*transform: rotateZ(215deg);*/
+  
+}
+

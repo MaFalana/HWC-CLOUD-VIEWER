@@ -22,14 +22,14 @@ export default function ViewerHeader({
   const router = useRouter();
 
   return (
-    <div className="absolute top-0 left-0 right-0 z-50 bg-hwc-dark/95 backdrop-blur-md text-white border-b border-hwc-red/20">
+    <div className="absolute top-0 left-0 right-0 z-50 bg-hwc-dark/95 backdrop-blur-md text-black border-b border-hwc-red/20">
       <div className="flex items-center justify-between px-6 py-4">
         <div className="flex items-center gap-6">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.push("/")}
-            className="text-white hover:bg-hwc-red/20 font-medium"
+            className="text-black hover:bg-hwc-red/20 font-medium"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Dashboard
@@ -59,7 +59,7 @@ export default function ViewerHeader({
             variant="ghost"
             size="sm"
             onClick={onToggleProjectInfoPanel}
-            className="text-white hover:bg-hwc-red/20"
+            className="text-black hover:bg-hwc-red/20"
             title="Project Information"
           >
             <Info className="h-4 w-4" />
@@ -68,7 +68,7 @@ export default function ViewerHeader({
             variant="ghost"
             size="sm"
             onClick={onToggleCustomSidebar}
-            className="text-white hover:bg-hwc-red/20"
+            className="text-black hover:bg-hwc-red/20"
             title={customSidebarVisible ? "Hide Potree Sidebar" : "Show Potree Sidebar"}
           >
             {customSidebarVisible ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
